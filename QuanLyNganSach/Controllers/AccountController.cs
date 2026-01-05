@@ -1,7 +1,7 @@
-﻿using QuanLyNganSach.Helpers;
+﻿using Newtonsoft.Json;
+using QuanLyNganSach.Helpers;
 using QuanLyNganSach.Models.Auth;
 using System;
-using System.Data.Entity;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -9,7 +9,7 @@ using System.Web.Security;
 
 namespace QuanLyNganSach.Controllers
 {
-    public class AccountController : Controller
+    public class AccountController : BaseController
     {
         private readonly QuanLyNganSachEntities db = new QuanLyNganSachEntities();
 
@@ -40,7 +40,7 @@ namespace QuanLyNganSach.Controllers
                 {
                     MaNhanVien = x.MaNhanVien,
                     UserName = x.HoTen,
-                    RoleId = x.RoleId
+                    RoleId = x.RoleId,
                 })
                 .FirstOrDefault();
 
@@ -50,31 +50,31 @@ namespace QuanLyNganSach.Controllers
                 return View();
             }
 
-            // Serialize object LoggedInUser
-            string userData = Newtonsoft.Json.JsonConvert.SerializeObject(user);
+            string userData = JsonConvert.SerializeObject(user);
 
             var ticket = new FormsAuthenticationTicket(
                 1,
-                user.UserName,               // Identity Name
+                user.UserName,
                 DateTime.Now,
                 DateTime.Now.AddMinutes(60),
                 false,
-                userData                     // 🔥 LƯU OBJECT
+                userData
             );
 
-            string encryptedTicket = FormsAuthentication.Encrypt(ticket);
-
-            var cookie = new HttpCookie(FormsAuthentication.FormsCookieName, encryptedTicket)
+            var cookie = new HttpCookie(
+                FormsAuthentication.FormsCookieName,
+                FormsAuthentication.Encrypt(ticket)
+            )
             {
-                HttpOnly = true,             // 🔐 Chống JS đọc cookie
-                Secure = Request.IsSecureConnection
+                HttpOnly = true,
+                Secure = Request.IsSecureConnection,
+                Expires = ticket.Expiration
             };
 
             Response.Cookies.Add(cookie);
 
             return RedirectToAction("Index", "Home");
         }
-
 
         public ActionResult Logout()
         {

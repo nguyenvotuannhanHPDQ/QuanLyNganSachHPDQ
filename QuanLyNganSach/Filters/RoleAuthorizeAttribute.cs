@@ -1,4 +1,5 @@
-﻿using QuanLyNganSach.Models.Auth;
+﻿using QuanLyNganSach.Constants;
+using QuanLyNganSach.Models.Auth;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,7 @@ namespace QuanLyNganSach.Filters
 
         protected override bool AuthorizeCore(HttpContextBase httpContext)
         {
-            var user = httpContext.Items["LoggedUser"] as LoggedInUser;
+            var user = httpContext.Items[AuthConst.CurrentUser] as LoggedInUser;
             return user != null && user.RoleId == RoleId;
         }
     }

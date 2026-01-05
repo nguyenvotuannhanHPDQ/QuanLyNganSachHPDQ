@@ -1,4 +1,5 @@
 ﻿using QuanLyNganSach.Constants;
+using QuanLyNganSach.Controllers;
 using QuanLyNganSach.Filters;
 using QuanLyNganSach.Helpers;
 using QuanLyNganSach.Models.ViewModels;
@@ -6,10 +7,10 @@ using System;
 using System.Linq;
 using System.Web.Mvc;
 
-namespace QuanLyNganSach.Controllers.Admin
+namespace QuanLyNganSach.Areas.Admin.Controllers
 {
     [RoleAuthorize(RoleId = RoleConst.Admin)]
-    public class UserController : Controller
+    public class UserController : BaseController
     {
         private readonly QuanLyNganSachEntities db = new QuanLyNganSachEntities();
 

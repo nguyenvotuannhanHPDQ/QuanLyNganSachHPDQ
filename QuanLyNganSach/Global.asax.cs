@@ -1,8 +1,6 @@
+using QuanLyNganSach.Constants;
 using QuanLyNganSach.Models.Auth;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Principal;
 using System.Web;
 using System.Web.Http;
 using System.Web.Mvc;
@@ -46,7 +44,7 @@ namespace QuanLyNganSach
             var loggedUser = Newtonsoft.Json.JsonConvert
                 .DeserializeObject<LoggedInUser>(ticket.UserData);
 
-            HttpContext.Current.Items["LoggedUser"] = loggedUser;
+            HttpContext.Current.Items[AuthConst.CurrentUser] = loggedUser;
         }
     }
 }
