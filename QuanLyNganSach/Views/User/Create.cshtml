@@ -1,0 +1,47 @@
+﻿@model QuanLyNganSach.Models.ViewModels.CreateUserViewModel
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Tạo tài khoản người dùng</h5>
+                </div>
+
+                <div class="card-body">
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success">
+                            @TempData["Success"]
+                        </div>
+                    }
+
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label>Mã nhân viên</label>
+                            @Html.TextBoxFor(m => m.MaNhanVien, new { @class = "form-control" })
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Họ tên</label>
+                            @Html.TextBoxFor(m => m.HoTen, new { @class = "form-control" })
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Quyền</label>
+                            @Html.DropDownListFor(m => m.RoleId, Model.Roles, "-- Chọn quyền --",
+                                new { @class = "form-select" })
+                        </div>
+
+                        <button class="btn btn-primary w-100">
+                            Tạo tài khoản
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

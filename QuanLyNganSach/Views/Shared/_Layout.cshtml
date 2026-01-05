@@ -1,0 +1,106 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - My ASP.NET Application</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+</head>
+
+@{
+    var currentUser = HttpContext.Current.Items["LoggedUser"] as QuanLyNganSach.Models.Auth.LoggedInUser;
+}
+
+<body>
+    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="@Url.Action("Index", "Home")">
+                <img src="~/Content/images/logo-inverse.png"
+                     alt="Logo công ty"
+                     class="img-fluid"
+                     style="max-height:40px;" />
+            </a>
+            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" title="Toggle navigation" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
+                <ul class="navbar-nav flex-grow-1">
+                    <li class="nav-item">
+                        @Html.ActionLink("Đăng ký ngân sách", "Index", "Home", null, new { @class = "nav-link text-dark" })
+                    </li>
+                    <li class="nav-item">
+                        @Html.ActionLink("Theo dõi phê duyệt", "About", "Home", null, new { @class = "nav-link text-dark" })
+                    </li>
+                    <li class="nav-item">
+                        @Html.ActionLink("Theo dõi tiến độ", "Contact", "Home", null, new { @class = "nav-link text-dark" })
+                    </li>
+                    <li class="nav-item">
+                        @Html.ActionLink("Report", "Contact", "Home", null, new { @class = "nav-link text-dark" })
+                    </li>
+                    <li class="nav-item">
+                        @Html.ActionLink("Quản lý tài khoản", "Create", "User", null, new { @class = "nav-link text-dark" })
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav">
+                    @if (currentUser != null)
+                    {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-dark d-flex align-items-center gap-1"
+                               href="#"
+                               id="accountDropdown"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               aria-expanded="false"
+                               title="Tài khoản">
+                                <i class="bi bi-person-circle fs-5 text-primary"></i>
+                                <span class="fw-semibold text-dark">
+                                    @currentUser.UserName
+                                </span>
+                            </a>
+
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        Đổi mật khẩu
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li>
+                                    <a class="dropdown-item text-danger"
+                                       href="@Url.Action("Logout", "Account")">
+                                        Đăng xuất
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container body-content pb-5">
+        @RenderBody()
+    </div>
+
+    <footer class="footer fixed-bottom bg-light text-dark">
+        <div class="container text-center py-3">
+            <div class="fw-semibold">
+                Phần mềm quản lý ngân sách
+            </div>
+            <div class="small mt-1">
+                &copy; @DateTime.Now.Year - Copy right P.CNTT & CĐS
+            </div>
+        </div>
+    </footer>
+
+
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+
+    @RenderSection("scripts", required: false)
+</body>
+</html>

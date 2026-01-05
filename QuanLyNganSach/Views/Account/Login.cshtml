@@ -1,0 +1,58 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Đăng nhập</title>
+    <link href="~/Content/bootstrap/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+
+    <div class="container">
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-4">
+                <div class="card shadow">
+                    <div class="card-header text-center">
+                        <img src="~/Content/images/logo-inverse.png"
+                             class="img-fluid mt-2" />
+                        <div class="mt-2 fw-semibold text-secondary">
+                            Phần mềm quản lý ngân sách
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        @if (ViewBag.Error != null)
+                        {
+                            <div class="alert alert-danger">
+                                @ViewBag.Error
+                            </div>
+                        }
+
+                        @using (Html.BeginForm())
+                        {
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label>Mã nhân viên</label>
+                                <input name="maNhanVien" class="form-control" required />
+                            </div>
+
+                            <div class="mb-3">
+                                <label>Mật khẩu</label>
+                                <input type="password" name="matKhau" class="form-control" required />
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">
+                                Đăng nhập
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
