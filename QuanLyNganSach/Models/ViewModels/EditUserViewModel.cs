@@ -4,8 +4,10 @@ using System.Web.Mvc;
 
 namespace QuanLyNganSach.Models.ViewModels
 {
-    public class CreateUserViewModel
+    public class EditUserViewModel
     {
+        public int UserId { get; set; }
+
         [Required(ErrorMessage = "Vui lòng nhập mã nhân viên")]
         public string MaNhanVien { get; set; }
 
@@ -15,9 +17,9 @@ namespace QuanLyNganSach.Models.ViewModels
         [Required(ErrorMessage = "Vui lòng chọn quyền hệ thống")]
         public int RoleId { get; set; }
 
-        public IEnumerable<SelectListItem> Roles
-        {
-            get; set;
-        }
+        [Display(Name = "Trạng thái")]
+        public bool IsActive { get; set; }
+
+        public IEnumerable<SelectListItem> Roles { get; set; }
     }
 }
