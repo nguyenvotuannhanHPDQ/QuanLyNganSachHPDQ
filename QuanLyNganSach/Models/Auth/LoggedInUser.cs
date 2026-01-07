@@ -9,6 +9,7 @@ namespace QuanLyNganSach.Models.Auth
     {
         public string MaNhanVien { get; set; }
         public string UserName { get; set; }
+        public string HoTen { get; set; }
         public int RoleId { get; set; }
     }
 }

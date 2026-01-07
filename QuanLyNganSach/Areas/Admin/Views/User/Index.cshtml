@@ -190,6 +190,14 @@
                                                         <i class="bi bi-pencil"></i>Sửa
                                                     </a>
                                                     <button type="button"
+                                                            class="btn btn-outline-info btn-reset"
+                                                            data-user-id="@user.UserId"
+                                                            data-user-name="@user.HoTen"
+                                                            data-user-code="@user.MaNhanVien"
+                                                            title="Reset mật khẩu">
+                                                        <i class="bi bi-arrow-clockwise"></i>Reset mật khẩu
+                                                    </button>
+                                                    <button type="button"
                                                             class="btn btn-outline-danger btn-delete"
                                                             data-user-id="@user.UserId"
                                                             data-user-name="@user.HoTen"
@@ -252,6 +260,13 @@
                                                     <i class="bi bi-pencil"></i>Sửa
                                                 </a>
                                                 <button type="button"
+                                                        class="btn btn-outline-info btn-sm btn-reset"
+                                                        data-user-id="@user.UserId"
+                                                        data-user-name="@user.HoTen"
+                                                        data-user-code="@user.MaNhanVien">
+                                                    <i class="bi bi-arrow-clockwise"></i>Reset mật khẩu
+                                                </button>
+                                                <button type="button"
                                                         class="btn btn-outline-danger btn-sm btn-delete"
                                                         data-user-id="@user.UserId"
                                                         data-user-name="@user.HoTen">
@@ -265,17 +280,17 @@
                         </div>
                     }
                     @*else
-                    {
-                        <div class="text-center py-5">
-                            <i class="bi bi-inbox display-1 text-muted"></i>
-                            <p class="text-muted mt-3">Chưa có tài khoản nào trong hệ thống</p>
-                            <a href="@Url.Action("Create", "User", new { area = "Admin" })"
-                               class="btn btn-primary">
-                                <i class="bi bi-plus-circle me-1"></i>
-                                Tạo tài khoản
-                            </a>
-                        </div>
-                    }*@
+                        {
+                            <div class="text-center py-5">
+                                <i class="bi bi-inbox display-1 text-muted"></i>
+                                <p class="text-muted mt-3">Chưa có tài khoản nào trong hệ thống</p>
+                                <a href="@Url.Action("Create", "User", new { area = "Admin" })"
+                                   class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-1"></i>
+                                    Tạo tài khoản
+                                </a>
+                            </div>
+                        }*@
                 </div>
 
                 @if (Model != null && Model.Any())
@@ -427,7 +442,80 @@
         </div>
     </div>
 </div>
+<!-- Modal xác nhận reset mật khẩu -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="resetPasswordModalLabel">
+                    <i class="bi bi-arrow-clockwise me-2"></i>
+                    Xác nhận reset mật khẩu
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-key display-1 text-info"></i>
+                </div>
+                <p class="text-center mb-3">
+                    Bạn có chắc chắn muốn reset mật khẩu cho tài khoản:
+                </p>
+                <div class="mb-3">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-circle fs-4 me-3"></i>
+                        <div>
+                            <div class="fw-bold" id="resetUserName"></div>
+                            <small class="text-muted">Mã NV: <span id="resetUserCode"></span></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Hủy bỏ
+                </button>
+                <button type="button" class="btn btn-info text-white" id="confirmReset">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Xác nhận reset
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
+<!-- Modal hiển thị mật khẩu mới -->
+<div class="modal fade" id="resetSuccessModal" tabindex="-1" aria-labelledby="resetSuccessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="resetSuccessModalLabel">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    Reset mật khẩu thành công
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="bi bi-shield-check display-1 text-success mb-3"></i>
+                <p class="mb-3" id="resetSuccessMessage"></p>
+                <div class="alert alert-success border border-success mb-0">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <button type="button" class="btn btn-success btn-sm" id="copyPassword" title="Copy mật khẩu">
+                            <i class="bi bi-clipboard"></i>
+                            Copy
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+                    <i class="bi bi-check-lg me-1"></i>
+                    Đã hiểu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Form ẩn để submit delete -->
 @using (Html.BeginForm("Delete", "User", new { area = "Admin" }, FormMethod.Post, new { id = "deleteForm" }))
 {
@@ -481,6 +569,97 @@
                     clearTimeout(searchTimeout); // Cancel debounce
                     $('#searchForm').submit();
                 }
+            });
+
+            // Reset password button click
+            $('.btn-reset').on('click', function () {
+                resetUserId = $(this).data('user-id');
+                var userName = $(this).data('user-name');
+                var userCode = $(this).data('user-code');
+
+                $('#resetUserName').text(userName);
+                $('#resetUserCode').text(userCode);
+                $('#resetPasswordModal').modal('show');
+            });
+
+            // Confirm reset password
+            $('#confirmReset').on('click', function () {
+                if (resetUserId) {
+                    var $button = $(this);
+                    $button.prop('disabled', true)
+                        .html('<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...');
+
+                    $.ajax({
+                        url: '@Url.Action("ResetPassword", "User", new { area = "Admin" })',
+                        type: 'POST',
+                        data: {
+                            id: resetUserId,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            $('#resetPasswordModal').modal('hide');
+
+                            if (response.success) {
+                                // Show success modal with new password
+                                $('#resetSuccessMessage').html(response.message);
+                                $('#resetSuccessModal').modal('show');
+                            } else {
+                                // Show error message
+                                var alertHtml = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                                    '<i class="bi bi-exclamation-triangle-fill me-2"></i>' +
+                                    response.message +
+                                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                                    '</div>';
+                                $('.container .row .col-12').prepend(alertHtml);
+                            }
+                        },
+                        error: function () {
+                            $('#resetPasswordModal').modal('hide');
+                            var alertHtml = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                                '<i class="bi bi-exclamation-triangle-fill me-2"></i>' +
+                                'Đã xảy ra lỗi. Vui lòng thử lại.' +
+                                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                                '</div>';
+                            $('.container .row .col-12').prepend(alertHtml);
+                        },
+                        complete: function () {
+                            $button.prop('disabled', false)
+                                .html('<i class="bi bi-check-circle me-1"></i>Xác nhận reset');
+                        }
+                    });
+                }
+            });
+
+            // Reset modal on close
+            $('#resetPasswordModal').on('hidden.bs.modal', function () {
+                resetUserId = null;
+                $('#confirmReset').prop('disabled', false)
+                    .html('<i class="bi bi-check-circle me-1"></i>Xác nhận reset');
+            });
+
+            // Copy password to clipboard
+            $('#copyPassword').on('click', function () {
+                var password = $('#displayNewPassword').text();
+                var $button = $(this);
+
+                // Create temporary input
+                var $temp = $('<input>');
+                $('body').append($temp);
+                $temp.val(password).select();
+                document.execCommand('copy');
+                $temp.remove();
+
+                // Show feedback
+                var originalHtml = $button.html();
+                $button.html('<i class="bi bi-check-lg"></i> Đã copy')
+                    .removeClass('btn-success')
+                    .addClass('btn-outline-success');
+
+                setTimeout(function () {
+                    $button.html(originalHtml)
+                        .removeClass('btn-outline-success')
+                        .addClass('btn-success');
+                }, 2000);
             });
 
             // Delete button click
@@ -696,34 +875,44 @@
         }
 
         media (max-width: 991.98px) {
-            .card-header .row > div {
-                margin-bottom: 0.5rem;
-            }
+            .card-header .row > div
 
-            .btn-group {
-                width: 100%;
-            }
+        {
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-group {
+            width: 100%;
+        }
 
             .btn-group label {
                 flex: 1;
             }
+
         }
 
         media (min-width: 768px) {
-            .pagination-wrapper {
-                justify-content: end;
-            }
+            .pagination-wrapper
+
+        {
+            justify-content: end;
+        }
+
         }
 
         keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from
+
+        {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         }
 
         #userTable tbody tr {
@@ -745,6 +934,34 @@
 
         .table-responsive::-webkit-scrollbar-thumb:hover {
             background: #555;
+        }
+
+        /* Reset button specific styles */
+        .btn-outline-info:hover {
+            background-color: #0dcaf0;
+            border-color: #0dcaf0;
+            color: white;
+        }
+
+        /* Modal animations */
+        .modal.fade .modal-dialog {
+            transition: transform 0.3s ease-out;
+        }
+
+        /* Copy button animation */
+        #copyPassword {
+            transition: all 0.3s ease;
+        }
+
+        #copyPassword:active {
+            transform: scale(0.95);
+        }
+
+        /* Success modal styles */
+        #displayNewPassword {
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+            color: #198754;
         }
 
         /* Modal styles */

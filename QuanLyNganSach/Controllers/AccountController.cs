@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
+using QuanLyNganSach.Constants;
 using QuanLyNganSach.Helpers;
 using QuanLyNganSach.Models.Auth;
+using QuanLyNganSach.Models.ViewModels;
 using System;
 using System.Linq;
 using System.Web;
@@ -39,7 +41,8 @@ namespace QuanLyNganSach.Controllers
                 .Select(x => new LoggedInUser
                 {
                     MaNhanVien = x.MaNhanVien,
-                    UserName = x.HoTen,
+                    UserName = x.MaNhanVien,
+                    HoTen = x.HoTen,
                     RoleId = x.RoleId,
                 })
                 .FirstOrDefault();
@@ -81,6 +84,64 @@ namespace QuanLyNganSach.Controllers
             FormsAuthentication.SignOut();
             Session.Clear();
             return RedirectToAction("Login");
+        }
+
+        // GET: Account/ChangePassword
+        [Authorize]
+        public ActionResult ChangePassword()
+        {
+            return View();
+        }
+
+        // POST: Account/ChangePassword
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public ActionResult ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            // Lấy thông tin user hiện tại
+            var username = CurrentUser.UserName;
+            var user = db.Users.FirstOrDefault(u => u.MaNhanVien == username);
+
+            if (user == null)
+            {
+                TempData["Error"] = "Không tìm thấy thông tin tài khoản.";
+                return View(model);
+            }
+
+            // Kiểm tra mật khẩu hiện tại
+            var currentPasswordHash = SecurityHelper.Sha256Hash(model.CurrentPassword);
+            if (user.Password != currentPasswordHash)
+            {
+                ModelState.AddModelError("CurrentPassword", "Mật khẩu hiện tại không đúng");
+                return View(model);
+            }
+
+            // Kiểm tra mật khẩu mới không được trùng mật khẩu cũ
+            var newPasswordHash = SecurityHelper.Sha256Hash(model.NewPassword);
+            if (user.Password == newPasswordHash)
+            {
+                ModelState.AddModelError("NewPassword", "Mật khẩu mới không được trùng với mật khẩu hiện tại");
+                return View(model);
+            }
+
+            // Cập nhật mật khẩu mới
+            user.Password = newPasswordHash;
+            db.SaveChanges();
+
+            TempData["Success"] = "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.";
+
+            // Đăng xuất sau khi đổi mật khẩu
+            FormsAuthentication.SignOut();
+            Session.Clear();
+            Session.Abandon();
+
+            return RedirectToAction("Login", "Account");
         }
     }
 }

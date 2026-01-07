@@ -6,6 +6,7 @@
     <title>@ViewBag.Title - My ASP.NET Application</title>
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
+    <link href="~/Content/menu-admin.css" rel="stylesheet" />
 </head>
 
 @{
@@ -39,9 +40,22 @@
                     <li class="nav-item">
                         @Html.ActionLink("Report", "Contact", "Home", new { area = "" }, new { @class = "nav-link text-dark" })
                     </li>
-                    <li class="nav-item">
-                        @Html.ActionLink("Quản lý tài khoản", "Create", "User", new { area = "Admin" }, new { @class = "nav-link text-dark" })
-                    </li>
+                    @if (user != null && user.RoleId == QuanLyNganSach.Constants.RoleConst.Admin)
+                    {
+                        <li class="nav-item dropdown">
+                            <a href="#" class="nav-link dropdown-toggle text-dark">
+                                Quản lý tài khoản
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    @Html.ActionLink("Danh sách tài khoản", "Index", "User", new { area = "Admin" }, new { @class = "dropdown-item" })
+                                </li>
+                                <li>
+                                    @Html.ActionLink("Tạo mới tài khoản", "Create", "User", new { area = "Admin" }, new { @class = "dropdown-item" })
+                                </li>
+                            </ul>
+                        </li>
+                    }
                 </ul>
 
                 <ul class="navbar-nav">
@@ -60,16 +74,17 @@
                                     @user.UserName
                                 </span>
                             </a>
-
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                 <li>
-                                    <a class="dropdown-item" href="#">
+                                    <a class="dropdown-item" href="@Url.Action("ChangePassword", "Account", new { area = "" })">
+                                        <i class="bi bi-key me-2"></i>
                                         Đổi mật khẩu
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider" /></li>
                                 <li>
-                                    <a class="dropdown-item text-danger" href="@Url.Action("Logout", "Account", new { area = "" })">
+                                    <a class="dropdown-item text-danger" href="@Url.Action("Logout", "Account")">
+                                        <i class="bi bi-box-arrow-right me-2"></i>
                                         Đăng xuất
                                     </a>
                                 </li>

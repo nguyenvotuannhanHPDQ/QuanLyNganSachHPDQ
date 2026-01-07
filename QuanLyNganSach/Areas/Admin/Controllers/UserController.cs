@@ -6,7 +6,6 @@ using QuanLyNganSach.Helpers;
 using QuanLyNganSach.Models.ViewModels;
 using System;
 using System.Collections.Generic;
-using System.Drawing.Printing;
 using System.Linq;
 using System.Web.Mvc;
 
@@ -101,7 +100,7 @@ namespace QuanLyNganSach.Areas.Admin.Controllers
                 MaNhanVien = model.MaNhanVien,
                 HoTen = model.HoTen,
                 RoleId = model.RoleId,
-                Password = SecurityHelper.Sha256Hash("123456"),
+                Password = SecurityHelper.Sha256Hash(PasswordConst.DEFAULT_PASSWORD),
                 IsActive = true,
                 CreatedDate = DateTime.Now
             };
@@ -190,6 +189,43 @@ namespace QuanLyNganSach.Areas.Admin.Controllers
             db.SaveChanges();
 
             return Json(new { success = true, message = $"Đã vô hiệu hóa tài khoản <strong>{user.HoTen}</strong>." });
+        }
+
+        // POST: Admin/User/ResetPassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult ResetPassword(int id)
+        {
+            try
+            {
+                var user = db.Users.Find(id);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy tài khoản." });
+                }
+
+                // Không cho phép reset mật khẩu chính mình
+                if (user.MaNhanVien == CurrentUser.MaNhanVien)
+                {
+                    return Json(new { success = false, message = "Không thể reset mật khẩu của chính bạn." });
+                }
+
+                // Reset về mật khẩu mặc định
+                user.Password = SecurityHelper.Sha256Hash(PasswordConst.DEFAULT_PASSWORD);
+
+                db.SaveChanges();
+
+                return Json(new
+                {
+                    success = true,
+                    message = $"Đã reset mật khẩu cho tài khoản <strong>{user.HoTen}</strong>.<br/>"
+                });
+            }
+            catch (Exception ex)
+            {
+                // Log error here
+                return Json(new { success = false, message = "Đã xảy ra lỗi khi reset mật khẩu. Vui lòng thử lại." });
+            }
         }
 
         private IEnumerable<SelectListItem> GetRolesList()
