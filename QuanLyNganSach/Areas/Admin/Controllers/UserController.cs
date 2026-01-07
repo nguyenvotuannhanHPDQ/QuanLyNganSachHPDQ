@@ -22,19 +22,20 @@ namespace QuanLyNganSach.Areas.Admin.Controllers
         {
             int pageNumber = page ?? 1;
 
-            var query = db.Users
-                .Join(db.Roles,
-                user => user.RoleId,
-                role => role.RoleId,
-                (user, role) => new UserListViewModel
+            var query =
+                from u in db.Users
+                join r in db.Roles on u.RoleId equals r.RoleId
+                join p in db.PhongBans on u.PhongBanId equals p.PhongBanId
+                select new UserListViewModel
                 {
-                    UserId = user.UserId,
-                    MaNhanVien = user.MaNhanVien,
-                    HoTen = user.HoTen,
-                    RoleName = role.RoleName,
-                    IsActive = (bool)user.IsActive,
-                    CreatedDate = (DateTime)user.CreatedDate
-                });
+                    UserId = u.UserId,
+                    MaNhanVien = u.MaNhanVien,
+                    HoTen = u.HoTen,
+                    RoleName = r.RoleName,
+                    TenPhongBan = p.TenPhongBan,
+                    IsActive = (bool) u.IsActive,
+                    CreatedDate = (DateTime) u.CreatedDate
+                };
 
             // Apply search filter
             if (!string.IsNullOrWhiteSpace(search))
@@ -69,7 +70,8 @@ namespace QuanLyNganSach.Areas.Admin.Controllers
         {
             var model = new CreateUserViewModel
             {
-                Roles = GetRolesList()
+                Roles = GetRolesList(),
+                PhongBans = GetPhongBanList()
             };
             return View(model);
         }
@@ -83,6 +85,7 @@ namespace QuanLyNganSach.Areas.Admin.Controllers
             if (!ModelState.IsValid)
             {
                 model.Roles = GetRolesList();
+                model.PhongBans = GetPhongBanList();
                 return View(model);
             }
 
@@ -91,6 +94,7 @@ namespace QuanLyNganSach.Areas.Admin.Controllers
             {
                 ModelState.AddModelError("MaNhanVien", "Mã nhân viên đã tồn tại");
                 model.Roles = GetRolesList();
+                model.PhongBans = GetPhongBanList();
                 return View(model);
             }
 
@@ -100,6 +104,7 @@ namespace QuanLyNganSach.Areas.Admin.Controllers
                 MaNhanVien = model.MaNhanVien,
                 HoTen = model.HoTen,
                 RoleId = model.RoleId,
+                PhongBanId = model.PhongBanId,
                 Password = SecurityHelper.Sha256Hash(PasswordConst.DEFAULT_PASSWORD),
                 IsActive = true,
                 CreatedDate = DateTime.Now
@@ -127,11 +132,14 @@ namespace QuanLyNganSach.Areas.Admin.Controllers
                 UserId = user.UserId,
                 MaNhanVien = user.MaNhanVien,
                 HoTen = user.HoTen,
+                PhongBanId = (int) user.PhongBanId,
                 RoleId = user.RoleId,
                 IsActive = (bool) user.IsActive
             };
 
             model.Roles = GetRolesList();
+            model.PhongBans = GetPhongBanList();
+
             return View(model);
         }
 
@@ -143,6 +151,7 @@ namespace QuanLyNganSach.Areas.Admin.Controllers
             if (!ModelState.IsValid)
             {
                 model.Roles = GetRolesList();
+                model.PhongBans = GetPhongBanList();
                 return View(model);
             }
 
@@ -165,6 +174,7 @@ namespace QuanLyNganSach.Areas.Admin.Controllers
             user.MaNhanVien = model.MaNhanVien;
             user.HoTen = model.HoTen;
             user.RoleId = model.RoleId;
+            user.PhongBanId = model.PhongBanId;
             user.IsActive = model.IsActive;
 
             db.SaveChanges();
@@ -236,6 +246,19 @@ namespace QuanLyNganSach.Areas.Admin.Controllers
                 {
                     Value = r.RoleId.ToString(),
                     Text = r.RoleName
+                })
+                .ToList();
+        }
+
+        private IEnumerable<SelectListItem> GetPhongBanList()
+        {
+            return db.PhongBans
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.TenPhongBan)
+                .Select(x => new SelectListItem
+                {
+                    Value = x.PhongBanId.ToString(),
+                    Text = x.TenPhongBan
                 })
                 .ToList();
         }

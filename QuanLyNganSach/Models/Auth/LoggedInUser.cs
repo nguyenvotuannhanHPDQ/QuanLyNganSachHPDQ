@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-
-namespace QuanLyNganSach.Models.Auth
+﻿namespace QuanLyNganSach.Models.Auth
 {
     public class LoggedInUser
     {
@@ -11,5 +6,7 @@ namespace QuanLyNganSach.Models.Auth
         public string UserName { get; set; }
         public string HoTen { get; set; }
         public int RoleId { get; set; }
+        public int? PhongBanId { get; set; }
+        public string TenPhongBan { get; set; }
     }
 }

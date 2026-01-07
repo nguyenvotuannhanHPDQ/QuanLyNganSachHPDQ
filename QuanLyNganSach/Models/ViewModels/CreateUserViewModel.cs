@@ -15,9 +15,17 @@ namespace QuanLyNganSach.Models.ViewModels
         [Required(ErrorMessage = "Vui lòng chọn quyền hệ thống")]
         public int RoleId { get; set; }
 
+        [Required(ErrorMessage = "Vui lòng chọn đơn vị")]
+        public int PhongBanId { get; set; }
+
         public IEnumerable<SelectListItem> Roles
         {
             get; set;
+        }
+
+        public IEnumerable<SelectListItem> PhongBans
+        { 
+            get; set; 
         }
     }
 }

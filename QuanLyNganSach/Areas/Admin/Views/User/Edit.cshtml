@@ -89,6 +89,25 @@
                             @Html.ValidationMessageFor(m => m.HoTen, "", new { @class = "invalid-feedback d-block" })
                         </div>
 
+                        <!-- Phòng ban -->
+                        <div class="mb-3">
+                            <label for="PhongBanId" class="form-label fw-semibold">
+                                <i class="bi bi-diagram-3 text-warning"></i>
+                                Phòng ban / Đơn vị
+                                <span class="text-danger">*</span>
+                            </label>
+
+                            @Html.DropDownListFor(m => m.PhongBanId,
+                                Model?.PhongBans ?? Enumerable.Empty<SelectListItem>(),
+                                "-- Chọn phòng ban --",
+                                new
+                                {
+                                    @class = "form-select" + (Html.ViewData.ModelState["PhongBanId"]?.Errors.Count > 0 ? " is-invalid" : "")
+                                })
+
+                            @Html.ValidationMessageFor(m => m.PhongBanId, "", new { @class = "invalid-feedback d-block" })
+                        </div>
+
                         <!-- Quyền -->
                         <div class="mb-3">
                             <label for="RoleId" class="form-label fw-semibold">

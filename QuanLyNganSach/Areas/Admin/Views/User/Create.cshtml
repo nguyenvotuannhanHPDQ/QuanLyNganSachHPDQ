@@ -90,6 +90,21 @@
                             @Html.ValidationMessageFor(m => m.HoTen, "", new { @class = "text-danger small mt-1" })
                         </div>
 
+                        <!-- Đơn vị -->
+                        <div class="mb-4">
+                            <label for="PhongBanId" class="form-label fw-semibold">
+                                <i class="bi bi-diagram-3 text-primary"></i>
+                                Đơn vị / Phòng ban
+                                <span class="text-danger">*</span>
+                            </label>
+                            @Html.DropDownListFor(m => m.PhongBanId,
+                                Model?.PhongBans ?? new SelectList(Enumerable.Empty<SelectListItem>()),
+                                "-- Chọn đơn vị --",
+                                new { @class = "form-select" })
+
+                            @Html.ValidationMessageFor(m => m.PhongBanId, "", new { @class = "text-danger small mt-1" })
+                        </div>
+
                         <!-- Quyền -->
                         <div class="mb-4">
                             <label for="RoleId" class="form-label fw-semibold">
