@@ -39,9 +39,13 @@ namespace QuanLyNganSach.Controllers
                          && (bool) x.IsActive)
                 .Select(x => new LoggedInUser
                 {
+                    UserId = x.UserId,
                     MaNhanVien = x.MaNhanVien,
                     UserName = x.MaNhanVien,
                     HoTen = x.HoTen,
+                    PhongBanId = x.PhongBanId,
+                    TenPhongBan = x.PhongBan.TenPhongBan,
+                    MaPhongBan = x.PhongBan.MaPhongBan,
                     RoleId = x.RoleId,
                 })
                 .FirstOrDefault();
