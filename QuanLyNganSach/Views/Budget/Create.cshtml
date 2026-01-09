@@ -4,6 +4,10 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
+@{
+    var user = ViewBag.CurrentUser as QuanLyNganSach.Models.Auth.LoggedInUser;
+}
+
 <div class="container mt-4 mb-5">
     <div class="row justify-content-center">
         <div class="col-12 col-xl-10">
@@ -26,7 +30,7 @@
                 <div class="card-header text-bg-primary py-3">
                     <h5 class="mb-0">
                         <i class="bi bi-file-earmark-text"></i>
-                        Đăng ký hồ sơ ngân sách
+                        Đăng ký kế hoạch ngân sách
                     </h5>
                 </div>
 
@@ -59,7 +63,7 @@
                                 <label class="form-label fw-semibold">Bộ phận</label>
                                 <input type="text"
                                        class="form-control"
-                                       value="@ViewBag.TenBoPhan"
+                                       value="@user.TenPhongBan"
                                        readonly />
                             </div>
                             <div class="col-md-4 mb-3">
@@ -148,18 +152,12 @@
                             <label class="form-label fw-semibold">
                                 Mô tả kỹ thuật
                             </label>
-
-                            @Html.TextAreaFor(m => m.MoTaKyThuat, new
-                            {
-                                @class = "form-control textarea-wide",
-                                rows = 4
-                            })
-
+                            @Html.TextAreaFor(m => m.MoTaKyThuat, new { @class = "form-control textarea-wide", rows = 4 })
                         </div>
 
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label>Ngày bắt đầu <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold">Ngày bắt đầu <span class="text-danger">*</span></label>
                                 @Html.TextBoxFor(m => m.NgayBatDau, "{0:yyyy-MM-dd}", new { type = "date", @class = "form-control" })
                                 @Html.ValidationMessageFor(m => m.NgayBatDau, "", new { @class = "text-danger small mt-1" })
                             </div>
@@ -185,7 +183,7 @@
                             <button type="submit" class="btn btn-primary flex-fill">
                                 <i class="bi bi-save"></i> Gửi đăng ký
                             </button>
-                            <a class="btn btn-outline-secondary flex-fill">Hủy</a>
+                            <a href="@Url.Action("Index", "Home", new { area = "" })" class="btn btn-outline-secondary flex-fill">Hủy</a>
                         </div>
                     }
                 </div>
@@ -210,22 +208,65 @@
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
     <script>
-        $(document).ready(function () {
-            // Auto-dismiss alerts after 5 seconds
-            setTimeout(function () {
-                $('.alert').fadeOut('slow');
-            }, 5000);
+            $(document).ready(function () {
+                // Auto-dismiss alerts after 5 seconds
+                setTimeout(function () {
+                    $('.alert').fadeOut('slow');
+                }, 5000);
 
-            // Form validation
-            $('form').submit(function () {
-                if ($(this).valid()) {
-                    // Disable submit button to prevent double submission
-                    $(this).find('button[type="submit"]')
-                        .prop('disabled', true)
-                        .html('<i class="bi bi-hourglass-split me-1"></i> Đang xử lý...');
-                }
+                // Form validation
+                $('form').submit(function () {
+                    if ($(this).valid()) {
+                        // Disable submit button to prevent double submission
+                        $(this).find('button[type="submit"]')
+                            .prop('disabled', true)
+                            .html('<i class="bi bi-hourglass-split me-1"></i> Đang xử lý...');
+                    }
+                });
+
+                // Initialize tooltips
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+
+                // Auto-generate MaHangMuc when CategoryTypeId changes
+                $('#CategoryTypeId').on('change', function() {
+                    var loaiHangMucId = $(this).val();
+
+                    if (!loaiHangMucId || loaiHangMucId === '') {
+                        $('#MaHangMuc').val('');
+                        return;
+                    }
+
+                    // Show loading state
+                    var $MaHangMuc = $('#MaHangMuc');
+                    var originalValue = $MaHangMuc.val();
+                    $MaHangMuc.val('Đang tạo mã...').prop('disabled', true);
+
+                    // Call AJAX to generate new code
+                    $.ajax({
+                        url: '@Url.Action("GenerateNewMaHangMuc", "Budget")',
+                        type: 'POST',
+                        data: { loaiHangMucId: loaiHangMucId },
+                        success: function(response) {
+                            if (response.success) {
+                                $MaHangMuc.val(response.maHangMuc);
+                            } else {
+                                alert(response.message || 'Không thể tạo mã hạng mục.');
+                                $MaHangMuc.val(originalValue);
+                            }
+                        },
+                        error: function() {
+                            alert('Đã xảy ra lỗi khi tạo mã hạng mục.');
+                            $MaHangMuc.val(originalValue);
+                        },
+                        complete: function() {
+                            $MaHangMuc.prop('disabled', false);
+                        }
+                    });
+                });
             });
-        });
     </script>
     <style>
         /* Custom styles matching layout theme */
@@ -267,10 +308,10 @@
             transition: all 0.3s ease;
         }
 
-            .btn:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-            }
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
 
         /* Responsive adjustments */
         media (max-width: 576px) {

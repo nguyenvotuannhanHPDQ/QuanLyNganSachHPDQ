@@ -1,0 +1,798 @@
+﻿@using PagedList.Mvc
+@model PagedList.IPagedList<QuanLyNganSach.Models.ViewModels.BudgetRegistrationListViewModel>
+@{
+    ViewBag.Title = "Danh sách đăng ký ngân sách";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4 mb-5">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Home")">
+                            <i class="bi bi-house-door"></i> Trang chủ
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        Danh sách đăng ký ngân sách
+                    </li>
+                </ol>
+            </nav>
+
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                    <h4 class="mb-0 fw-semibold">
+                        <i class="bi bi-card-list text-primary me-2"></i>
+                        Danh sách đăng ký ngân sách
+                    </h4>
+                    <small class="text-muted">
+                        Tổng số: <span>@Model.TotalItemCount</span> đăng ký
+                    </small>
+                </div>
+                <a href="@Url.Action("Create", "Budget")" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    Đăng ký mới
+                </a>
+            </div>
+
+            <!-- Success/Error Messages -->
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    @Html.Raw(TempData["Success"])
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    @Html.Raw(TempData["Error"])
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <!-- Card chứa bảng -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light py-3">
+                    @using (Html.BeginForm("Index", "Budget", FormMethod.Get, new { id = "searchForm" }))
+                    {
+                        <div class="row align-items-center g-2">
+                            <!-- SEARCH -->
+                            <div class="col-12 col-md-5 col-lg-4">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white">
+                                        <i class="bi bi-search"></i>
+                                    </span>
+                                    <input type="text"
+                                           id="searchInput"
+                                           name="search"
+                                           value="@ViewBag.CurrentSearch"
+                                           class="form-control"
+                                           placeholder="Tìm kiếm theo mã, tên hạng mục...">
+                                    @if (!string.IsNullOrWhiteSpace(ViewBag.CurrentSearch))
+                                    {
+                                        <button type="button"
+                                                class="btn btn-outline-secondary"
+                                                id="clearSearch"
+                                                title="Xóa tìm kiếm">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- PHÒNG BAN (Manager/Admin) -->
+                            @if (ViewBag.IsManagerOrAdmin == true)
+                            {
+                                <div class="col-12 col-md-4 col-lg-3">
+                                    <select id="phongBanId"
+                                            name="phongBanId"
+                                            class="form-select form-select-sm">
+                                        @foreach (var item in ViewBag.PhongBanList as List<SelectListItem>)
+                                        {
+                                            <option value="@item.Value" @(item.Selected ? "selected" : "")>
+                                                @item.Text
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+
+                            <!-- SORT -->
+                            <div class="col-12 col-md-3 col-lg-2">
+                                <select id="sortOrder"
+                                        name="sortOrder"
+                                        class="form-select form-select-sm">
+                                    <option value="newest" @(ViewBag.CurrentSort == "newest" ? "selected" : "")>
+                                        Ngày tạo mới nhất
+                                    </option>
+                                    <option value="oldest" @(ViewBag.CurrentSort == "oldest" ? "selected" : "")>
+                                        Ngày tạo cũ nhất
+                                    </option>
+                                    <option value="budget-high" @(ViewBag.CurrentSort == "budget-high" ? "selected" : "")>
+                                        Dự toán cao - thấp
+                                    </option>
+                                    <option value="budget-low" @(ViewBag.CurrentSort == "budget-low" ? "selected" : "")>
+                                        Dự toán thấp - cao
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    }
+
+                </div>
+
+                <div class="card-body p-0">
+                    @if (Model != null && Model.Any())
+                    {
+                        <!-- Desktop Table -->
+                        <div class="table-responsive d-none d-lg-block">
+                            <table class="table table-hover align-middle mb-0" id="budgetTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="px-4">
+                                            <i class="bi bi-hash text-primary"></i>
+                                            STT
+                                        </th>
+                                        <th style="min-width: 150px;">
+                                            <i class="bi bi-code-square text-primary"></i>
+                                            Mã hạng mục
+                                        </th>
+                                        <th style="min-width: 200px;">
+                                            <i class="bi bi-file-text text-primary"></i>
+                                            Tên hạng mục
+                                        </th>
+                                        <th class="text-end">
+                                            <i class="bi bi-currency-dollar text-primary"></i>
+                                            Dự toán
+                                        </th>
+                                        <th>
+                                            <i class="bi bi-journal-text text-primary"></i>
+                                            Tờ trình
+                                        </th>
+                                        <th style="min-width: 150px;">
+                                            <i class="bi bi-calendar-range text-primary"></i>
+                                            Thời gian
+                                        </th>
+                                        <th>
+                                            <i class="bi bi-building text-primary"></i>
+                                            Phòng ban
+                                        </th>
+                                        <th class="text-center">
+                                            <i class="bi bi-info-circle text-primary"></i>
+                                            Trạng thái
+                                        </th>
+                                        <th class="text-center px-4">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{ int index = ((Model.PageNumber - 1) * Model.PageSize) + 1; }
+                                    @foreach (var item in Model)
+                                    {
+                                        <tr>
+                                            <td class="px-4 fw-semibold text-muted">@index</td>
+                                            <td>
+                                                <span>@item.MaHangMuc</span>
+                                            </td>
+                                            <td>
+                                                <div class="fw-semibold text-truncate" style="max-width: 250px;" title="@item.TenHangMuc">
+                                                    @item.TenHangMuc
+                                                </div>
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="fw-semibold text-success">
+                                                    @item.DuToan.ToString("N0") đ
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <small>@(string.IsNullOrEmpty(item.SoToTrinh) ? "Chưa có" : item.SoToTrinh)</small>
+                                            </td>
+                                            <td>
+                                                <small>
+                                                    <i class="bi bi-calendar-event"></i>
+                                                    @item.NgayBatDau.ToString("dd/MM/yyyy")
+                                                    <br />
+                                                    <i class="bi bi-calendar-check"></i>
+                                                    @item.NgayKetThuc.ToString("dd/MM/yyyy")
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <small>@item.TenPhongBan</small>
+                                            </td>
+                                            <td class="text-center">
+                                                @if (item.TrangThai == "Chờ duyệt")
+                                                {
+                                                    <span class="badge bg-warning-subtle text-warning border border-warning">
+                                                        <i class="bi bi-clock-history me-1"></i>
+                                                        Chờ duyệt
+                                                    </span>
+                                                }
+                                                else if (item.TrangThai == "Đã duyệt")
+                                                {
+                                                    <span class="badge bg-success-subtle text-success border border-success">
+                                                        <i class="bi bi-check-circle-fill me-1"></i>
+                                                        Đã duyệt
+                                                    </span>
+                                                }
+                                                else if (item.TrangThai == "Từ chối")
+                                                {
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger">
+                                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                                        Từ chối
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td class="text-center px-4">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button"
+                                                            class="btn btn-outline-info btn-view"
+                                                            data-budget-id="@item.BudgetRegistrationId"
+                                                            title="Xem chi tiết">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                    @if (item.TrangThai == "Chờ duyệt")
+                                                    {
+                                                        <a href="@Url.Action("Edit", "Budget", new { id = item.BudgetRegistrationId })"
+                                                           class="btn btn-outline-warning"
+                                                           title="Chỉnh sửa">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </a>
+                                                        <button type="button"
+                                                                class="btn btn-outline-danger btn-delete"
+                                                                data-budget-id="@item.BudgetRegistrationId"
+                                                                data-budget-name="@item.TenHangMuc"
+                                                                title="Xóa">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Mobile Cards -->
+                        <div class="d-lg-none" id="budgetCards">
+                            @foreach (var item in Model)
+                            {
+                                <div class="card border-0 border-bottom rounded-0 budget-card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <h6 class="mb-1 fw-semibold">@item.TenHangMuc</h6>
+                                                <span class="badge bg-secondary small">@item.MaHangMuc</span>
+                                            </div>
+                                            @if (item.TrangThai == "Chờ duyệt")
+                                            {
+                                                <span class="badge bg-warning-subtle text-warning border border-warning">
+                                                    <i class="bi bi-clock-history"></i>
+                                                </span>
+                                            }
+                                            else if (item.TrangThai == "Đã duyệt")
+                                            {
+                                                <span class="badge bg-success-subtle text-success border border-success">
+                                                    <i class="bi bi-check-circle-fill"></i>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger-subtle text-danger border border-danger">
+                                                    <i class="bi bi-x-circle-fill"></i>
+                                                </span>
+                                            }
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <small class="text-muted">
+                                                <i class="bi bi-currency-dollar text-success"></i>
+                                                Dự toán:
+                                            </small>
+                                            <span class="fw-bold text-success ms-1">
+                                                @item.DuToan.ToString("N0") đ
+                                            </span>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <small class="text-muted">
+                                                <i class="bi bi-building text-primary"></i>
+                                                @item.TenPhongBan
+                                            </small>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <small class="text-muted">
+                                                <i class="bi bi-calendar-range"></i>
+                                                @item.NgayBatDau.ToString("dd/MM/yyyy") - @item.NgayKetThuc.ToString("dd/MM/yyyy")
+                                            </small>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock-history"></i>
+                                                @item.NgayTao.ToString("dd/MM/yyyy HH:mm")
+                                            </small>
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button"
+                                                        class="btn btn-outline-info btn-sm btn-view"
+                                                        data-budget-id="@item.BudgetRegistrationId">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                @if (item.TrangThai == "Chờ duyệt")
+                                                {
+                                                    <a href="@Url.Action("Edit", "Budget", new { id = item.BudgetRegistrationId })"
+                                                       class="btn btn-outline-warning btn-sm">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    <button type="button"
+                                                            class="btn btn-outline-danger btn-sm btn-delete"
+                                                            data-budget-id="@item.BudgetRegistrationId"
+                                                            data-budget-name="@item.TenHangMuc">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    @*else
+                        {
+                            <div class="text-center py-5">
+                                <i class="bi bi-inbox display-1 text-muted"></i>
+                                <p class="text-muted mt-3">Chưa có đăng ký ngân sách nào</p>
+                                <a href="@Url.Action("Create", "Budget")" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-1"></i>
+                                    Tạo đăng ký đầu tiên
+                                </a>
+                            </div>
+                        }*@
+                </div>
+
+                @if (Model != null && Model.Any())
+                {
+                    <div class="card-footer bg-light py-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-6 text-center text-md-start mb-2 mb-md-0">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i>
+                                    Hiển thị @Model.Count / @Model.TotalItemCount đăng ký
+                                    <span class="mx-2">|</span>
+                                    <i class="bi bi-clock-history"></i>
+                                    Cập nhật: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="pagination-wrapper">
+                                    @if (Model.PageCount > 1)
+                                    {
+                                        <nav aria-label="Phân trang">
+                                            <ul class="pagination pagination-sm mb-0 justify-content-center justify-content-md-end">
+                                                <!-- First page -->
+                                                <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
+                                                    @if (Model.HasPreviousPage)
+                                                    {
+                                                        <a class="page-link" href="@Url.Action("Index", new { page = 1, search = ViewBag.CurrentSearch, status = ViewBag.CurrentStatus })">Đầu</a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="page-link">Đầu</span>
+                                                    }
+                                                </li>
+
+                                                <!-- Previous page -->
+                                                <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
+                                                    @if (Model.HasPreviousPage)
+                                                    {
+                                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber - 1, search = ViewBag.CurrentSearch, status = ViewBag.CurrentStatus })">Trước</a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="page-link">Trước</span>
+                                                    }
+                                                </li>
+
+                                                <!-- Page numbers -->
+                                                @{
+                                                    int startPage = Math.Max(1, Model.PageNumber - 2);
+                                                    int endPage = Math.Min(Model.PageCount, Model.PageNumber + 2);
+
+                                                    if (Model.PageNumber <= 3)
+                                                    {
+                                                        endPage = Math.Min(5, Model.PageCount);
+                                                    }
+
+                                                    if (Model.PageNumber >= Model.PageCount - 2)
+                                                    {
+                                                        startPage = Math.Max(1, Model.PageCount - 4);
+                                                    }
+                                                }
+
+                                                @for (int i = startPage; i <= endPage; i++)
+                                                {
+                                                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                                        @if (i == Model.PageNumber)
+                                                        {
+                                                            <span class="page-link">@i</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <a class="page-link" href="@Url.Action("Index", new { page = i, search = ViewBag.CurrentSearch, status = ViewBag.CurrentStatus })">@i</a>
+                                                        }
+                                                    </li>
+                                                }
+
+                                                <!-- Next page -->
+                                                <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
+                                                    @if (Model.HasNextPage)
+                                                    {
+                                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber + 1, search = ViewBag.CurrentSearch, status = ViewBag.CurrentStatus })">Sau</a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="page-link">Sau</span>
+                                                    }
+                                                </li>
+
+                                                <!-- Last page -->
+                                                <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
+                                                    @if (Model.HasNextPage)
+                                                    {
+                                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.PageCount, search = ViewBag.CurrentSearch, status = ViewBag.CurrentStatus })">Cuối</a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="page-link">Cuối</span>
+                                                    }
+                                                </li>
+                                            </ul>
+                                        </nav>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+
+            // Search on input with debounce
+            var searchTimeout;
+            $('#searchInput').on('keyup', function (e) {
+                // Don't submit on Enter key here (handled separately)
+                if (e.which === 13) {
+                    return;
+                }
+
+                clearTimeout(searchTimeout);
+                var searchValue = $(this).val(); // Capture value
+
+                searchTimeout = setTimeout(function () {
+                    // Ensure value is set before submit
+                    $('#searchInput').val(searchValue);
+                    $('#searchForm').submit();
+                }, 500); // Wait 500ms after user stops typing
+            });
+
+            // Filter by status - submit form immediately
+            $('input[name="status"]').on('change', function () {
+                $('#searchForm').submit();
+            });
+
+            // Auto-submit when department filter changes (for Manager/Admin)
+            $('#phongBanId').on('change', function () {
+                $('#searchForm').submit();
+            });
+
+            // Clear search button
+            $('#clearSearch').on('click', function () {
+                $('#searchInput').val('');
+                $('#searchForm').submit();
+            });
+
+            // Handle Enter key explicitly
+            $('#searchInput').on('keypress', function (e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    clearTimeout(searchTimeout); // Cancel debounce
+                    $('#searchForm').submit();
+                }
+            });
+
+            // Auto-submit when sort order changes
+            $('#sortOrder').on('change', function () {
+                var sortValue = $(this).val();
+                var currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('sortOrder', sortValue);
+                currentUrl.searchParams.delete('page'); // Reset về trang 1
+                window.location.href = currentUrl.toString();
+            });
+        });
+    </script>
+    <style>
+        .card {
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(13, 110, 253, 0.05);
+            transform: translateX(2px);
+        }
+
+        .badge {
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+        }
+
+        .btn-group-sm .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .input-group-text {
+            border-right: 0;
+        }
+
+        #searchInput {
+            border-left: 0;
+            border-right: 0;
+        }
+
+        #searchInput:focus {
+            box-shadow: none;
+            border-color: #ced4da;
+        }
+
+        .input-group:focus-within .input-group-text {
+            border-color: #86b7fe;
+            background-color: #e7f1ff;
+        }
+
+        .input-group:focus-within #searchInput {
+            border-color: #86b7fe;
+        }
+
+        #clearSearch {
+            border-left: 0;
+        }
+
+        .user-card {
+            transition: all 0.2s ease;
+        }
+
+        .user-card:hover {
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+
+        .btn-check:checked + label {
+            font-weight: 600;
+        }
+
+        .pagination-wrapper {
+            display: flex;
+            justify-content: center;
+        }
+
+        .page-link {
+            color: #0d6efd;
+            transition: all 0.2s ease;
+        }
+
+        .page-link:hover {
+            background-color: #e7f1ff;
+            border-color: #0d6efd;
+            color: #0d6efd;
+        }
+
+        .page-item.active .page-link {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            font-weight: 600;
+        }
+
+        .page-item.disabled .page-link {
+            cursor: not-allowed;
+        }
+
+        .modal-content {
+            border: none;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            border-bottom: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-footer {
+            border-top: 1px solid #dee2e6;
+        }
+
+        .btn-close-white {
+            filter: brightness(0) invert(1);
+        }
+
+        .loading-spinner {
+            z-index: 9999;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 2rem;
+            border-radius: 0.5rem;
+        }
+
+        media (max-width: 991.98px) {
+            .card-header .row > div
+
+        {
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-group {
+            width: 100%;
+        }
+
+        .btn-group label {
+            flex: 1;
+        }
+
+        }
+
+        media (min-width: 768px) {
+            .pagination-wrapper
+
+        {
+            justify-content: end;
+        }
+
+        }
+
+        keyframes fadeIn {
+            from
+
+        {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        }
+
+        #userTable tbody tr {
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Reset button specific styles */
+        .btn-outline-info:hover {
+            background-color: #0dcaf0;
+            border-color: #0dcaf0;
+            color: white;
+        }
+
+        /* Modal animations */
+        .modal.fade .modal-dialog {
+            transition: transform 0.3s ease-out;
+        }
+
+        /* Copy button animation */
+        #copyPassword {
+            transition: all 0.3s ease;
+        }
+
+        #copyPassword:active {
+            transform: scale(0.95);
+        }
+
+        /* Success modal styles */
+        #displayNewPassword {
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+            color: #198754;
+        }
+
+        /* Modal styles */
+        .modal-content {
+            border: none;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            border-bottom: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-footer {
+            border-top: 1px solid #dee2e6;
+        }
+
+        .btn-close-white {
+            filter: brightness(0) invert(1);
+        }
+
+        /* Pagination styles - Tự động apply cho tất cả links trong pagination */
+        .pagination a,
+        .pagination span {
+            color: #0d6efd;
+            border: 1px solid #dee2e6;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-block;
+            border-radius: 0.25rem;
+            margin: 0 2px;
+        }
+
+        .pagination a:hover {
+            background-color: #e7f1ff;
+            border-color: #0d6efd;
+            color: #0d6efd;
+        }
+
+        .pagination .active a,
+        .pagination .active span {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            color: white;
+            font-weight: 600;
+        }
+
+        .pagination .disabled a,
+        .pagination .disabled span {
+            color: #6c757d;
+            pointer-events: none;
+            background-color: #fff;
+            border-color: #dee2e6;
+            cursor: not-allowed;
+        }
+    </style>
+}

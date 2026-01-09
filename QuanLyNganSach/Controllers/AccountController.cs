@@ -43,7 +43,7 @@ namespace QuanLyNganSach.Controllers
                     MaNhanVien = x.MaNhanVien,
                     UserName = x.MaNhanVien,
                     HoTen = x.HoTen,
-                    PhongBanId = x.PhongBanId,
+                    PhongBanId = (int) x.PhongBanId,
                     TenPhongBan = x.PhongBan.TenPhongBan,
                     MaPhongBan = x.PhongBan.MaPhongBan,
                     RoleId = x.RoleId,

@@ -7,7 +7,7 @@
         public string UserName { get; set; }
         public string HoTen { get; set; }
         public int RoleId { get; set; }
-        public int? PhongBanId { get; set; }
+        public int PhongBanId { get; set; }
         public string MaPhongBan { get; set; }
         public string TenPhongBan { get; set; }
     }
