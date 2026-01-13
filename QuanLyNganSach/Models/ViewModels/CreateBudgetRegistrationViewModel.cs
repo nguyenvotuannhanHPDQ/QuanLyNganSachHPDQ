@@ -47,6 +47,8 @@ namespace QuanLyNganSach.Models.ViewModels
         [Required(ErrorMessage = "Vui lòng chọn hồ sơ căn cứ")]
         public HttpPostedFileBase HoSoCanCu { get; set; }
 
+        public string LinkTaiLieuLienQuan { get; set; }
+
         /* Dropdowns */
         public IEnumerable<SelectListItem> CategoryTypes { get; set; }
         public IEnumerable<SelectListItem> PriorityLevels { get; set; }

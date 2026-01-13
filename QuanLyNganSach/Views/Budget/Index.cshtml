@@ -82,7 +82,7 @@
                                                 class="btn btn-outline-secondary"
                                                 id="clearSearch"
                                                 title="Xóa tìm kiếm">
-                                            <i class="bi bi-x-lg"></i>
+                                            <i class="bi bi-x-lg"></i>Clear
                                         </button>
                                     }
                                 </div>
@@ -182,9 +182,18 @@
                                                 <span>@item.MaHangMuc</span>
                                             </td>
                                             <td>
-                                                <div class="fw-semibold text-truncate" style="max-width: 250px;" title="@item.TenHangMuc">
+                                                @*<a href="@Url.Action("Details", "Budget", new { id = item.BudgetRegistrationId })"
+                                                   class="fw-semibold text-truncate d-inline-block text-decoration-none"
+                                                   style="max-width: 250px;"
+                                                   title="@item.TenHangMuc">
                                                     @item.TenHangMuc
-                                                </div>
+                                                </a>*@
+                                                <a href="@Url.Action("Details", "Budget", new { id = item.BudgetRegistrationId })"
+                                                   class="fw-semibold text-truncate d-inline-block text-decoration-none w-100 w-md-auto"
+                                                   style="max-width: 250px;"
+                                                   title="@item.TenHangMuc">
+                                                    @item.TenHangMuc
+                                                </a>
                                             </td>
                                             <td class="text-end">
                                                 <span class="fw-semibold text-success">
@@ -269,7 +278,12 @@
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <div>
-                                                <h6 class="mb-1 fw-semibold">@item.TenHangMuc</h6>
+                                                <a href="@Url.Action("Details", "Budget", new { id = item.BudgetRegistrationId })"
+                                                   class="fw-semibold text-truncate d-inline-block text-decoration-none w-100 w-md-auto"
+                                                   style="max-width: 250px;"
+                                                   title="@item.TenHangMuc">
+                                                    @item.TenHangMuc
+                                                </a>
                                                 <span class="badge bg-secondary small">@item.MaHangMuc</span>
                                             </div>
                                             @if (item.TrangThai == "Chờ duyệt")

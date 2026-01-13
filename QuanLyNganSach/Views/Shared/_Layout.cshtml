@@ -28,8 +28,21 @@
             </button>
             <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
                 <ul class="navbar-nav flex-grow-1">
-                    <li class="nav-item">
+                    @*<li class="nav-item">
                         @Html.ActionLink("Đăng ký ngân sách", "Create", "Budget", new { area = "" }, new { @class = "nav-link text-dark" })
+                    </li>*@
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle text-dark">
+                            Đăng ký ngân sách
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                @Html.ActionLink("Đăng ký mới", "Create", "Budget", new { area = "" }, new { @class = "dropdown-item" })
+                            </li>
+                            <li>
+                                @Html.ActionLink("Danh sách đăng ký", "Index", "Budget", new { area = "" }, new { @class = "dropdown-item" })
+                            </li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         @Html.ActionLink("Theo dõi phê duyệt", "About", "Home", new { area = "" }, new { @class = "nav-link text-dark" })

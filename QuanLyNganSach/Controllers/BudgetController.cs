@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using System.Data.Entity;
 
 namespace QuanLyNganSach.Controllers
 {
@@ -252,6 +253,7 @@ namespace QuanLyNganSach.Controllers
                 MoTaKyThuat = model.MoTaKyThuat,
                 NgayBatDau = model.NgayBatDau,
                 NgayKetThuc = model.NgayKetThuc,
+                LinkTaiLieuLienQuan = model.LinkTaiLieuLienQuan,
                 UserId = CurrentUser.UserId,
                 PhongBanId = (int) CurrentUser.PhongBanId,
                 CreatedDate = DateTime.Now
@@ -423,7 +425,7 @@ namespace QuanLyNganSach.Controllers
                 int count = db.BudgetRegistrations
                     .Where(x => x.PhongBanId == phongBanId
                              //&& x.CategoryTypeId == loaiHangMucId
-                             //&& x.CreatedDate >= startOfMonth && x.CreatedDate <= endOfMonth
+                             && x.CreatedDate >= startOfMonth && x.CreatedDate <= endOfMonth
                             )
                     .Count();
 
@@ -471,5 +473,360 @@ namespace QuanLyNganSach.Controllers
                 return Json(new { success = false, message = "Đã xảy ra lỗi khi tạo mã hạng mục." });
             }
         }
+
+        /// <summary>
+        /// GET: Budget/Details/5 - Xem chi tiết đăng ký ngân sách
+        /// </summary>
+        /// <param name="id">ID của đăng ký ngân sách</param>
+        /// <returns>View hiển thị chi tiết đăng ký</returns>
+        public ActionResult Details(int? id)
+        {
+            try
+            {
+                // Validate id parameter
+                if (!id.HasValue || id.Value <= 0)
+                {
+                    TempData["Error"] = "Mã đăng ký không hợp lệ.";
+                    return RedirectToAction("Index");
+                }
+
+                // Validate current user
+                if (CurrentUser == null)
+                {
+                    TempData["Error"] = "Phiên đăng nhập đã hết hạn.";
+                    return RedirectToAction("Login", "Account");
+                }
+
+                // Query budget registration with all related data using eager loading
+                var budgetRegistration = db.BudgetRegistrations
+                    .Include(x => x.PhongBan)
+                    .Include(x => x.User)
+                    .Include(x => x.BudgetCategoryType)
+                    .Include(x => x.BudgetPriorityLevel)
+                    .Include(x => x.BudgetAttachments.Select(a => a.User))
+                    .FirstOrDefault(x => x.BudgetRegistrationId == id.Value);
+
+                // Check if record exists
+                if (budgetRegistration == null)
+                {
+                    TempData["Error"] = "Không tìm thấy thông tin đăng ký.";
+                    return RedirectToAction("Index");
+                }
+
+                // Check permissions
+                bool isManagerOrAdmin = CurrentUser.RoleId == Constants.RoleConst.Admin ||
+                                        CurrentUser.RoleId == Constants.RoleConst.Manager;
+
+                // User thường chỉ được xem đăng ký của mình
+                
+                if (!isManagerOrAdmin && budgetRegistration.UserId != CurrentUser.UserId)
+                {
+                    TempData["Error"] = "Bạn không có quyền xem đăng ký này.";
+                    return RedirectToAction("Index");
+                }
+
+                // Map to view model
+                var viewModel = new BudgetRegistrationDetailsViewModel
+                {
+                    // Basic Information
+                    BudgetRegistrationId = budgetRegistration.BudgetRegistrationId,
+                    TenPhongBan = budgetRegistration.PhongBan.TenPhongBan,
+                    MaHangMuc = budgetRegistration.MaHangMuc ?? string.Empty,
+                    TenHangMuc = budgetRegistration.TenHangMuc ?? string.Empty,
+                    DuToan = budgetRegistration.DuToan,
+                    SoToTrinh = budgetRegistration.SoToTrinh ?? string.Empty,
+                    SoLuong = budgetRegistration.SoLuong,
+                    LyDoDauTu = budgetRegistration.LyDoDauTu ?? string.Empty,
+                    MoTaKyThuat = budgetRegistration.MoTaKyThuat,
+                    LinkTaiLieuLienQuan = budgetRegistration.LinkTaiLieuLienQuan,
+
+                    // Category & Priority
+                    //CategoryTypeId = budgetRegistration.CategoryTypeId,
+                    CategoryTypeName = budgetRegistration.BudgetCategoryType?.CategoryTypeName ?? "N/A",
+                    //PriorityLevelId = budgetRegistration.PriorityLevelId,
+                    PriorityLevelName = budgetRegistration.BudgetPriorityLevel?.PriorityLevelName ?? "N/A",
+
+                    // Dates
+                    NgayBatDau = budgetRegistration.NgayBatDau,
+                    NgayKetThuc = budgetRegistration.NgayKetThuc,
+                    NgayTao = budgetRegistration.CreatedDate,
+                    //NgayCapNhat = budgetRegistration.UpdatedDate,
+
+                    // Department Information
+                    //PhongBanId = budgetRegistration.PhongBanId,
+                    //TenPhongBan = budgetRegistration.PhongBan?.TenPhongBan ?? "N/A",
+                    //MaPhongBan = budgetRegistration.PhongBan?.MaPhongBan ?? "N/A",
+
+                    // User Information
+                    //UserId = budgetRegistration.UserId,
+                    //NguoiDangKy = budgetRegistration.User?.HoTen ?? "N/A",
+                    //EmailNguoiDangKy = budgetRegistration.User?.Email,
+                    //MaNhanVienDangKy = budgetRegistration.User?.MaNhanVien,
+
+                    // Status (nếu có field TrangThai)
+                    // TrangThai = budgetRegistration.TrangThai ?? "Chờ duyệt",
+
+                    // Attachments
+                    Attachments = budgetRegistration.BudgetAttachments
+                        .OrderByDescending(a => a.UploadedDate)
+                        .Select(a => new BudgetAttachmentViewModel
+                        {
+                            AttachmentId = a.AttachmentId,
+                            FileName = a.FileName ?? string.Empty,
+                            FilePath = a.FilePath ?? string.Empty,
+                            FileExtension = a.FileExtension ?? string.Empty,
+                            FileSize = a.FileSize,
+                            FileSizeFormatted = FormatFileSize(a.FileSize),
+                            UploadedBy = a.User?.HoTen ?? "N/A",
+                            UploadedDate = a.UploadedDate
+                        })
+                        .ToList(),
+
+                    // Permissions
+                    //IsManagerOrAdmin = isManagerOrAdmin,
+                    //CanEdit = budgetRegistration.UserId == CurrentUser.UserId,
+                    //CanDelete = budgetRegistration.UserId == CurrentUser.UserId,
+                    //IsOwner = budgetRegistration.UserId == CurrentUser.UserId
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                // Log error với đầy đủ thông tin
+                System.Diagnostics.Debug.WriteLine($"Details Error - ID: {id}, Message: {ex.Message}, StackTrace: {ex.StackTrace}");
+
+                TempData["Error"] = "Đã xảy ra lỗi khi tải thông tin chi tiết. Vui lòng thử lại.";
+                return RedirectToAction("Index");
+            }
+        }
+
+        /// <summary>
+        /// Helper method để format file size thành dạng dễ đọc
+        /// </summary>
+        /// <param name="bytes">Kích thước file tính bằng bytes</param>
+        /// <returns>Chuỗi đã format (VD: 1.5 MB, 250 KB)</returns>
+        private string FormatFileSize(long bytes)
+        {
+            try
+            {
+                if (bytes <= 0)
+                    return "0 B";
+
+                string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+                int order = 0;
+                double size = bytes;
+
+                while (size >= 1024 && order < sizes.Length - 1)
+                {
+                    order++;
+                    size /= 1024;
+                }
+
+                return $"{size:0.##} {sizes[order]}";
+            }
+            catch
+            {
+                return "N/A";
+            }
+        }
+
+        /// <summary>
+        /// GET: Budget/GetFileContent/5 - Lấy nội dung file để hiển thị
+        /// </summary>
+        [HttpGet]
+        public ActionResult GetFileContent(int? id)
+        {
+            try
+            {
+                if (!id.HasValue || id.Value <= 0)
+                    return HttpNotFound();
+
+                if (CurrentUser == null)
+                    return new HttpUnauthorizedResult();
+
+                var attachment = db.BudgetAttachments
+                    .Include(x => x.BudgetRegistration)
+                    .FirstOrDefault(x => x.AttachmentId == id.Value);
+
+                if (attachment == null)
+                    return HttpNotFound();
+
+                // Check permissions
+                bool isManagerOrAdmin = CurrentUser.RoleId == Constants.RoleConst.Admin ||
+                                        CurrentUser.RoleId == Constants.RoleConst.Manager;
+
+                if (!isManagerOrAdmin && attachment.BudgetRegistration.UserId != CurrentUser.UserId)
+                    return new HttpUnauthorizedResult();
+
+                string uploadsFolder = Server.MapPath("~/Uploads/HoSoCanCu/");
+                string fullPath = Path.Combine(uploadsFolder, attachment.FilePath);
+
+                if (!System.IO.File.Exists(fullPath))
+                    return HttpNotFound();
+
+                string extension = attachment.FileExtension?.TrimStart('.').ToLower() ?? string.Empty;
+                string contentType = GetContentType(extension);
+
+                byte[] fileBytes = System.IO.File.ReadAllBytes(fullPath);
+
+                // Set headers for inline display
+                Response.AddHeader("Content-Disposition", $"inline; filename=\"{attachment.FileName}\"");
+
+                return File(fileBytes, contentType);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetFileContent Error - ID: {id}, Message: {ex.Message}");
+                return new HttpStatusCodeResult(500, "Internal Server Error");
+            }
+        }
+
+        /// <summary>
+        /// GET: Budget/DownloadFile/5 - Tải xuống file
+        /// </summary>
+        public ActionResult DownloadFile(int? id)
+        {
+            try
+            {
+                if (!id.HasValue || id.Value <= 0)
+                {
+                    TempData["Error"] = "Mã file không hợp lệ.";
+                    return RedirectToAction("Index");
+                }
+
+                if (CurrentUser == null)
+                {
+                    TempData["Error"] = "Phiên đăng nhập đã hết hạn.";
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var attachment = db.BudgetAttachments
+                    .Include(x => x.BudgetRegistration)
+                    .FirstOrDefault(x => x.AttachmentId == id.Value);
+
+                if (attachment == null)
+                {
+                    TempData["Error"] = "Không tìm thấy file đính kèm.";
+                    return RedirectToAction("Index");
+                }
+
+                // Check permissions
+                bool isManagerOrAdmin = CurrentUser.RoleId == Constants.RoleConst.Admin ||
+                                        CurrentUser.RoleId == Constants.RoleConst.Manager;
+
+                if (!isManagerOrAdmin && attachment.BudgetRegistration.UserId != CurrentUser.UserId)
+                {
+                    TempData["Error"] = "Bạn không có quyền tải file này.";
+                    return RedirectToAction("Index");
+                }
+
+                // Build full file path
+                string uploadsFolder = Server.MapPath("~/Uploads/HoSoCanCu");
+                string fileName = Path.GetFileName(attachment.FilePath);
+                string fullPath = Path.Combine(uploadsFolder, fileName);
+
+                //// Check if file exists
+                if (!System.IO.File.Exists(fullPath))
+                {
+                    TempData["Error"] = "File không tồn tại trên hệ thống.";
+                    return RedirectToAction("Details", new { id = attachment.BudgetRegistrationId });
+                }
+
+                string extension = attachment.FileExtension?.TrimStart('.').ToLower() ?? string.Empty;
+                string contentType = GetContentType(extension);
+
+                byte[] fileBytes = System.IO.File.ReadAllBytes(fullPath);
+
+                return File(fileBytes, contentType, attachment.FileName);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"DownloadFile Error - ID: {id}, Message: {ex.Message}");
+                TempData["Error"] = "Đã xảy ra lỗi khi tải file. Vui lòng thử lại.";
+                return RedirectToAction("Index");
+            }
+        }
+
+        /// <summary>
+        /// Kiểm tra file có thể xem trực tiếp không
+        /// </summary>
+        private bool CanViewInline(string extension)
+        {
+            if (string.IsNullOrWhiteSpace(extension))
+                return false;
+
+            extension = extension.ToLower();
+
+            var supportedExtensions = new[] { "pdf", "jpg", "jpeg", "png", "gif", "bmp", "doc", "docx", "xls", "xlsx" };
+
+            return supportedExtensions.Contains(extension);
+        }
+
+        /// <summary>
+        /// Kiểm tra file có phải là image không
+        /// </summary>
+        private bool IsImage(string extension)
+        {
+            if (string.IsNullOrWhiteSpace(extension))
+                return false;
+
+            extension = extension.ToLower();
+            var imageExtensions = new[] { "jpg", "jpeg", "png", "gif", "bmp" };
+
+            return imageExtensions.Contains(extension);
+        }
+
+        private string GetContentType(string extension)
+        {
+            if (string.IsNullOrWhiteSpace(extension))
+                return "application/octet-stream";
+
+            extension = extension.TrimStart('.').ToLower();
+
+            switch (extension)
+            {
+                case "pdf":
+                    return "application/pdf";
+
+                case "jpg":
+                case "jpeg":
+                    return "image/jpeg";
+
+                case "png":
+                    return "image/png";
+
+                case "gif":
+                    return "image/gif";
+
+                case "bmp":
+                    return "image/bmp";
+
+                case "doc":
+                    return "application/msword";
+
+                case "docx":
+                    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+                case "xls":
+                    return "application/vnd.ms-excel";
+
+                case "xlsx":
+                    return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+                case "txt":
+                    return "text/plain";
+
+                case "zip":
+                    return "application/zip";
+
+                case "rar":
+                    return "application/x-rar-compressed";
+
+                default:
+                    return "application/octet-stream";
+            }
+        }
+
     }
 }
