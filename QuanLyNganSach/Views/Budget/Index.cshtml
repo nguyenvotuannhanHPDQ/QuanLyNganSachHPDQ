@@ -132,246 +132,139 @@
                 <div class="card-body p-0">
                     @if (Model != null && Model.Any())
                     {
-                        <!-- Desktop Table -->
-                        <div class="table-responsive d-none d-lg-block">
-                            <table class="table table-hover align-middle mb-0" id="budgetTable">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th class="px-4">
-                                            <i class="bi bi-hash text-primary"></i>
-                                            STT
-                                        </th>
-                                        <th style="min-width: 150px;">
-                                            <i class="bi bi-code-square text-primary"></i>
-                                            Mã hạng mục
-                                        </th>
-                                        <th style="min-width: 200px;">
-                                            <i class="bi bi-file-text text-primary"></i>
-                                            Tên hạng mục
-                                        </th>
-                                        <th class="text-end">
-                                            <i class="bi bi-currency-dollar text-primary"></i>
-                                            Dự toán
-                                        </th>
-                                        <th>
-                                            <i class="bi bi-journal-text text-primary"></i>
-                                            Tờ trình
-                                        </th>
-                                        <th style="min-width: 150px;">
-                                            <i class="bi bi-calendar-range text-primary"></i>
-                                            Thời gian
-                                        </th>
-                                        <th>
-                                            <i class="bi bi-building text-primary"></i>
-                                            Phòng ban
-                                        </th>
-                                        <th class="text-center">
-                                            <i class="bi bi-info-circle text-primary"></i>
-                                            Trạng thái
-                                        </th>
-                                        <th class="text-center px-4">Thao tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @{ int index = ((Model.PageNumber - 1) * Model.PageSize) + 1; }
-                                    @foreach (var item in Model)
-                                    {
-                                        <tr>
-                                            <td class="px-4 fw-semibold text-muted">@index</td>
-                                            <td>
-                                                <span>@item.MaHangMuc</span>
-                                            </td>
-                                            <td>
-                                                @*<a href="@Url.Action("Details", "Budget", new { id = item.BudgetRegistrationId })"
-                                                   class="fw-semibold text-truncate d-inline-block text-decoration-none"
-                                                   style="max-width: 250px;"
-                                                   title="@item.TenHangMuc">
-                                                    @item.TenHangMuc
-                                                </a>*@
-                                                <a href="@Url.Action("Details", "Budget", new { id = item.BudgetRegistrationId })"
-                                                   class="fw-semibold text-truncate d-inline-block text-decoration-none w-100 w-md-auto"
-                                                   style="max-width: 250px;"
-                                                   title="@item.TenHangMuc">
-                                                    @item.TenHangMuc
-                                                </a>
-                                            </td>
-                                            <td class="text-end">
-                                                <span class="fw-semibold text-success">
-                                                    @item.DuToan.ToString("N0") đ
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <small>@(string.IsNullOrEmpty(item.SoToTrinh) ? "Chưa có" : item.SoToTrinh)</small>
-                                            </td>
-                                            <td>
-                                                <small>
-                                                    <i class="bi bi-calendar-event"></i>
-                                                    @item.NgayBatDau.ToString("dd/MM/yyyy")
-                                                    <br />
-                                                    <i class="bi bi-calendar-check"></i>
-                                                    @item.NgayKetThuc.ToString("dd/MM/yyyy")
+                        <!-- Budget Cards - One card per row -->
+                        <div class="budget-cards-container">
+                            @{ int cardIndex = ((Model.PageNumber - 1) * Model.PageSize) + 1; }
+                            @foreach (var item in Model)
+                            {
+                                <div class="card mb-3 shadow-sm border-0 budget-card-horizontal">
+                                    <div class="card-body">
+                                        <div class="row align-items-center g-3">
+                                            <!-- Column 1: STT & Status Badge -->
+                                            <div class="col-auto">
+                                                <div class="text-center">
+                                                    <div class="badge bg-light text-dark border mb-2" style="width: 50px; height: 50px; line-height: 50px; font-size: 1.2rem; border-radius: 10px;">
+                                                        #@cardIndex
+                                                    </div>
+                                                    @if (item.TrangThai == "Chờ duyệt")
+                                                    {
+                                                        <span class="badge bg-warning text-dark d-block">
+                                                            <i class="bi bi-clock-history"></i> Chờ duyệt
+                                                        </span>
+                                                    }
+                                                    else if (item.TrangThai == "Đã duyệt")
+                                                    {
+                                                        <span class="badge bg-success d-block">
+                                                            <i class="bi bi-check-circle-fill"></i> Đã duyệt
+                                                        </span>
+                                                    }
+                                                    else if (item.TrangThai == "Từ chối")
+                                                    {
+                                                        <span class="badge bg-danger d-block">
+                                                            <i class="bi bi-x-circle-fill"></i> Từ chối
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            <!-- Column 2: Mã hạng mục & Ngày tạo -->
+                                            <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                                                <div class="mb-2">
+                                                    <span class="badge bg-secondary bg-gradient px-3 py-2 w-100">
+                                                        <i class="bi bi-tag-fill"></i> @item.MaHangMuc
+                                                    </span>
+                                                </div>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-calendar-plus"></i>
+                                                    @item.NgayTao.ToString("dd/MM/yyyy")
                                                 </small>
-                                            </td>
-                                            <td>
-                                                <small>@item.TenPhongBan</small>
-                                            </td>
-                                            <td class="text-center">
-                                                @if (item.TrangThai == "Chờ duyệt")
+                                            </div>
+
+                                            <!-- Column 3: Tên hạng mục & Phòng ban -->
+                                            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                                                <h6 class="mb-1 fw-bold">
+                                                    <a href="@Url.Action("Details", "Budget", new { id = item.BudgetRegistrationId })"
+                                                       class="text-decoration-none text-dark"
+                                                       title="@item.TenHangMuc">
+                                                        @item.TenHangMuc
+                                                    </a>
+                                                </h6>
+                                                <div class="text-muted small">
+                                                    <i class="bi bi-building text-primary"></i>
+                                                    @item.TenPhongBan
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(item.NguoiDangKy))
                                                 {
-                                                    <span class="badge bg-warning-subtle text-warning border border-warning">
-                                                        <i class="bi bi-clock-history me-1"></i>
-                                                        Chờ duyệt
-                                                    </span>
+                                                    <div class="text-muted small mt-1">
+                                                        <i class="bi bi-journal-text"></i>
+                                                        @item.NguoiDangKy
+                                                    </div>
                                                 }
-                                                else if (item.TrangThai == "Đã duyệt")
-                                                {
-                                                    <span class="badge bg-success-subtle text-success border border-success">
-                                                        <i class="bi bi-check-circle-fill me-1"></i>
-                                                        Đã duyệt
-                                                    </span>
-                                                }
-                                                else if (item.TrangThai == "Từ chối")
-                                                {
-                                                    <span class="badge bg-danger-subtle text-danger border border-danger">
-                                                        <i class="bi bi-x-circle-fill me-1"></i>
-                                                        Từ chối
-                                                    </span>
-                                                }
-                                            </td>
-                                            <td class="text-center px-4">
-                                                <div class="btn-group btn-group-sm" role="group">
+                                            </div>
+
+                                            <!-- Column 4: Dự toán - Highlighted -->
+                                            <div class="col-6 col-sm-6 col-md-3 col-lg-2">
+                                                <div class="p-2 bg-success bg-opacity-10 rounded text-center">
+                                                    <small class="text-muted d-block">
+                                                        <i class="bi bi-currency-dollar"></i> Dự toán
+                                                    </small>
+                                                    <div class="fw-bold text-success fs-5">
+                                                        @item.DuToan.ToString("N0")
+                                                    </div>
+                                                    <small class="text-muted">VNĐ</small>
+                                                </div>
+                                            </div>
+
+                                            <!-- Column 5: Thời gian -->
+                                            <div class="col-6 col-sm-6 col-md-2 col-lg-2">
+                                                <div class="small">
+                                                    <div class="mb-1">
+                                                        <i class="bi bi-calendar-event text-primary"></i>
+                                                        <span class="text-muted">@item.NgayBatDau.ToString("dd/MM/yyyy")</span>
+                                                    </div>
+                                                    <div>
+                                                        <i class="bi bi-calendar-check text-success"></i>
+                                                        <span class="text-muted">@item.NgayKetThuc.ToString("dd/MM/yyyy")</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Column 6: Actions -->
+                                            <div class="col-12 col-sm-6 col-md-12 col-lg-3">
+                                                <div class="d-flex gap-2 justify-content-lg-end justify-content-start">
                                                     <button type="button"
-                                                            class="btn btn-outline-info btn-view"
+                                                            class="btn btn-outline-primary btn-sm flex-fill flex-lg-grow-0 btn-view-modal"
                                                             data-budget-id="@item.BudgetRegistrationId"
                                                             title="Xem chi tiết">
-                                                        <i class="bi bi-eye"></i>
+                                                        <i class="bi bi-eye"></i> Xem
                                                     </button>
                                                     @if (item.TrangThai == "Chờ duyệt")
                                                     {
                                                         <a href="@Url.Action("Edit", "Budget", new { id = item.BudgetRegistrationId })"
-                                                           class="btn btn-outline-warning"
+                                                           class="btn btn-outline-warning btn-sm flex-fill flex-lg-grow-0"
                                                            title="Chỉnh sửa">
-                                                            <i class="bi bi-pencil"></i>
+                                                            <i class="bi bi-pencil"></i> Sửa
                                                         </a>
                                                         <button type="button"
-                                                                class="btn btn-outline-danger btn-delete"
+                                                                class="btn btn-outline-danger btn-sm flex-fill flex-lg-grow-0 btn-delete"
                                                                 data-budget-id="@item.BudgetRegistrationId"
                                                                 data-budget-name="@item.TenHangMuc"
                                                                 title="Xóa">
-                                                            <i class="bi bi-trash"></i>
+                                                            <i class="bi bi-trash"></i> Xóa
                                                         </button>
                                                     }
                                                 </div>
-                                            </td>
-                                        </tr>
-                                        index++;
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Mobile Cards -->
-                        <div class="d-lg-none" id="budgetCards">
-                            @foreach (var item in Model)
-                            {
-                                <div class="card border-0 border-bottom rounded-0 budget-card">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <div>
-                                                <a href="@Url.Action("Details", "Budget", new { id = item.BudgetRegistrationId })"
-                                                   class="fw-semibold text-truncate d-inline-block text-decoration-none w-100 w-md-auto"
-                                                   style="max-width: 250px;"
-                                                   title="@item.TenHangMuc">
-                                                    @item.TenHangMuc
-                                                </a>
-                                                <span class="badge bg-secondary small">@item.MaHangMuc</span>
-                                            </div>
-                                            @if (item.TrangThai == "Chờ duyệt")
-                                            {
-                                                <span class="badge bg-warning-subtle text-warning border border-warning">
-                                                    <i class="bi bi-clock-history"></i>
-                                                </span>
-                                            }
-                                            else if (item.TrangThai == "Đã duyệt")
-                                            {
-                                                <span class="badge bg-success-subtle text-success border border-success">
-                                                    <i class="bi bi-check-circle-fill"></i>
-                                                </span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-danger-subtle text-danger border border-danger">
-                                                    <i class="bi bi-x-circle-fill"></i>
-                                                </span>
-                                            }
-                                        </div>
-
-                                        <div class="mb-2">
-                                            <small class="text-muted">
-                                                <i class="bi bi-currency-dollar text-success"></i>
-                                                Dự toán:
-                                            </small>
-                                            <span class="fw-bold text-success ms-1">
-                                                @item.DuToan.ToString("N0") đ
-                                            </span>
-                                        </div>
-
-                                        <div class="mb-2">
-                                            <small class="text-muted">
-                                                <i class="bi bi-building text-primary"></i>
-                                                @item.TenPhongBan
-                                            </small>
-                                        </div>
-
-                                        <div class="mb-2">
-                                            <small class="text-muted">
-                                                <i class="bi bi-calendar-range"></i>
-                                                @item.NgayBatDau.ToString("dd/MM/yyyy") - @item.NgayKetThuc.ToString("dd/MM/yyyy")
-                                            </small>
-                                        </div>
-
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">
-                                                <i class="bi bi-clock-history"></i>
-                                                @item.NgayTao.ToString("dd/MM/yyyy HH:mm")
-                                            </small>
-                                            <div class="btn-group btn-group-sm">
-                                                <button type="button"
-                                                        class="btn btn-outline-info btn-sm btn-view"
-                                                        data-budget-id="@item.BudgetRegistrationId">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                                @if (item.TrangThai == "Chờ duyệt")
-                                                {
-                                                    <a href="@Url.Action("Edit", "Budget", new { id = item.BudgetRegistrationId })"
-                                                       class="btn btn-outline-warning btn-sm">
-                                                        <i class="bi bi-pencil"></i>
-                                                    </a>
-                                                    <button type="button"
-                                                            class="btn btn-outline-danger btn-sm btn-delete"
-                                                            data-budget-id="@item.BudgetRegistrationId"
-                                                            data-budget-name="@item.TenHangMuc">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                }
                                             </div>
                                         </div>
                                     </div>
+
+                                    <!-- Card left border indicator -->
+                                    <div class="position-absolute top-0 start-0 h-100 bg-primary" style="width: 4px;"></div>
                                 </div>
+                                cardIndex++;
                             }
                         </div>
                     }
-                    @*else
-                        {
-                            <div class="text-center py-5">
-                                <i class="bi bi-inbox display-1 text-muted"></i>
-                                <p class="text-muted mt-3">Chưa có đăng ký ngân sách nào</p>
-                                <a href="@Url.Action("Create", "Budget")" class="btn btn-primary">
-                                    <i class="bi bi-plus-circle me-1"></i>
-                                    Tạo đăng ký đầu tiên
-                                </a>
-                            </div>
-                        }*@
                 </div>
 
                 @if (Model != null && Model.Any())
@@ -482,6 +375,282 @@
         </div>
     </div>
 </div>
+<!-- Modal Chi tiết đăng ký ngân sách -->
+<div class="modal fade" id="budgetDetailModal" tabindex="-1" aria-labelledby="budgetDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="budgetDetailModalLabel">
+                    <i class="bi bi-file-earmark-text"></i> Chi tiết đăng ký ngân sách
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body" id="modalBodyContent">
+                <!-- Loading State -->
+                <div class="text-center py-5" id="modalLoading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Đang tải thông tin...</p>
+                </div>
+
+                <!-- Content will be loaded here -->
+                <div id="modalContentContainer" style="display: none;">
+                    <!-- Tabs Navigation -->
+                    <ul class="nav nav-tabs mb-3" id="budgetDetailModalTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active"
+                                    id="modal-info-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#modal-info-tab-pane"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="modal-info-tab-pane"
+                                    aria-selected="true">
+                                <i class="bi bi-info-circle"></i> Thông tin đăng ký
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link"
+                                    id="modal-approval-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#modal-approval-tab-pane"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="modal-approval-tab-pane"
+                                    aria-selected="false">
+                                <i class="bi bi-clipboard-check"></i> Theo dõi phê duyệt
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link"
+                                    id="modal-progress-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#modal-progress-tab-pane"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="modal-progress-tab-pane"
+                                    aria-selected="false">
+                                <i class="bi bi-bar-chart-line"></i> Theo dõi tiến độ
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tabs Content -->
+                    <div class="tab-content" id="budgetDetailModalTabsContent">
+                        <!-- Tab 1: Thông tin đăng ký -->
+                        <div class="tab-pane fade show active"
+                             id="modal-info-tab-pane"
+                             role="tabpanel"
+                             aria-labelledby="modal-info-tab"
+                             tabindex="0">
+
+                            <div class="card border-0">
+                                <div class="card-body">
+                                    <!-- Row 1: Bộ phận, Mã hạng mục -->
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-semibold">Bộ phận</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="modal-tenPhongBan"
+                                                   readonly />
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-semibold">Mã hạng mục</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="modal-maHangMuc"
+                                                   readonly />
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-semibold">Người đăng ký</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="modal-nguoiDangKy"
+                                                   readonly />
+                                            <small class="text-muted" id="modal-emailNguoiDangKy"></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Row 2: Tên hạng mục, Dự toán -->
+                                    <div class="row">
+                                        <div class="col-md-8 mb-3">
+                                            <label class="form-label fw-semibold">Tên hạng mục</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="modal-tenHangMuc"
+                                                   readonly />
+                                        </div>
+
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-semibold">Dự toán</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="modal-duToan"
+                                                   readonly />
+                                        </div>
+                                    </div>
+
+                                    <!-- Row 3: Số tờ trình -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Số tờ trình</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="modal-soToTrinh"
+                                               readonly />
+                                    </div>
+
+                                    <!-- Row 4: Loại hạng mục, Mức ưu tiên, Số lượng -->
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-semibold">Loại hạng mục</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="modal-categoryTypeName"
+                                                   readonly />
+                                        </div>
+
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-semibold">Mức ưu tiên</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="modal-priorityLevelName"
+                                                   readonly />
+                                        </div>
+
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-semibold">Số lượng</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="modal-soLuong"
+                                                   readonly />
+                                        </div>
+                                    </div>
+
+                                    <!-- Row 5: Lý do đầu tư -->
+                                    <div class="row">
+                                        <div class="col-12 mb-3">
+                                            <label class="form-label fw-semibold">Lý do đầu tư</label>
+                                            <textarea class="form-control"
+                                                      rows="4"
+                                                      id="modal-lyDoDauTu"
+                                                      readonly></textarea>
+                                        </div>
+                                    </div>
+
+                                    <!-- Row 6: Mô tả kỹ thuật -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Mô tả kỹ thuật</label>
+                                        <textarea class="form-control"
+                                                  rows="4"
+                                                  id="modal-moTaKyThuat"
+                                                  readonly></textarea>
+                                    </div>
+
+                                    <!-- Row 7: Ngày bắt đầu, Ngày kết thúc, Ngày tạo -->
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-semibold">Ngày bắt đầu</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="modal-ngayBatDau"
+                                                   readonly />
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-semibold">Ngày kết thúc</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="modal-ngayKetThuc"
+                                                   readonly />
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-semibold">Ngày tạo</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="modal-ngayTao"
+                                                   readonly />
+                                        </div>
+                                    </div>
+
+                                    <!-- Row 8: Hồ sơ căn cứ -->
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-semibold">Hồ sơ căn cứ</label>
+                                            <div id="modal-attachments"></div>
+                                        </div>
+
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-semibold">Link tài liệu liên quan</label>
+                                            <div id="modal-linkTaiLieu"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Theo dõi phê duyệt -->
+                        <div class="tab-pane fade"
+                             id="modal-approval-tab-pane"
+                             role="tabpanel"
+                             aria-labelledby="modal-approval-tab"
+                             tabindex="0">
+
+                            <div class="card border-0">
+                                <div class="card-body">
+                                    <div class="alert alert-info" role="alert">
+                                        <i class="bi bi-info-circle"></i> Nội dung theo dõi phê duyệt đang được phát triển.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: Theo dõi tiến độ -->
+                        <div class="tab-pane fade"
+                             id="modal-progress-tab-pane"
+                             role="tabpanel"
+                             aria-labelledby="modal-progress-tab"
+                             tabindex="0">
+
+                            <div class="card border-0">
+                                <div class="card-body">
+                                    <div class="alert alert-info" role="alert">
+                                        <i class="bi bi-info-circle"></i> Nội dung theo dõi tiến độ đang được phát triển.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer bg-light" id="modalFooter" style="display: none;">
+                <div class="d-flex justify-content-between w-100">
+                    <div>
+                        <a href="#" id="modal-viewFullDetails" class="btn btn-outline-primary" target="_blank">
+                            <i class="bi bi-box-arrow-up-right"></i> Xem đầy đủ
+                        </a>
+                    </div>
+                    <div>
+                        <a href="#" id="modal-editBtn" class="btn btn-warning" style="display: none;">
+                            <i class="bi bi-pencil"></i> Chỉnh sửa
+                        </a>
+                        <button type="button" id="modal-deleteBtn" class="btn btn-danger" style="display: none;">
+                            <i class="bi bi-trash"></i> Xóa
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg"></i> Đóng
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <script>
@@ -537,6 +706,287 @@
                 currentUrl.searchParams.set('sortOrder', sortValue);
                 currentUrl.searchParams.delete('page'); // Reset về trang 1
                 window.location.href = currentUrl.toString();
+            });
+
+            var currentBudgetId = null;
+
+            // Handle view button click
+            $(document).on('click', '.btn-view-modal', function() {
+                var budgetId = $(this).data('budget-id');
+                currentBudgetId = budgetId;
+                loadBudgetDetails(budgetId);
+            });
+
+            // Load budget details via AJAX
+            function loadBudgetDetails(budgetId) {
+                // Show modal
+                var modal = new bootstrap.Modal(document.getElementById('budgetDetailModal'));
+                modal.show();
+
+                // Show loading, hide content
+                $('#modalLoading').show();
+                $('#modalContentContainer').hide();
+                $('#modalFooter').hide();
+
+                // AJAX call
+                $.ajax({
+                    url: '@Url.Action("GetDetailsModal", "Budget")',
+                    type: 'GET',
+                    data: { id: budgetId },
+                    success: function(response) {
+                        if (response.success) {
+                            populateModalData(response.data);
+                            $('#modalLoading').hide();
+                            $('#modalContentContainer').show();
+                            $('#modalFooter').show();
+                        } else {
+                            showError(response.message || 'Không thể tải thông tin chi tiết.');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        showError('Đã xảy ra lỗi khi tải dữ liệu. Vui lòng thử lại.');
+                    }
+                });
+            }
+
+            // Populate modal with data
+            function populateModalData(data) {
+                // Basic information
+                $('#modal-tenPhongBan').val(data.TenPhongBan || '');
+                $('#modal-maHangMuc').val(data.MaHangMuc || '');
+                $('#modal-nguoiDangKy').val(data.TenNguoiDangKy || '');
+
+                if (data.EmailNguoiDangKy) {
+                    $('#modal-emailNguoiDangKy').html('<i class="bi bi-envelope"></i> ' + data.EmailNguoiDangKy);
+                }
+
+                $('#modal-tenHangMuc').val(data.TenHangMuc || '');
+                $('#modal-duToan').val(formatCurrency(data.DuToan) + ' VNĐ');
+                $('#modal-soToTrinh').val(data.SoToTrinh || '');
+
+                $('#modal-categoryTypeName').val(data.CategoryTypeName || '');
+                $('#modal-priorityLevelName').val(data.PriorityLevelName || '');
+                $('#modal-soLuong').val(data.SoLuong || '');
+
+                $('#modal-lyDoDauTu').val(data.LyDoDauTu || '');
+                $('#modal-moTaKyThuat').val(data.MoTaKyThuat || 'Không có thông tin');
+
+                // Dates
+                $('#modal-ngayBatDau').val(formatDate(data.NgayBatDau));
+                $('#modal-ngayKetThuc').val(formatDate(data.NgayKetThuc));
+                $('#modal-ngayTao').val(formatDateTime(data.NgayTao));
+
+                // Attachments
+                renderAttachments(data.Attachments);
+
+                // Link tài liệu
+                renderLinkTaiLieu(data.LinkTaiLieuLienQuan);
+
+                // Action buttons
+                $('#modal-viewFullDetails').attr('href', '@Url.Action("Details", "Budget")/' + data.BudgetRegistrationId);
+
+                if (data.CanEdit) {
+                    $('#modal-editBtn').show().attr('href', '@Url.Action("Edit", "Budget")/' + data.BudgetRegistrationId);
+                } else {
+                    $('#modal-editBtn').hide();
+                }
+
+                if (data.CanDelete) {
+                    $('#modal-deleteBtn').show().data('budget-id', data.BudgetRegistrationId).data('budget-name', data.TenHangMuc);
+                } else {
+                    $('#modal-deleteBtn').hide();
+                }
+            }
+
+            // Render attachments
+            function renderAttachments(attachments) {
+                var container = $('#modal-attachments');
+                container.empty();
+
+                if (attachments && attachments.length > 0) {
+                    var html = '<div class="list-group">';
+                    attachments.forEach(function(file) {
+                        html += '<div class="list-group-item">';
+                        html += '  <div class="d-flex justify-content-between align-items-center">';
+                        html += '    <div class="flex-grow-1">';
+                        html += '      <div class="d-flex align-items-center mb-1">';
+                        html += '        <i class="bi bi-file-earmark-' + getFileIcon(file.FileExtension) + ' me-2"></i>';
+                        html += '        <strong>' + file.FileName + '</strong>';
+                        html += '      </div>';
+                        html += '      <small class="text-muted">' + file.FileSizeFormatted + '</small>';
+                        html += '    </div>';
+                        html += '    <div class="btn-group" role="group">';
+                        html += '      <a href="@Url.Action("DownloadFile", "Budget")/' + file.AttachmentId + '" class="btn btn-sm btn-outline-primary" target="_blank" title="Tải xuống">';
+                        html += '        <i class="bi bi-download"></i> Tải';
+                        html += '      </a>';
+                        html += '    </div>';
+                        html += '  </div>';
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                    container.html(html);
+                } else {
+                    container.html('<input type="text" class="form-control" value="Không có file đính kèm" readonly />');
+                }
+            }
+
+            // Render link tài liệu
+            function renderLinkTaiLieu(link) {
+                var container = $('#modal-linkTaiLieu');
+                container.empty();
+
+                if (link) {
+                    var html = '<div class="input-group">';
+                    html += '  <input type="text" class="form-control" value="' + link + '" readonly />';
+                    html += '  <a href="' + link + '" class="btn btn-primary" target="_blank">';
+                    html += '    <i class="bi bi-link-45deg"></i> Mở';
+                    html += '  </a>';
+                    html += '</div>';
+                    container.html(html);
+                } else {
+                    container.html('<input type="text" class="form-control" value="Không có link" readonly />');
+                }
+            }
+
+            // Helper functions
+            function formatCurrency(value) {
+                return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+
+            // Format date từ C# DateTime sang dd/MM/yyyy
+            function formatDate(dateString) {
+                if (!dateString) return '';
+
+                try {
+                    // Parse ISO string hoặc .NET JSON date format
+                    var date;
+
+                    // Check if it's .NET JSON date format: /Date(1234567890000)/
+                    if (typeof dateString === 'string' && dateString.indexOf('/Date(') === 0) {
+                        var timestamp = parseInt(dateString.replace(/\/Date\((\d+)\)\//, '$1'));
+                        date = new Date(timestamp);
+                    } else {
+                        // ISO format hoặc normal date string
+                        date = new Date(dateString);
+                    }
+
+                    // Validate date
+                    if (isNaN(date.getTime())) {
+                        console.warn('Invalid date:', dateString);
+                        return dateString; // Return original if can't parse
+                    }
+
+                    var day = String(date.getDate()).padStart(2, '0');
+                    var month = String(date.getMonth() + 1).padStart(2, '0');
+                    var year = date.getFullYear();
+
+                    return day + '/' + month + '/' + year;
+                } catch (e) {
+                    console.error('Error formatting date:', e);
+                    return dateString;
+                }
+            }
+
+            // Format datetime từ C# DateTime sang dd/MM/yyyy HH:mm
+            function formatDateTime(dateString) {
+                if (!dateString) return '';
+
+                try {
+                    // Parse ISO string hoặc .NET JSON date format
+                    var date;
+
+                    // Check if it's .NET JSON date format: /Date(1234567890000)/
+                    if (typeof dateString === 'string' && dateString.indexOf('/Date(') === 0) {
+                        var timestamp = parseInt(dateString.replace(/\/Date\((\d+)\)\//, '$1'));
+                        date = new Date(timestamp);
+                    } else {
+                        // ISO format hoặc normal date string
+                        date = new Date(dateString);
+                    }
+
+                    // Validate date
+                    if (isNaN(date.getTime())) {
+                        console.warn('Invalid datetime:', dateString);
+                        return dateString; // Return original if can't parse
+                    }
+
+                    var day = String(date.getDate()).padStart(2, '0');
+                    var month = String(date.getMonth() + 1).padStart(2, '0');
+                    var year = date.getFullYear();
+                    var hours = String(date.getHours()).padStart(2, '0');
+                    var minutes = String(date.getMinutes()).padStart(2, '0');
+
+                    return day + '/' + month + '/' + year + ' ' + hours + ':' + minutes;
+                } catch (e) {
+                    console.error('Error formatting datetime:', e);
+                    return dateString;
+                }
+            }
+
+            function getFileIcon(extension) {
+                if (!extension) return 'text';
+                extension = extension.toLowerCase().replace('.', '');
+
+                var icons = {
+                    'pdf': 'pdf text-danger',
+                    'doc': 'word text-primary',
+                    'docx': 'word text-primary',
+                    'xls': 'excel text-success',
+                    'xlsx': 'excel text-success',
+                    'ppt': 'ppt text-warning',
+                    'pptx': 'ppt text-warning',
+                    'jpg': 'image text-info',
+                    'jpeg': 'image text-info',
+                    'png': 'image text-info',
+                    'gif': 'image text-info',
+                    'zip': 'zip text-secondary',
+                    'rar': 'zip text-secondary'
+                };
+
+                return icons[extension] || 'text';
+            }
+
+            function canViewInline(extension) {
+                if (!extension) return false;
+                extension = extension.toLowerCase().replace('.', '');
+                var supported = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'doc', 'docx', 'xls', 'xlsx'];
+                return supported.includes(extension);
+            }
+
+            function showError(message) {
+                $('#modalLoading').hide();
+                $('#modalContentContainer').hide();
+                $('#modalBodyContent').html(
+                    '<div class="alert alert-danger text-center" role="alert">' +
+                    '  <i class="bi bi-exclamation-triangle-fill"></i> ' +
+                    '  <p class="mb-0">' + message + '</p>' +
+                    '</div>'
+                );
+            }
+
+            // Handle delete button in modal
+            $(document).on('click', '#modal-deleteBtn', function() {
+                var budgetId = $(this).data('budget-id');
+                var budgetName = $(this).data('budget-name');
+
+                if (confirm('Bạn có chắc chắn muốn xóa đăng ký "' + budgetName + '" không?\n\nHành động này không thể hoàn tác!')) {
+                    // Close modal first
+                    bootstrap.Modal.getInstance(document.getElementById('budgetDetailModal')).hide();
+
+                    // Trigger delete action
+                    window.location.href = '@Url.Action("Delete", "Budget")/' + budgetId;
+                }
+            });
+
+            // Reset modal when closed
+            $('#budgetDetailModal').on('hidden.bs.modal', function () {
+                $('#modalLoading').show();
+                $('#modalContentContainer').hide();
+                $('#modalFooter').hide();
+
+                // Reset to first tab
+                var firstTab = new bootstrap.Tab(document.querySelector('#modal-info-tab'));
+                firstTab.show();
             });
         });
     </script>
@@ -742,9 +1192,9 @@
             transition: all 0.3s ease;
         }
 
-        #copyPassword:active {
-            transform: scale(0.95);
-        }
+            #copyPassword:active {
+                transform: scale(0.95);
+            }
 
         /* Success modal styles */
         #displayNewPassword {
@@ -807,6 +1257,116 @@
             background-color: #fff;
             border-color: #dee2e6;
             cursor: not-allowed;
+        }
+
+        /* Budget Horizontal Card Styles */
+        .budget-card-horizontal {
+            transition: all 0.3s ease;
+            /*            border-left: 4px solid #0d6efd !important;*/
+            position: relative;
+            overflow: visible;
+        }
+
+        .budget-card-horizontal:hover {
+            transform: translateX(5px);
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .budget-card-horizontal .card-body {
+            padding: 1.25rem;
+        }
+
+        /* STT Badge styling */
+        .budget-card-horizontal .badge {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        /* Budget amount box */
+        .bg-success.bg-opacity-10 {
+            background-color: rgba(25, 135, 84, 0.1) !important;
+            border: 1px solid rgba(25, 135, 84, 0.2);
+        }
+
+        /* Responsive adjustments */
+        media (max-width: 767px) {
+            .budget-card-horizontal .card-body
+
+        {
+            padding: 1rem;
+        }
+
+        .budget-card-horizontal h6 {
+            font-size: 0.95rem;
+        }
+
+        .budget-card-horizontal .fs-5 {
+            font-size: 1.1rem !important;
+        }
+
+        }
+
+        media (max-width: 575px) {
+            .budget-card-horizontal .col-auto
+
+        {
+            width: 100%;
+        }
+
+        .budget-card-horizontal .col-auto .text-center {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .budget-card-horizontal .col-auto .badge.bg-light {
+            margin-bottom: 0 !important;
+            margin-right: 10px;
+        }
+
+        }
+
+        /* Animation */
+        .budget-card-horizontal {
+            animation: fadeInLeft 0.5s ease-in-out;
+        }
+
+        keyframes fadeInLeft {
+            from
+
+        {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        }
+
+        /* Button styling */
+        .budget-card-horizontal .btn {
+            min-width: 80px;
+        }
+
+        media (max-width: 991px) {
+            .budget-card-horizontal .btn
+
+        {
+            min-width: auto;
+        }
+
+        }
+
+        /* Left border indicator */
+        .budget-card-horizontal .position-absolute.bg-primary {
+            transition: width 0.3s ease;
+        }
+
+        .budget-card-horizontal:hover .position-absolute.bg-primary {
+            width: 6px;
         }
     </style>
 }

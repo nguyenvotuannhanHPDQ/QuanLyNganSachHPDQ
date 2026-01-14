@@ -602,6 +602,109 @@ namespace QuanLyNganSach.Controllers
         }
 
         /// <summary>
+        /// GET: Budget/GetDetailsModal/5 - Lấy thông tin chi tiết để hiển thị trong modal
+        /// </summary>
+        [HttpGet]
+        public ActionResult GetDetailsModal(int? id)
+        {
+            try
+            {
+                // Validate id parameter
+                if (!id.HasValue || id.Value <= 0)
+                {
+                    return Json(new { success = false, message = "Mã đăng ký không hợp lệ." }, JsonRequestBehavior.AllowGet);
+                }
+
+                // Validate current user
+                if (CurrentUser == null)
+                {
+                    return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn." }, JsonRequestBehavior.AllowGet);
+                }
+
+                // Query budget registration with all related data
+                var budgetRegistration = db.BudgetRegistrations
+                    .Include(x => x.PhongBan)
+                    .Include(x => x.User)
+                    .Include(x => x.BudgetCategoryType)
+                    .Include(x => x.BudgetPriorityLevel)
+                    .Include(x => x.BudgetAttachments.Select(a => a.User))
+                    .FirstOrDefault(x => x.BudgetRegistrationId == id.Value);
+
+                // Check if record exists
+                if (budgetRegistration == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin đăng ký." }, JsonRequestBehavior.AllowGet);
+                }
+
+                // Check permissions
+                bool isManagerOrAdmin = CurrentUser.RoleId == Constants.RoleConst.Admin ||
+                                        CurrentUser.RoleId == Constants.RoleConst.Manager;
+
+                if (!isManagerOrAdmin && budgetRegistration.UserId != CurrentUser.UserId)
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền xem đăng ký này." }, JsonRequestBehavior.AllowGet);
+                }
+
+                // Map to view model
+                var viewModel = new BudgetRegistrationDetailsViewModel
+                {
+                    BudgetRegistrationId = budgetRegistration.BudgetRegistrationId,
+                    MaHangMuc = budgetRegistration.MaHangMuc ?? string.Empty,
+                    TenHangMuc = budgetRegistration.TenHangMuc ?? string.Empty,
+                    DuToan = budgetRegistration.DuToan,
+                    SoToTrinh = budgetRegistration.SoToTrinh ?? string.Empty,
+                    SoLuong = budgetRegistration.SoLuong,
+                    LyDoDauTu = budgetRegistration.LyDoDauTu ?? string.Empty,
+                    MoTaKyThuat = budgetRegistration.MoTaKyThuat,
+                    LinkTaiLieuLienQuan = budgetRegistration.LinkTaiLieuLienQuan,
+
+                    //CategoryTypeId = budgetRegistration.CategoryTypeId,
+                    CategoryTypeName = budgetRegistration.BudgetCategoryType?.CategoryTypeName ?? "N/A",
+                    //PriorityLevelId = budgetRegistration.PriorityLevelId,
+                    PriorityLevelName = budgetRegistration.BudgetPriorityLevel?.PriorityLevelName ?? "N/A",
+
+                    NgayBatDau = budgetRegistration.NgayBatDau,
+                    NgayKetThuc = budgetRegistration.NgayKetThuc,
+                    NgayTao = budgetRegistration.CreatedDate,
+                    //NgayCapNhat = budgetRegistration.UpdatedDate,
+
+                    //PhongBanId = budgetRegistration.PhongBanId,
+                    TenPhongBan = budgetRegistration.PhongBan.TenPhongBan,
+                    //MaPhongBan = budgetRegistration.PhongBan?.MaPhongBan ?? "N/A",
+
+                    //UserId = budgetRegistration.UserId,
+                    TenNguoiDangKy = budgetRegistration.User.HoTen,
+                    //EmailNguoiDangKy = budgetRegistration.User?.Email,
+                    //MaNhanVienDangKy = budgetRegistration.User?.MaNhanVien,
+
+                    //TrangThai = budgetRegistration.TrangThai ?? "Chờ duyệt",
+
+                    Attachments = budgetRegistration.BudgetAttachments
+                        .OrderByDescending(a => a.UploadedDate)
+                        .Select(a => new BudgetAttachmentViewModel
+                        {
+                            AttachmentId = a.AttachmentId,
+                            FileName = a.FileName ?? string.Empty,
+                            FilePath = a.FilePath ?? string.Empty,
+                            FileExtension = a.FileExtension ?? string.Empty,
+                            FileSize = a.FileSize,
+                            FileSizeFormatted = FormatFileSize(a.FileSize),
+                            UploadedBy = a.User?.HoTen ?? "N/A",
+                            UploadedDate = a.UploadedDate
+                        })
+                        .ToList(),
+                };
+
+                return Json(new { success = true, data = viewModel }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetDetailsModal Error - ID: {id}, Message: {ex.Message}");
+                return Json(new { success = false, message = "Đã xảy ra lỗi khi tải thông tin chi tiết." }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
         /// Helper method để format file size thành dạng dễ đọc
         /// </summary>
         /// <param name="bytes">Kích thước file tính bằng bytes</param>

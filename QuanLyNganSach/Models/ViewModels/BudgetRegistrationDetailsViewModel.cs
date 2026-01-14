@@ -6,6 +6,7 @@ namespace QuanLyNganSach.Models.ViewModels
     public class BudgetRegistrationDetailsViewModel
     {
         public int BudgetRegistrationId { get; set; }
+        public string TenNguoiDangKy { get; set; }
         public string TenPhongBan { get; set; }
         public string MaHangMuc { get; set; }
         public string TenHangMuc { get; set; }
