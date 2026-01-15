@@ -12,11 +12,11 @@ namespace QuanLyNganSach.Models.ViewModels
         public string SoToTrinh { get; set; }
         public string LyDoDauTu { get; set; }
         public string MoTaKyThuat { get; set; }
-        public DateTime NgayBatDau { get; set; }
-        public DateTime NgayKetThuc { get; set; }
+        public DateTime? NgayBatDau { get; set; }
+        public DateTime? NgayKetThuc { get; set; }
         public string TenPhongBan { get; set; }
         public string NguoiDangKy { get; set; }
-        public string TrangThai { get; set; }
+        public int TrangThai { get; set; }
         public DateTime NgayTao { get; set; }
     }
 }

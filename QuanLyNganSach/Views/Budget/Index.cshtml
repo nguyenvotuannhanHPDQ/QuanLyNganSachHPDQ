@@ -146,22 +146,16 @@
                                                     <div class="badge bg-light text-dark border mb-2" style="width: 50px; height: 50px; line-height: 50px; font-size: 1.2rem; border-radius: 10px;">
                                                         #@cardIndex
                                                     </div>
-                                                    @if (item.TrangThai == "Chờ duyệt")
+                                                    @if (item.TrangThai == 1)
                                                     {
-                                                        <span class="badge bg-warning text-dark d-block">
-                                                            <i class="bi bi-clock-history"></i> Chờ duyệt
+                                                        <span class="badge bg-success">
+                                                            <i class="bi bi-info-circle"></i> Hồ sơ đủ thông tin
                                                         </span>
                                                     }
-                                                    else if (item.TrangThai == "Đã duyệt")
+                                                    else
                                                     {
-                                                        <span class="badge bg-success d-block">
-                                                            <i class="bi bi-check-circle-fill"></i> Đã duyệt
-                                                        </span>
-                                                    }
-                                                    else if (item.TrangThai == "Từ chối")
-                                                    {
-                                                        <span class="badge bg-danger d-block">
-                                                            <i class="bi bi-x-circle-fill"></i> Từ chối
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="bi bi-info-circle"></i> Chưa đủ thông tin
                                                         </span>
                                                     }
                                                 </div>
@@ -220,11 +214,25 @@
                                                 <div class="small">
                                                     <div class="mb-1">
                                                         <i class="bi bi-calendar-event text-primary"></i>
-                                                        <span class="text-muted">@item.NgayBatDau.ToString("dd/MM/yyyy")</span>
+                                                        @if (item.NgayBatDau.HasValue)
+                                                        {
+                                                            <span class="text-muted">@item.NgayBatDau.Value.ToString("dd/MM/yyyy")</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">--</span>
+                                                        }
                                                     </div>
                                                     <div>
                                                         <i class="bi bi-calendar-check text-success"></i>
-                                                        <span class="text-muted">@item.NgayKetThuc.ToString("dd/MM/yyyy")</span>
+                                                        @if (item.NgayBatDau.HasValue)
+                                                        {
+                                                            <span class="text-muted">@item.NgayKetThuc.Value.ToString("dd/MM/yyyy")</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">--</span>
+                                                        }
                                                     </div>
                                                 </div>
                                             </div>
@@ -238,7 +246,7 @@
                                                             title="Xem chi tiết">
                                                         <i class="bi bi-eye"></i> Xem
                                                     </button>
-                                                    @if (item.TrangThai == "Chờ duyệt")
+                                                    @*@if (item.TrangThai == "Chờ duyệt")
                                                     {
                                                         <a href="@Url.Action("Edit", "Budget", new { id = item.BudgetRegistrationId })"
                                                            class="btn btn-outline-warning btn-sm flex-fill flex-lg-grow-0"
@@ -252,7 +260,7 @@
                                                                 title="Xóa">
                                                             <i class="bi bi-trash"></i> Xóa
                                                         </button>
-                                                    }
+                                                    }*@
                                                 </div>
                                             </div>
                                         </div>
@@ -769,7 +777,7 @@
                 $('#modal-soLuong').val(data.SoLuong || '');
 
                 $('#modal-lyDoDauTu').val(data.LyDoDauTu || '');
-                $('#modal-moTaKyThuat').val(data.MoTaKyThuat || 'Không có thông tin');
+                $('#modal-moTaKyThuat').val(data.MoTaKyThuat || '');
 
                 // Dates
                 $('#modal-ngayBatDau').val(formatDate(data.NgayBatDau));
@@ -817,7 +825,7 @@
                         html += '    </div>';
                         html += '    <div class="btn-group" role="group">';
                         html += '      <a href="@Url.Action("DownloadFile", "Budget")/' + file.AttachmentId + '" class="btn btn-sm btn-outline-primary" target="_blank" title="Tải xuống">';
-                        html += '        <i class="bi bi-download"></i> Tải';
+                        html += '        <i class="bi bi-download"></i>';
                         html += '      </a>';
                         html += '    </div>';
                         html += '  </div>';
@@ -826,7 +834,7 @@
                     html += '</div>';
                     container.html(html);
                 } else {
-                    container.html('<input type="text" class="form-control" value="Không có file đính kèm" readonly />');
+                    container.html('<input type="text" class="form-control" value="" readonly />');
                 }
             }
 
@@ -844,7 +852,7 @@
                     html += '</div>';
                     container.html(html);
                 } else {
-                    container.html('<input type="text" class="form-control" value="Không có link" readonly />');
+                    container.html('<input type="text" class="form-control" value="" readonly />');
                 }
             }
 

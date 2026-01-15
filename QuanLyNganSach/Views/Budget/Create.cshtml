@@ -82,7 +82,7 @@
 
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-semibold">
-                                    Dự toán <span class="text-danger">*</span>
+                                    Dự toán
                                 </label>
 
                                 @Html.TextBoxFor(m => m.DuToan, new
@@ -96,7 +96,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Số tờ trình <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold">Số tờ trình</label>
                             @Html.TextBoxFor(m => m.SoToTrinh, new { @class = "form-control" })
                             @Html.ValidationMessageFor(m => m.SoToTrinh, "", new { @class = "text-danger small mt-1" })
                         </div>
@@ -116,7 +116,7 @@
 
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-semibold">
-                                    Số lượng <span class="text-danger">*</span>
+                                    Số lượng
                                 </label>
 
                                 @Html.TextBoxFor(m => m.SoLuong, new
@@ -134,7 +134,7 @@
                         <div class="row">
                             <div class="col-12 mb-3">
                                 <label class="form-label fw-semibold">
-                                    Lý do đầu tư <span class="text-danger">*</span>
+                                    Lý do đầu tư
                                 </label>
 
                                 @Html.TextAreaFor(m => m.LyDoDauTu, new
@@ -157,12 +157,12 @@
 
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">Ngày bắt đầu <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold">Ngày bắt đầu</label>
                                 @Html.TextBoxFor(m => m.NgayBatDau, "{0:yyyy-MM-dd}", new { type = "date", @class = "form-control" })
                                 @Html.ValidationMessageFor(m => m.NgayBatDau, "", new { @class = "text-danger small mt-1" })
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">Ngày kết thúc <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold">Ngày kết thúc</label>
                                 @Html.TextBoxFor(m => m.NgayKetThuc, "{0:yyyy-MM-dd}", new { type = "date", @class = "form-control" })
                                 @Html.ValidationMessageFor(m => m.NgayKetThuc, "", new { @class = "text-danger small mt-1" })
                             </div>
@@ -170,7 +170,7 @@
 
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">Hồ sơ căn cứ<span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold">Hồ sơ căn cứ</label>
                                 @Html.TextBoxFor(m => m.HoSoCanCu, new
                                 {
                                     type = "file",
@@ -197,7 +197,7 @@
                 <div class="card-footer bg-light text-muted small py-2">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                         <span>
-                            <i class="bi bi-shield-lock"></i>
+                            
                         </span>
                         <span class="text-end">
                             <i class="bi bi-clock-history"></i>

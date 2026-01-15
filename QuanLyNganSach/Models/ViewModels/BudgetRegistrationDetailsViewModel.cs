@@ -20,8 +20,8 @@ namespace QuanLyNganSach.Models.ViewModels
         public string CategoryTypeName { get; set; }
         public int PriorityLevelId { get; set; }
         public string PriorityLevelName { get; set; }
-        public DateTime NgayBatDau { get; set; }
-        public DateTime NgayKetThuc { get; set; }
+        public DateTime? NgayBatDau { get; set; }
+        public DateTime? NgayKetThuc { get; set; }
         public DateTime NgayTao { get; set; }
 
         // Attachments
