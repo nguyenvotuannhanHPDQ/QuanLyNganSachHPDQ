@@ -23,6 +23,9 @@ namespace QuanLyNganSach.Models.ViewModels
         public DateTime? NgayBatDau { get; set; }
         public DateTime? NgayKetThuc { get; set; }
         public DateTime NgayTao { get; set; }
+        public int? WorkflowType { get; set; }
+        public bool IsManagerOrAdmin { get; set; }
+
 
         // Attachments
         public List<BudgetAttachmentViewModel> Attachments { get; set; }

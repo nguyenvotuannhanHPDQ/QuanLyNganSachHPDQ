@@ -730,6 +730,10 @@ namespace QuanLyNganSach.Controllers
 
                     //TrangThai = budgetRegistration.TrangThai ?? "Chờ duyệt",
 
+                    WorkflowType = budgetRegistration.WorkflowType,
+
+                    IsManagerOrAdmin = isManagerOrAdmin,
+
                     Attachments = budgetRegistration.BudgetAttachments
                         .OrderByDescending(a => a.UploadedDate)
                         .Select(a => new BudgetAttachmentViewModel
@@ -979,6 +983,71 @@ namespace QuanLyNganSach.Controllers
 
                 default:
                     return "application/octet-stream";
+            }
+        }
+
+        /// <summary>
+        /// POST: Budget/UpdateWorkflowType - Cập nhật loại luồng quy trình
+        /// Chỉ Admin/Manager được phép
+        /// </summary>
+        [HttpPost]
+        public JsonResult UpdateWorkflowType(int budgetId, int workflowType)
+        {
+            try
+            {
+                // Validate current user
+                if (CurrentUser == null)
+                {
+                    return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn." });
+                }
+
+                // Check permissions - Only Admin/Manager can update workflow
+                bool isManagerOrAdmin = CurrentUser.RoleId == Constants.RoleConst.Admin ||
+                                        CurrentUser.RoleId == Constants.RoleConst.Manager;
+
+                if (!isManagerOrAdmin)
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này." });
+                }
+
+                // Validate budgetId
+                if (budgetId <= 0)
+                {
+                    return Json(new { success = false, message = "Mã đăng ký không hợp lệ." });
+                }
+
+                // Validate workflowType
+                if (!Enum.IsDefined(typeof(WorkflowType), workflowType))
+                {
+                    return Json(new { success = false, message = "Loại luồng quy trình không hợp lệ." });
+                }
+
+                // Get budget registration
+                var budgetRegistration = db.BudgetRegistrations.FirstOrDefault(x => x.BudgetRegistrationId == budgetId);
+
+                if (budgetRegistration == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy hồ sơ đăng ký." });
+                }
+
+                // Update workflow type
+                budgetRegistration.WorkflowType = workflowType;
+                budgetRegistration.UpdatedDate = DateTime.Now;
+                //budgetRegistration.UpdatedBy = CurrentUser.UserId;
+
+                db.SaveChanges();
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Cập nhật luồng quy trình thành công.",
+                    workflowType = workflowType
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UpdateWorkflowType Error: {ex.Message}");
+                return Json(new { success = false, message = "Đã xảy ra lỗi khi cập nhật. Vui lòng thử lại." });
             }
         }
 

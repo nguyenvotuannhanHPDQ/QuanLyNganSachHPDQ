@@ -421,7 +421,7 @@
                                 <i class="bi bi-info-circle"></i> Thông tin đăng ký
                             </button>
                         </li>
-                        <li class="nav-item" role="presentation">
+                        <li class="nav-item" role="presentation" id="modal-approval-tab-li" style="display: none;">
                             <button class="nav-link"
                                     id="modal-approval-tab"
                                     data-bs-toggle="tab"
@@ -433,7 +433,7 @@
                                 <i class="bi bi-clipboard-check"></i> Theo dõi phê duyệt
                             </button>
                         </li>
-                        <li class="nav-item" role="presentation">
+                        <li class="nav-item" role="presentation" id="modal-progress-tab-li" style="display: none;">
                             <button class="nav-link"
                                     id="modal-progress-tab"
                                     data-bs-toggle="tab"
@@ -596,6 +596,31 @@
                                             <div id="modal-linkTaiLieu"></div>
                                         </div>
                                     </div>
+
+                                    <!-- Row 9: Xác nhận luồng quy trình - CHỈ ADMIN/MANAGER -->
+                                    <div class="row" id="modal-workflow-container" style="display: none;">
+                                        <div class="col-12 mb-3">
+                                            <div class="alert alert-warning" role="alert">
+                                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                                <strong>Lưu ý:</strong> Việc chọn luồng quy trình sẽ ảnh hưởng đến các tab hiển thị và quy trình phê duyệt.
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-semibold">
+                                                Xác nhận luồng quy trình <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-select" id="modal-workflowType">
+                                                <option value="0">-- Chưa xác định --</option>
+                                                <option value="1">Theo luồng ngân sách đầu tư</option>
+                                                <option value="2">Theo luồng chi phí sản xuất</option>
+                                            </select>
+                                            <small class="text-muted">
+                                                <i class="bi bi-info-circle"></i>
+                                                Luồng ngân sách: Hiển thị tab Phê duyệt |
+                                                Luồng chi phí: Hiển thị cả 2 tab
+                                            </small>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -717,6 +742,7 @@
             });
 
             var currentBudgetId = null;
+            var currentWorkflowType = 0;
 
             // Handle view button click
             $(document).on('click', '.btn-view-modal', function() {
@@ -762,7 +788,7 @@
                 // Basic information
                 $('#modal-tenPhongBan').val(data.TenPhongBan || '');
                 $('#modal-maHangMuc').val(data.MaHangMuc || '');
-                $('#modal-nguoiDangKy').val(data.TenNguoiDangKy || '');
+                $('#modal-nguoiDangKy').val(data.NguoiDangKy || '');
 
                 if (data.EmailNguoiDangKy) {
                     $('#modal-emailNguoiDangKy').html('<i class="bi bi-envelope"></i> ' + data.EmailNguoiDangKy);
@@ -790,6 +816,19 @@
                 // Link tài liệu
                 renderLinkTaiLieu(data.LinkTaiLieuLienQuan);
 
+                // Workflow Type - Show/Hide based on role
+                currentWorkflowType = data.WorkflowType || 0;
+
+                if (data.IsManagerOrAdmin) {
+                    $('#modal-workflow-container').show();
+                    $('#modal-workflowType').val(currentWorkflowType).prop('disabled', false);
+                } else {
+                    $('#modal-workflow-container').hide();
+                }
+
+                // Update tabs visibility based on workflow type
+                updateTabsVisibility(currentWorkflowType);
+
                 // Action buttons
                 $('#modal-viewFullDetails').attr('href', '@Url.Action("Details", "Budget")/' + data.BudgetRegistrationId);
 
@@ -805,6 +844,127 @@
                     $('#modal-deleteBtn').hide();
                 }
             }
+
+            // Update tabs visibility based on workflow type
+            function updateTabsVisibility(workflowType) {
+                // Reset: Hide all tabs except info tab
+                $('#modal-approval-tab-li').hide();
+                $('#modal-progress-tab-li').hide();
+
+                // Show tabs based on workflow type
+                switch(parseInt(workflowType)) {
+                    case 1: // Ngân sách đầu tư
+                        $('#modal-approval-tab-li').show();
+                        $('#modal-progress-tab-li').hide();
+                        break;
+
+                    case 2: // Chi phí sản xuất
+                        $('#modal-approval-tab-li').show();
+                        $('#modal-progress-tab-li').show();
+                        break;
+
+                    case 0: // Chưa xác định
+                    default:
+                        $('#modal-approval-tab-li').hide();
+                        $('#modal-progress-tab-li').hide();
+                        break;
+                }
+
+                // Reset to info tab if current tab is hidden
+                var activeTab = $('#budgetDetailModalTabs .nav-link.active').attr('id');
+                if ((activeTab === 'modal-approval-tab' && !$('#modal-approval-tab-li').is(':visible')) ||
+                    (activeTab === 'modal-progress-tab' && !$('#modal-progress-tab-li').is(':visible'))) {
+                    var infoTab = new bootstrap.Tab(document.querySelector('#modal-info-tab'));
+                    infoTab.show();
+                }
+            }
+
+            // Handle workflow type change
+            $(document).on('change', '#modal-workflowType', function() {
+                var newWorkflowType = parseInt($(this).val());
+
+                if (newWorkflowType === currentWorkflowType) {
+                    return; // No change
+                }
+
+                // Confirm change
+                if (!confirm('Bạn có chắc chắn muốn thay đổi luồng quy trình không?\n\nThao tác này sẽ ảnh hưởng đến quy trình phê duyệt và các tab hiển thị.')) {
+                    $(this).val(currentWorkflowType); // Revert
+                    return;
+                }
+
+                // Show loading
+                var $dropdown = $(this);
+                var originalHtml = $dropdown.html();
+                $dropdown.prop('disabled', true);
+
+                // AJAX call to update workflow type
+                $.ajax({
+                    url: '@Url.Action("UpdateWorkflowType", "Budget")',
+                    type: 'POST',
+                    data: {
+                        budgetId: currentBudgetId,
+                        workflowType: newWorkflowType
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            currentWorkflowType = newWorkflowType;
+                            updateTabsVisibility(newWorkflowType);
+                            showNotification('success', 'Cập nhật luồng quy trình thành công!');
+                        } else {
+                            showNotification('error', response.message || 'Không thể cập nhật luồng quy trình.');
+                            $dropdown.val(currentWorkflowType); // Revert
+                        }
+                    },
+                    error: function() {
+                        showNotification('error', 'Đã xảy ra lỗi khi cập nhật. Vui lòng thử lại.');
+                        $dropdown.val(currentWorkflowType); // Revert
+                    },
+                    complete: function() {
+                        $dropdown.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Show notification
+            function showNotification(type, message) {
+                var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+                var icon = type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill';
+
+                var alertHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show position-fixed top-0 end-0 m-3" role="alert" style="z-index: 9999;">' +
+                    '<i class="bi bi-' + icon + '"></i> ' + message +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                    '</div>';
+
+                $('body').append(alertHtml);
+
+                // Auto dismiss after 3 seconds
+                setTimeout(function() {
+                    $('.alert').alert('close');
+                }, 3000);
+            }
+
+            // Reset modal when closed
+            $('#budgetDetailModal').on('hidden.bs.modal', function () {
+                $('#modalLoading').show();
+                $('#modalContentContainer').hide();
+                $('#modalFooter').hide();
+
+                // Reset workflow
+                currentBudgetId = null;
+                currentWorkflowType = 0;
+
+                // Hide all tabs except info
+                $('#modal-approval-tab-li').hide();
+                $('#modal-progress-tab-li').hide();
+
+                // Reset to first tab
+                var firstTab = new bootstrap.Tab(document.querySelector('#modal-info-tab'));
+                firstTab.show();
+            });
+
+            // Existing helper functions...
+            // formatCurrency, formatDate, formatDateTime, renderAttachments, renderLinkTaiLieu, etc.
 
             // Render attachments
             function renderAttachments(attachments) {
@@ -952,13 +1112,6 @@
                 };
 
                 return icons[extension] || 'text';
-            }
-
-            function canViewInline(extension) {
-                if (!extension) return false;
-                extension = extension.toLowerCase().replace('.', '');
-                var supported = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'doc', 'docx', 'xls', 'xlsx'];
-                return supported.includes(extension);
             }
 
             function showError(message) {
