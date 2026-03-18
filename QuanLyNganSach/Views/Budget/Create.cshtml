@@ -54,141 +54,225 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     }
-                    @using (Html.BeginForm("Create", "Budget", FormMethod.Post, new { enctype = "multipart/form-data" }))
+
+                    @using (Html.BeginForm("Create", "Budget", FormMethod.Post,
+                                           new { enctype = "multipart/form-data", id = "mainForm" }))
                     {
                         @Html.AntiForgeryToken()
 
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">Bộ phận</label>
-                                <input type="text"
-                                       class="form-control"
-                                       value="@user.TenPhongBan"
-                                       readonly />
+                        <!-- ===== TAB NAVIGATION ===== -->
+                        <ul class="nav nav-tabs mb-4" id="budgetTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="tab-phieu-btn"
+                                        data-bs-toggle="tab" data-bs-target="#tab-phieu"
+                                        type="button" role="tab">
+                                    <i class="bi bi-file-earmark-text me-1"></i>Phiếu đăng ký
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tab-phannhiem-btn"
+                                        data-bs-toggle="tab" data-bs-target="#tab-phannhiem"
+                                        type="button" role="tab">
+                                    <i class="bi bi-people me-1"></i>Phân nhiệm
+                                    <span id="phanNhiemCount" class="badge bg-secondary ms-1">0</span>
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="budgetTabsContent">
+
+                            <!-- ===== TAB 1: PHIẾU ĐĂNG KÝ (giữ nguyên toàn bộ nội dung cũ) ===== -->
+                            <div class="tab-pane fade show active" id="tab-phieu" role="tabpanel">
+
+                                <div class="row">
+                                    <!-- Khu vực dự án — THÊM MỚI, đặt trước Bộ phận -->
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-semibold">
+                                            Khu vực dự án <span class="text-danger">*</span>
+                                        </label>
+                                        @Html.DropDownListFor(m => m.ProjectAreaId,
+                                            Model.DanhSachKhuVuc,
+                                            "-- Chọn khu vực --",
+                                            new { @class = "form-select" })
+                                        @Html.ValidationMessageFor(m => m.ProjectAreaId, "",
+                                            new { @class = "text-danger small mt-1" })
+                                    </div>
+
+                                    <!-- Bộ phận — giữ nguyên -->
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-semibold">Bộ phận</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               value="@user.TenPhongBan"
+                                               readonly />
+                                    </div>
+
+                                    <!-- Mã hạng mục — giữ nguyên -->
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-semibold">Mã hạng mục</label>
+                                        @Html.TextBoxFor(m => m.MaHangMuc,
+                                            new { @class = "form-control", @readonly = "readonly" })
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-semibold">Tên hạng mục <span class="text-danger">*</span></label>
+                                        @Html.TextBoxFor(m => m.TenHangMuc, new { @class = "form-control" })
+                                        @Html.ValidationMessageFor(m => m.TenHangMuc, "", new { @class = "text-danger small mt-1" })
+                                    </div>
+
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-semibold">
+                                            Dự toán
+                                        </label>
+
+                                        @Html.TextBoxFor(m => m.DuToan, new
+                                        {
+                                            @class = "form-control",
+                                            type = "number",
+                                        })
+
+                                        @Html.ValidationMessageFor(m => m.DuToan, "", new { @class = "text-danger small mt-1" })
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Số tờ trình</label>
+                                    @Html.TextBoxFor(m => m.SoToTrinh, new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(m => m.SoToTrinh, "", new { @class = "text-danger small mt-1" })
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-semibold">Loại hạng mục <span class="text-danger">*</span></label>
+                                        @Html.DropDownListFor(m => m.CategoryTypeId, Model.CategoryTypes, "-- Chọn --", new { @class = "form-select" })
+                                        @Html.ValidationMessageFor(m => m.CategoryTypeId, "", new { @class = "text-danger small mt-1" })
+                                    </div>
+
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-semibold">Mức ưu tiên <span class="text-danger">*</span></label>
+                                        @Html.DropDownListFor(m => m.PriorityLevelId, Model.PriorityLevels, "-- Chọn --", new { @class = "form-select" })
+                                        @Html.ValidationMessageFor(m => m.PriorityLevelId, "", new { @class = "text-danger small mt-1" })
+                                    </div>
+
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-semibold">
+                                            Số lượng
+                                        </label>
+
+                                        @Html.TextBoxFor(m => m.SoLuong, new
+                                        {
+                                            @class = "form-control",
+                                            type = "number",
+                                            placeholder = "Nhập số lượng"
+                                        })
+
+                                        @Html.ValidationMessageFor(m => m.SoLuong, "", new { @class = "text-danger small mt-1" })
+                                    </div>
+
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label fw-semibold">
+                                            Lý do đầu tư
+                                        </label>
+
+                                        @Html.TextAreaFor(m => m.LyDoDauTu, new
+                                        {
+                                            @class = "form-control",
+                                            rows = 4
+                                        })
+
+                                        @Html.ValidationMessageFor(m => m.LyDoDauTu, "", new { @class = "text-danger small mt-1" })
+                                    </div>
+                                </div>
+
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">
+                                        Mô tả kỹ thuật
+                                    </label>
+                                    @Html.TextAreaFor(m => m.MoTaKyThuat, new { @class = "form-control textarea-wide", rows = 4 })
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-semibold">Ngày bắt đầu</label>
+                                        @Html.TextBoxFor(m => m.NgayBatDau, "{0:yyyy-MM-dd}", new { type = "date", @class = "form-control" })
+                                        @Html.ValidationMessageFor(m => m.NgayBatDau, "", new { @class = "text-danger small mt-1" })
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-semibold">Ngày kết thúc</label>
+                                        @Html.TextBoxFor(m => m.NgayKetThuc, "{0:yyyy-MM-dd}", new { type = "date", @class = "form-control" })
+                                        @Html.ValidationMessageFor(m => m.NgayKetThuc, "", new { @class = "text-danger small mt-1" })
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-semibold">Hồ sơ căn cứ</label>
+                                        @Html.TextBoxFor(m => m.HoSoCanCu, new
+                                        {
+                                            type = "file",
+                                            @class = "form-control"
+                                        })
+                                        @Html.ValidationMessageFor(m => m.HoSoCanCu, "", new { @class = "text-danger small mt-1" })
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-semibold">Link tài liệu liên quan</label>
+                                        @Html.TextBoxFor(m => m.LinkTaiLieuLienQuan, new { @class = "form-control" })
+                                    </div>
+                                </div>
+
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">Mã hạng mục</label>
-                                @Html.TextBoxFor(m => m.MaHangMuc,
-                                    new { @class = "form-control", @readonly = "readonly" })
+
+                            <!-- ===== TAB 2: PHÂN NHIỆM ===== -->
+                            <div class="tab-pane fade" id="tab-phannhiem" role="tabpanel">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="fw-semibold mb-0">
+                                        <i class="bi bi-people-fill me-1"></i>Danh sách phân nhiệm
+                                    </h6>
+                                    <button type="button" class="btn btn-success btn-sm" id="btnThemDong">
+                                        <i class="bi bi-plus-circle me-1"></i>Thêm dòng
+                                    </button>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover align-middle" id="tblPhanNhiem">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width:5%">#</th>
+                                                <th style="width:22%">Tên Bộ phận <span class="text-danger">*</span></th>
+                                                <th style="width:25%">Chức năng / Nhiệm vụ</th>
+                                                <th style="width:20%">Email liên hệ</th>
+                                                <th style="width:22%">Ghi chú</th>
+                                                <th style="width:6%"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="phanNhiemBody">
+                                            @* Dòng trống mặc định nếu chưa có dữ liệu *@
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <p class="text-muted small mt-2">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Chọn chức năng từ danh sách hoặc nhập trực tiếp vào ô bên dưới nếu không có trong danh sách.
+                                </p>
                             </div>
+
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">Tên hạng mục <span class="text-danger">*</span></label>
-                                @Html.TextBoxFor(m => m.TenHangMuc, new { @class = "form-control" })
-                                @Html.ValidationMessageFor(m => m.TenHangMuc, "", new { @class = "text-danger small mt-1" })
-                            </div>
-
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">
-                                    Dự toán
-                                </label>
-
-                                @Html.TextBoxFor(m => m.DuToan, new
-                                {
-                                    @class = "form-control",
-                                    type = "number",
-                                })
-
-                                @Html.ValidationMessageFor(m => m.DuToan, "", new { @class = "text-danger small mt-1" })
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Số tờ trình</label>
-                            @Html.TextBoxFor(m => m.SoToTrinh, new { @class = "form-control" })
-                            @Html.ValidationMessageFor(m => m.SoToTrinh, "", new { @class = "text-danger small mt-1" })
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">Loại hạng mục <span class="text-danger">*</span></label>
-                                @Html.DropDownListFor(m => m.CategoryTypeId, Model.CategoryTypes, "-- Chọn --", new { @class = "form-select" })
-                                @Html.ValidationMessageFor(m => m.CategoryTypeId, "", new { @class = "text-danger small mt-1" })
-                            </div>
-
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">Mức ưu tiên <span class="text-danger">*</span></label>
-                                @Html.DropDownListFor(m => m.PriorityLevelId, Model.PriorityLevels, "-- Chọn --", new { @class = "form-select" })
-                                @Html.ValidationMessageFor(m => m.PriorityLevelId, "", new { @class = "text-danger small mt-1" })
-                            </div>
-
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">
-                                    Số lượng
-                                </label>
-
-                                @Html.TextBoxFor(m => m.SoLuong, new
-                                {
-                                    @class = "form-control",
-                                    type = "number",
-                                    placeholder = "Nhập số lượng"
-                                })
-
-                                @Html.ValidationMessageFor(m => m.SoLuong, "", new { @class = "text-danger small mt-1" })
-                            </div>
-
-                        </div>
-
-                        <div class="row">
-                            <div class="col-12 mb-3">
-                                <label class="form-label fw-semibold">
-                                    Lý do đầu tư
-                                </label>
-
-                                @Html.TextAreaFor(m => m.LyDoDauTu, new
-                                {
-                                    @class = "form-control",
-                                    rows = 4
-                                })
-
-                                @Html.ValidationMessageFor(m => m.LyDoDauTu, "", new { @class = "text-danger small mt-1" })
-                            </div>
-                        </div>
-
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                Mô tả kỹ thuật
-                            </label>
-                            @Html.TextAreaFor(m => m.MoTaKyThuat, new { @class = "form-control textarea-wide", rows = 4 })
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">Ngày bắt đầu</label>
-                                @Html.TextBoxFor(m => m.NgayBatDau, "{0:yyyy-MM-dd}", new { type = "date", @class = "form-control" })
-                                @Html.ValidationMessageFor(m => m.NgayBatDau, "", new { @class = "text-danger small mt-1" })
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">Ngày kết thúc</label>
-                                @Html.TextBoxFor(m => m.NgayKetThuc, "{0:yyyy-MM-dd}", new { type = "date", @class = "form-control" })
-                                @Html.ValidationMessageFor(m => m.NgayKetThuc, "", new { @class = "text-danger small mt-1" })
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">Hồ sơ căn cứ</label>
-                                @Html.TextBoxFor(m => m.HoSoCanCu, new
-                                {
-                                    type = "file",
-                                    @class = "form-control"
-                                })
-                                @Html.ValidationMessageFor(m => m.HoSoCanCu, "", new { @class = "text-danger small mt-1" })
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">Link tài liệu liên quan</label>
-                                @Html.TextBoxFor(m => m.LinkTaiLieuLienQuan, new { @class = "form-control" })
-                            </div>
-                        </div>
-
+                        <!-- ===== NÚT SUBMIT (dùng chung cho cả 2 tab) ===== -->
+                        <hr class="mt-4" />
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary flex-fill">
                                 <i class="bi bi-save"></i> Gửi đăng ký
                             </button>
-                            <a href="@Url.Action("Index", "Home", new { area = "" })" class="btn btn-outline-secondary flex-fill">Hủy</a>
+                            <a href="@Url.Action("Index", "Home", new { area = "" })"
+                               class="btn btn-outline-secondary flex-fill">Hủy</a>
                         </div>
                     }
                 </div>
@@ -197,7 +281,7 @@
                 <div class="card-footer bg-light text-muted small py-2">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                         <span>
-                            
+
                         </span>
                         <span class="text-end">
                             <i class="bi bi-clock-history"></i>
@@ -214,15 +298,111 @@
     @Scripts.Render("~/bundles/jqueryval")
     <script>
             $(document).ready(function () {
-                // Auto-dismiss alerts after 5 seconds
-                setTimeout(function () {
-                    $('.alert').fadeOut('slow');
-                }, 5000);
+                // ── Dữ liệu dropdown từ Razor ──────────────────────────────────
+                var dsPhongBan  = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(
+                    Model.DanhSachPhongBan.Select(x => new { value = x.Value, text = x.Text })
+                ));
+                var dsChucNang  = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(
+                    Model.DanhSachChucNang.Select(x => new { value = x.Value, text = x.Text })
+                ));
 
-                // Form validation
-                $('form').submit(function () {
+                var rowIndex = 0; // đếm index dòng để bind đúng tên field
+
+                // ── Hàm render 1 dòng mới ──────────────────────────────────────
+                function taoHtmlDong(idx) {
+                    // Dropdown Phòng ban
+                    var optionsPhongBan = '<option value="">-- Chọn --</option>';
+                    $.each(dsPhongBan, function (i, pb) {
+                        optionsPhongBan += '<option value="' + pb.value + '">'
+                                         + pb.text + '</option>';
+                    });
+
+                    // Dropdown Chức năng
+                    var optionsChucNang = '<option value="">-- Chọn hoặc nhập tay --</option>';
+                    $.each(dsChucNang, function (i, cn) {
+                        optionsChucNang += '<option value="' + cn.value + '">'
+                                         + cn.text + '</option>';
+                    });
+
+                    return '<tr data-index="' + idx + '">'
+                        + '<td class="text-center stt"></td>'
+
+                        // Phòng ban
+                        + '<td>'
+                        + '<select name="DanhSachPhanNhiem[' + idx + '].PhongBanId" '
+                        +         'class="form-select form-select-sm" required>'
+                        + optionsPhongBan
+                        + '</select>'
+                        + '</td>'
+
+                        // Chức năng — dropdown + textbox nhập tay
+                        + '<td>'
+                        + '<select name="DanhSachPhanNhiem[' + idx + '].ChucNangNhiemVuId" '
+                        +         'class="form-select form-select-sm mb-1 ddChucNang">'
+                        + optionsChucNang
+                        + '</select>'
+                        + '<input type="text" '
+                        +        'name="DanhSachPhanNhiem[' + idx + '].TenChucNangNhapTay" '
+                        +        'class="form-control form-control-sm txtChucNangTay" '
+                        +        'placeholder="Hoặc nhập tay tại đây..." />'
+                        + '</td>'
+
+                        // Email
+                        + '<td>'
+                        + '<input type="email" '
+                        +        'name="DanhSachPhanNhiem[' + idx + '].Email" '
+                        +        'class="form-control form-control-sm" '
+                        +        'placeholder="" />'
+                        + '</td>'
+
+                        // Ghi chú
+                        + '<td>'
+                        + '<input type="text" '
+                        +        'name="DanhSachPhanNhiem[' + idx + '].GhiChu" '
+                        +        'class="form-control form-control-sm" '
+                        +        'placeholder="Ghi chú..." />'
+                        + '</td>'
+
+                        // Nút xóa
+                        + '<td class="text-center">'
+                        + '<button type="button" class="btn btn-danger btn-sm btnXoaDong" '
+                        +         'title="Xóa dòng">'
+                        + '<i class="bi bi-trash"></i>'
+                        + '</button>'
+                        + '</td>'
+                        + '</tr>';
+                }
+
+                // ── Cập nhật số thứ tự và badge đếm dòng ──────────────────────
+                function capNhatSTT() {
+                    var rows = $('#phanNhiemBody tr');
+                    rows.each(function (i) {
+                        $(this).find('.stt').text(i + 1);
+                    });
+                    var count = rows.length;
+                    $('#phanNhiemCount').text(count)
+                        .toggleClass('bg-secondary', count === 0)
+                        .toggleClass('bg-primary',   count > 0);
+                }
+
+                // ── Thêm dòng ──────────────────────────────────────────────────
+                $('#btnThemDong').on('click', function () {
+                    $('#phanNhiemBody').append(taoHtmlDong(rowIndex++));
+                    capNhatSTT();
+                });
+
+                // ── Xóa dòng (event delegation) ────────────────────────────────
+                $('#phanNhiemBody').on('click', '.btnXoaDong', function () {
+                    $(this).closest('tr').remove();
+                    capNhatSTT();
+                });
+
+                // ── Auto-dismiss alerts ─────────────────────────────────────────
+                setTimeout(function () { $('.alert').fadeOut('slow'); }, 5000);
+
+                // ── Chống double-submit ─────────────────────────────────────────
+                $('#mainForm').submit(function () {
                     if ($(this).valid()) {
-                        // Disable submit button to prevent double submission
                         $(this).find('button[type="submit"]')
                             .prop('disabled', true)
                             .html('<i class="bi bi-hourglass-split me-1"></i> Đang xử lý...');
@@ -265,6 +445,7 @@
                         }
                     });
                 });
+
             });
     </script>
     <style>
@@ -307,10 +488,10 @@
             transition: all 0.3s ease;
         }
 
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        }
+            .btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            }
 
         /* Responsive adjustments */
         media (max-width: 576px) {

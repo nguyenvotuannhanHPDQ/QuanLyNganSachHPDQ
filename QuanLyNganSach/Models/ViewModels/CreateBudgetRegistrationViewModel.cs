@@ -46,6 +46,20 @@ namespace QuanLyNganSach.Models.ViewModels
         /* Dropdowns */
         public IEnumerable<SelectListItem> CategoryTypes { get; set; }
         public IEnumerable<SelectListItem> PriorityLevels { get; set; }
+
+        // Danh sách dòng phân nhiệm
+        public List<PhanNhiemViewModel> DanhSachPhanNhiem { get; set; }
+            = new List<PhanNhiemViewModel>();
+
+        // Dropdown sources cho tab Phân nhiệm
+        public IEnumerable<SelectListItem> DanhSachPhongBan { get; set; }
+        public IEnumerable<SelectListItem> DanhSachChucNang { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng chọn khu vực dự án")]
+        public int ProjectAreaId { get; set; }
+
+        // Dropdown source
+        public IEnumerable<SelectListItem> DanhSachKhuVuc { get; set; }
     }
 
 }

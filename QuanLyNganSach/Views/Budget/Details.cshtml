@@ -33,206 +33,304 @@
                 </div>
             </div>
 
-            @if (TempData["Error"] != null)
-            {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    @Html.Raw(TempData["Error"])
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            }
+            <!-- Tabs Navigation -->
+            <ul class="nav nav-tabs mb-3" id="budgetDetailTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active"
+                            id="info-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#info-tab-pane"
+                            type="button"
+                            role="tab"
+                            aria-controls="info-tab-pane"
+                            aria-selected="true">
+                        <i class="bi bi-info-circle"></i> Thông tin đăng ký
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link"
+                            id="approval-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#approval-tab-pane"
+                            type="button"
+                            role="tab"
+                            aria-controls="approval-tab-pane"
+                            aria-selected="false">
+                        <i class="bi bi-clipboard-check"></i> Theo dõi phê duyệt
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link"
+                            id="progress-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#progress-tab-pane"
+                            type="button"
+                            role="tab"
+                            aria-controls="progress-tab-pane"
+                            aria-selected="false">
+                        <i class="bi bi-bar-chart-line"></i> Theo dõi tiến độ
+                    </button>
+                </li>
+            </ul>
 
-            <!-- Main Card -->
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <!-- Row 1: Bộ phận, Mã hạng mục -->
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold">Bộ phận</label>
-                            <input type="text"
-                                   class="form-control"
-                                   value="@Model.TenPhongBan"
-                                   readonly />
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold">Mã hạng mục</label>
-                            <input type="text"
-                                   class="form-control"
-                                   value="@Model.MaHangMuc"
-                                   readonly />
-                        </div>
-                    </div>
+            <!-- Tabs Content -->
+            <div class="tab-content" id="budgetDetailTabsContent">
 
-                    <!-- Row 2: Tên hạng mục, Dự toán -->
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold">Tên hạng mục</label>
-                            <input type="text"
-                                   class="form-control"
-                                   value="@Model.TenHangMuc"
-                                   readonly />
-                        </div>
+                <!-- Tab 1: Thông tin đăng ký -->
+                <div class="tab-pane fade show active"
+                     id="info-tab-pane"
+                     role="tabpanel"
+                     aria-labelledby="info-tab"
+                     tabindex="0">
 
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold">Dự toán</label>
-                            <input type="text"
-                                   class="form-control"
-                                   value="@Model.DuToan.ToString("N0") VNĐ"
-                                   readonly />
-                        </div>
-                    </div>
-
-                    <!-- Row 3: Số tờ trình -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Số tờ trình</label>
-                        <input type="text"
-                               class="form-control"
-                               value="@Model.SoToTrinh"
-                               readonly />
-                    </div>
-
-                    <!-- Row 4: Loại hạng mục, Mức ưu tiên, Số lượng -->
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold">Loại hạng mục</label>
-                            <input type="text"
-                                   class="form-control"
-                                   value="@Model.CategoryTypeName"
-                                   readonly />
-                        </div>
-
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold">Mức ưu tiên</label>
-                            <input type="text"
-                                   class="form-control"
-                                   value="@Model.PriorityLevelName"
-                                   readonly />
-                        </div>
-
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold">Số lượng</label>
-                            <input type="text"
-                                   class="form-control"
-                                   value="@Model.SoLuong"
-                                   readonly />
-                        </div>
-                    </div>
-
-                    <!-- Row 5: Lý do đầu tư -->
-                    <div class="row">
-                        <div class="col-12 mb-3">
-                            <label class="form-label fw-semibold">Lý do đầu tư</label>
-                            <textarea class="form-control"
-                                      rows="4"
-                                      readonly>@Model.LyDoDauTu</textarea>
-                        </div>
-                    </div>
-
-                    <!-- Row 6: Mô tả kỹ thuật -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Mô tả kỹ thuật</label>
-                        @if (!string.IsNullOrWhiteSpace(Model.MoTaKyThuat))
-                        {
-                            <textarea class="form-control textarea-wide"
-                                      rows="4"
-                                      readonly>@Model.MoTaKyThuat</textarea>
-                        }
-                        else
-                        {
-                            <input type="text"
-                                   class="form-control"
-                                   value="Không có thông tin"
-                                   readonly />
-                        }
-                    </div>
-
-                    <!-- Row 7: Ngày bắt đầu, Ngày kết thúc -->
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold">Ngày bắt đầu</label>
-                            <input type="text"
-                                   class="form-control"
-                                   value="@Model.NgayBatDau.ToString("dd/MM/yyyy")"
-                                   readonly />
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold">Ngày kết thúc</label>
-                            <input type="text"
-                                   class="form-control"
-                                   value="@Model.NgayKetThuc.ToString("dd/MM/yyyy")"
-                                   readonly />
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold">Ngày tạo</label>
-                            <input type="text"
-                                   class="form-control"
-                                   value="@Model.NgayTao.ToString("dd/MM/yyyy HH:mm")"
-                                   readonly />
-                        </div>
-                    </div>
-
-                    <!-- Row 8: Hồ sơ căn cứ (Files đính kèm) -->
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold">Hồ sơ căn cứ</label>
-                            @if (Model.Attachments != null && Model.Attachments.Any())
-                            {
-                                <div class="list-group">
-                                    @foreach (var file in Model.Attachments)
-                                    {
-                                        <div class="list-group-item">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div class="flex-grow-1">
-                                                    <div class="d-flex align-items-center mb-1">
-                                                        <strong>@file.FileName</strong>
-                                                    </div>
-                                                </div>
-                                                <div class="btn-group" role="group">
-                                                    <a href="@Url.Action("DownloadFile", "Budget", new { id = file.AttachmentId })"
-                                                       class="btn btn-sm btn-primary"
-                                                       target="_blank"
-                                                       title="Tải xuống">
-                                                        <i class="bi bi-download"></i>Tải
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-                            }
-                            else
-                            {
-                                <input type="text"
-                                       class="form-control"
-                                       value="Không có file đính kèm"
-                                       readonly />
-                            }
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold">Link tài liệu liên quan</label>
-                            @if (!string.IsNullOrWhiteSpace(Model.LinkTaiLieuLienQuan))
-                            {
-                                <div class="input-group">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <!-- Row 1: Bộ phận, Mã hạng mục, Người đăng ký -->
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Bộ phận</label>
                                     <input type="text"
                                            class="form-control"
-                                           value="@Model.LinkTaiLieuLienQuan"
+                                           value="@Model.TenPhongBan"
                                            readonly />
-                                    <a href="@Model.LinkTaiLieuLienQuan"
-                                       class="btn btn-primary"
-                                       target="_blank">
-                                        <i class="bi bi-link-45deg"></i> Mở
-                                    </a>
                                 </div>
-                            }
-                            else
-                            {
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Mã hạng mục</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           value="@Model.MaHangMuc"
+                                           readonly />
+                                </div>
+                            </div>
+
+                            <!-- Row 2: Tên hạng mục, Dự toán -->
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Tên hạng mục</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           value="@Model.TenHangMuc"
+                                           readonly />
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Dự toán</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           value="@Model.DuToan.ToString("N0") VNĐ"
+                                           readonly />
+                                </div>
+                            </div>
+
+                            <!-- Row 3: Số tờ trình -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Số tờ trình</label>
                                 <input type="text"
                                        class="form-control"
-                                       value="Không có link"
+                                       value="@Model.SoToTrinh"
                                        readonly />
-                            }
+                            </div>
+
+                            <!-- Row 4: Loại hạng mục, Mức ưu tiên, Số lượng -->
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Loại hạng mục</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           value="@Model.CategoryTypeName"
+                                           readonly />
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Mức ưu tiên</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           value="@Model.PriorityLevelName"
+                                           readonly />
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Số lượng</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           value="@Model.SoLuong"
+                                           readonly />
+                                </div>
+                            </div>
+
+                            <!-- Row 5: Lý do đầu tư -->
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label class="form-label fw-semibold">Lý do đầu tư</label>
+                                    <textarea class="form-control"
+                                              rows="4"
+                                              readonly>@Model.LyDoDauTu</textarea>
+                                </div>
+                            </div>
+
+                            <!-- Row 6: Mô tả kỹ thuật -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Mô tả kỹ thuật</label>
+                                @if (!string.IsNullOrWhiteSpace(Model.MoTaKyThuat))
+                                {
+                                    <textarea class="form-control textarea-wide"
+                                              rows="4"
+                                              readonly>@Model.MoTaKyThuat</textarea>
+                                }
+                                else
+                                {
+                                    <input type="text"
+                                           class="form-control"
+                                           value="Không có thông tin"
+                                           readonly />
+                                }
+                            </div>
+
+                            <!-- Row 7: Ngày bắt đầu, Ngày kết thúc, Ngày tạo -->
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Ngày bắt đầu</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           @*value="@Model.NgayBatDau.ToString("dd/MM/yyyy")"*@
+                                           readonly />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Ngày kết thúc</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           @*value="@Model.NgayKetThuc.ToString("dd/MM/yyyy")"*@
+                                           readonly />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Ngày tạo</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           value="@Model.NgayTao.ToString("dd/MM/yyyy HH:mm")"
+                                           readonly />
+                                </div>
+                            </div>
+
+                            <!-- Row 8: Hồ sơ căn cứ (Files đính kèm) -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Hồ sơ căn cứ</label>
+                                    @if (Model.Attachments != null && Model.Attachments.Any())
+                                    {
+                                        <div class="list-group">
+                                            @foreach (var file in Model.Attachments)
+                                            {
+                                                <div class="list-group-item">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div class="flex-grow-1">
+                                                            <div class="d-flex align-items-center mb-1">
+                                                                <strong>@file.FileName</strong>
+                                                            </div>
+                                                            <small class="text-muted">
+                                                                @file.FileSizeFormatted
+                                                            </small>
+                                                        </div>
+                                                        <div class="btn-group" role="group">
+                                                            <a href="@Url.Action("DownloadFile", "Budget", new { id = file.AttachmentId })"
+                                                               class="btn btn-sm btn-outline-primary"
+                                                               target="_blank"
+                                                               title="Tải xuống">
+                                                                <i class="bi bi-download"></i> Tải
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <input type="text"
+                                               class="form-control"
+                                               value="Không có file đính kèm"
+                                               readonly />
+                                    }
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Link tài liệu liên quan</label>
+                                    @if (!string.IsNullOrWhiteSpace(Model.LinkTaiLieuLienQuan))
+                                    {
+                                        <div class="input-group">
+                                            <input type="text"
+                                                   class="form-control"
+                                                   value="@Model.LinkTaiLieuLienQuan"
+                                                   readonly />
+                                            <a href="@Model.LinkTaiLieuLienQuan"
+                                               class="btn btn-primary"
+                                               target="_blank">
+                                                <i class="bi bi-link-45deg"></i> Mở
+                                            </a>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <input type="text"
+                                               class="form-control"
+                                               value="Không có link"
+                                               readonly />
+                                    }
+                                </div>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- Save Button for Tab 1 -->
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" class="btn btn-primary" id="saveInfoBtn">
+                            <i class="bi bi-save"></i> Lưu
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Theo dõi phê duyệt -->
+                <div class="tab-pane fade"
+                     id="approval-tab-pane"
+                     role="tabpanel"
+                     aria-labelledby="approval-tab"
+                     tabindex="0">
+
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="alert alert-info" role="alert">
+                                <i class="bi bi-info-circle"></i> Nội dung theo dõi phê duyệt đang được phát triển.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Save Button for Tab 2 -->
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" class="btn btn-primary" id="saveApprovalBtn">
+                            <i class="bi bi-save"></i> Lưu
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Theo dõi tiến độ -->
+                <div class="tab-pane fade"
+                     id="progress-tab-pane"
+                     role="tabpanel"
+                     aria-labelledby="progress-tab"
+                     tabindex="0">
+
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="alert alert-info" role="alert">
+                                <i class="bi bi-info-circle"></i> Nội dung theo dõi tiến độ đang được phát triển.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Save Button for Tab 3 -->
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" class="btn btn-primary" id="saveProgressBtn">
+                            <i class="bi bi-save"></i> Lưu
+                        </button>
                     </div>
                 </div>
             </div>

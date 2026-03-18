@@ -26,9 +26,26 @@ namespace QuanLyNganSach.Models.ViewModels
         public int? WorkflowType { get; set; }
         public bool IsManagerOrAdmin { get; set; }
 
+        // Khu vực dự án
+        public string AreaName { get; set; }
+
+        // Khu vực dự án ID
+        public int ProjectAreaId { get; set; }
+
+        // Danh sách phân nhiệm
+        public List<PhanNhiemViewModel> DanhSachPhanNhiem { get; set; }
+            = new List<PhanNhiemViewModel>();
 
         // Attachments
         public List<BudgetAttachmentViewModel> Attachments { get; set; }
+
+        // Thay đổi ThongTinPheDuyet thành cấu trúc rõ ràng hơn
+        public BudgetApprovalViewModel NganSachGoc { get; set; }
+        public List<BudgetApprovalViewModel> DanhSachBoSung { get; set; }
+            = new List<BudgetApprovalViewModel>();
+
+        // Xóa dòng cũ:
+        //public BudgetApprovalViewModel ThongTinPheDuyet { get; set; }
 
         // Constructor
         public BudgetRegistrationDetailsViewModel()

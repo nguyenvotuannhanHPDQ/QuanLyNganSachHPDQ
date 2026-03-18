@@ -246,21 +246,6 @@
                                                             title="Xem chi tiết">
                                                         <i class="bi bi-eye"></i> Xem
                                                     </button>
-                                                    @*@if (item.TrangThai == "Chờ duyệt")
-                                                    {
-                                                        <a href="@Url.Action("Edit", "Budget", new { id = item.BudgetRegistrationId })"
-                                                           class="btn btn-outline-warning btn-sm flex-fill flex-lg-grow-0"
-                                                           title="Chỉnh sửa">
-                                                            <i class="bi bi-pencil"></i> Sửa
-                                                        </a>
-                                                        <button type="button"
-                                                                class="btn btn-outline-danger btn-sm flex-fill flex-lg-grow-0 btn-delete"
-                                                                data-budget-id="@item.BudgetRegistrationId"
-                                                                data-budget-name="@item.TenHangMuc"
-                                                                title="Xóa">
-                                                            <i class="bi bi-trash"></i> Xóa
-                                                        </button>
-                                                    }*@
                                                 </div>
                                             </div>
                                         </div>
@@ -383,304 +368,426 @@
         </div>
     </div>
 </div>
-<!-- Modal Chi tiết đăng ký ngân sách -->
-<div class="modal fade" id="budgetDetailModal" tabindex="-1" aria-labelledby="budgetDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+<!-- ===== MODAL CHI TIẾT HỒ SƠ ===== -->
+<div class="modal fade" id="budgetDetailsModal" tabindex="-1"
+     aria-labelledby="budgetDetailsModalLabel" aria-hidden="true"
+     data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
-            <!-- Modal Header -->
-            <div class="modal-header bg-light">
-                <h5 class="modal-title" id="budgetDetailModalLabel">
-                    <i class="bi bi-file-earmark-text"></i> Chi tiết đăng ký ngân sách
+
+            <!-- HEADER -->
+            <div class="modal-header text-bg-primary">
+                <h5 class="modal-title" id="budgetDetailsModalLabel">
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    Chi tiết hồ sơ ngân sách
+                    <span class="badge bg-light text-primary ms-2 fs-6"
+                          id="modalMaHangMuc"></span>
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <!-- Modal Body -->
-            <div class="modal-body" id="modalBodyContent">
-                <!-- Loading State -->
-                <div class="text-center py-5" id="modalLoading">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Đang tải...</span>
-                    </div>
-                    <p class="mt-3 text-muted">Đang tải thông tin...</p>
+            <!-- BODY -->
+            <div class="modal-body p-4">
+
+                <!-- Loading spinner -->
+                <div id="modalLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Đang tải dữ liệu...</p>
                 </div>
 
-                <!-- Content will be loaded here -->
-                <div id="modalContentContainer" style="display: none;">
-                    <!-- Tabs Navigation -->
-                    <ul class="nav nav-tabs mb-3" id="budgetDetailModalTabs" role="tablist">
+                <!-- Nội dung modal (ẩn khi đang load) -->
+                <div id="modalContent" style="display:none;">
+
+                    <!-- TAB NAVIGATION -->
+                    <ul class="nav nav-tabs mb-4" id="detailTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active"
-                                    id="modal-info-tab"
-                                    data-bs-toggle="tab"
-                                    data-bs-target="#modal-info-tab-pane"
-                                    type="button"
-                                    role="tab"
-                                    aria-controls="modal-info-tab-pane"
-                                    aria-selected="true">
-                                <i class="bi bi-info-circle"></i> Thông tin đăng ký
+                            <button class="nav-link active" id="detail-phieu-btn"
+                                    data-bs-toggle="tab" data-bs-target="#detail-phieu"
+                                    type="button" role="tab">
+                                <i class="bi bi-file-earmark-text me-1"></i>Phiếu đăng ký
                             </button>
                         </li>
-                        <li class="nav-item" role="presentation" id="modal-approval-tab-li" style="display: none;">
-                            <button class="nav-link"
-                                    id="modal-approval-tab"
-                                    data-bs-toggle="tab"
-                                    data-bs-target="#modal-approval-tab-pane"
-                                    type="button"
-                                    role="tab"
-                                    aria-controls="modal-approval-tab-pane"
-                                    aria-selected="false">
-                                <i class="bi bi-clipboard-check"></i> Theo dõi phê duyệt
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="detail-phannhiem-btn"
+                                    data-bs-toggle="tab" data-bs-target="#detail-phannhiem"
+                                    type="button" role="tab">
+                                <i class="bi bi-people me-1"></i>Phân nhiệm
+                                <span id="modalPhanNhiemCount"
+                                      class="badge bg-secondary ms-1">0</span>
                             </button>
                         </li>
-                        <li class="nav-item" role="presentation" id="modal-progress-tab-li" style="display: none;">
-                            <button class="nav-link"
-                                    id="modal-progress-tab"
-                                    data-bs-toggle="tab"
-                                    data-bs-target="#modal-progress-tab-pane"
-                                    type="button"
-                                    role="tab"
-                                    aria-controls="modal-progress-tab-pane"
-                                    aria-selected="false">
-                                <i class="bi bi-bar-chart-line"></i> Theo dõi tiến độ
+                        <!-- Tab Phê duyệt — chỉ hiện khi WorkflowType = 1 -->
+                        <li class="nav-item d-none" id="tabPheDuyetItem" role="presentation">
+                            <button class="nav-link" id="detail-pheduyet-btn"
+                                    data-bs-toggle="tab" data-bs-target="#detail-pheduyet"
+                                    type="button" role="tab">
+                                <i class="bi bi-check2-circle me-1"></i>Phê duyệt
+                            </button>
+                        </li>
+                        <!-- Tab Nhật ký tiến độ — chỉ hiện khi WorkflowType = 1 -->
+                        <li class="nav-item d-none" id="tabNhatKyItem" role="presentation">
+                            <button class="nav-link" id="detail-nhatky-btn"
+                                    data-bs-toggle="tab" data-bs-target="#detail-nhatky"
+                                    type="button" role="tab">
+                                <i class="bi bi-journal-text me-1"></i>Nhật ký tiến độ
                             </button>
                         </li>
                     </ul>
 
-                    <!-- Tabs Content -->
-                    <div class="tab-content" id="budgetDetailModalTabsContent">
-                        <!-- Tab 1: Thông tin đăng ký -->
+                    <div class="tab-content" id="detailTabsContent">
+
+                        <!-- ===== TAB 1: PHIẾU ĐĂNG KÝ (READONLY) ===== -->
                         <div class="tab-pane fade show active"
-                             id="modal-info-tab-pane"
-                             role="tabpanel"
-                             aria-labelledby="modal-info-tab"
-                             tabindex="0">
+                             id="detail-phieu" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold text-muted small">
+                                        Khu vực dự án
+                                    </label>
+                                    <select class="form-select" id="modal_AreaName" disabled>
+                                        <option value="">-- Chưa chọn --</option>
+                                        @foreach (SelectListItem item in (IEnumerable<SelectListItem>)ViewBag.DsKhuVucModal)
+                                        {
+                                            <option value="@item.Value">@item.Text</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold text-muted small">
+                                        Bộ phận
+                                    </label>
+                                    <input type="text" class="form-control"
+                                           id="modal_TenPhongBan" readonly />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold text-muted small">
+                                        Mã hạng mục
+                                    </label>
+                                    <input type="text" class="form-control"
+                                           id="modal_MaHangMuc" readonly />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold text-muted small">
+                                        Tên hạng mục
+                                    </label>
+                                    <input type="text" class="form-control"
+                                           id="modal_TenHangMuc" readonly />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold text-muted small">
+                                        Dự toán
+                                    </label>
+                                    <input type="text" class="form-control"
+                                           id="modal_DuToan" readonly />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold text-muted small">
+                                        Số tờ trình
+                                    </label>
+                                    <input type="text" class="form-control"
+                                           id="modal_SoToTrinh" readonly />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold text-muted small">
+                                        Loại hạng mục
+                                    </label>
+                                    <input type="text" class="form-control"
+                                           id="modal_CategoryTypeName" readonly />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold text-muted small">
+                                        Mức ưu tiên
+                                    </label>
+                                    <input type="text" class="form-control"
+                                           id="modal_PriorityLevelName" readonly />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold text-muted small">
+                                        Số lượng
+                                    </label>
+                                    <input type="text" class="form-control"
+                                           id="modal_SoLuong" readonly />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold text-muted small">
+                                        Ngày bắt đầu
+                                    </label>
+                                    <input type="text" class="form-control"
+                                           id="modal_NgayBatDau" readonly />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold text-muted small">
+                                        Ngày kết thúc
+                                    </label>
+                                    <input type="text" class="form-control"
+                                           id="modal_NgayKetThuc" readonly />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold text-muted small">
+                                        Người đăng ký
+                                    </label>
+                                    <input type="text" class="form-control"
+                                           id="modal_TenNguoiDangKy" readonly />
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted small">
+                                    Lý do đầu tư
+                                </label>
+                                <textarea class="form-control" id="modal_LyDoDauTu"
+                                          rows="3" readonly></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted small">
+                                    Mô tả kỹ thuật
+                                </label>
+                                <textarea class="form-control" id="modal_MoTaKyThuat"
+                                          rows="3" readonly></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted small">
+                                    Link tài liệu liên quan
+                                </label>
+                                <input type="text" class="form-control"
+                                       id="modal_LinkTaiLieu" readonly />
+                            </div>
 
-                            <div class="card border-0">
+                            <!-- Attachments -->
+                            <div id="modal_AttachmentsSection">
+                                <label class="form-label fw-semibold text-muted small">
+                                    <i class="bi bi-paperclip me-1"></i>Hồ sơ đính kèm
+                                </label>
+                                <div id="modal_AttachmentsList"
+                                     class="border rounded p-2 bg-light"></div>
+                            </div>
+                        </div>
+
+                        <!-- ===== TAB 2: PHÂN NHIỆM (EDITABLE) ===== -->
+                        <div class="tab-pane fade"
+                             id="detail-phannhiem" role="tabpanel">
+                            <div class="d-flex justify-content-between
+                                        align-items-center mb-3">
+                                <h6 class="fw-semibold mb-0">
+                                    <i class="bi bi-people-fill me-1"></i>
+                                    Danh sách phân nhiệm
+                                </h6>
+                                <button type="button"
+                                        class="btn btn-success btn-sm"
+                                        id="btnModalThemDong">
+                                    <i class="bi bi-plus-circle me-1"></i>Thêm dòng
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover
+                                              align-middle" id="tblModalPhanNhiem">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width:5%">#</th>
+                                            <th style="width:22%">
+                                                Tên Bộ phận
+                                                <span class="text-danger">*</span>
+                                            </th>
+                                            <th style="width:25%">
+                                                Chức năng / Nhiệm vụ
+                                            </th>
+                                            <th style="width:20%">Email liên hệ</th>
+                                            <th style="width:22%">Ghi chú</th>
+                                            <th style="width:6%"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="modalPhanNhiemBody"></tbody>
+                                </table>
+                            </div>
+                            <p class="text-muted small mt-2">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Chọn chức năng từ danh sách hoặc nhập trực tiếp
+                                vào ô bên dưới nếu không có trong danh sách.
+                            </p>
+                        </div>
+
+                        <!-- ===== TAB 3: PHÊ DUYỆT (PLACEHOLDER) ===== -->
+                        <div class="tab-pane fade"
+                             id="detail-pheduyet" role="tabpanel">
+                            <!-- CARD NGÂN SÁCH GỐC -->
+                            <div class="card border-primary mb-3" id="cardNganSachGoc">
+                                <div class="card-header bg-primary text-white d-flex
+                    justify-content-between align-items-center py-2">
+                                    <span class="fw-semibold">
+                                        <i class="bi bi-wallet2 me-1"></i>Ngân sách gốc
+                                    </span>
+                                    <!-- Dropdown Khởi tạo quy trình — chỉ Admin/Manager -->
+                                    <div id="processTypeSection" style="display:none;">
+                                        <select class="form-select form-select-sm w-auto"
+                                                id="pd_ProcessType" style="min-width:200px;">
+                                            <option value="1">Theo QT Tập đoàn</option>
+                                            <option value="2">Theo QT Công ty</option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div class="card-body">
-                                    <!-- Row 1: Bộ phận, Mã hạng mục -->
-                                    <div class="row">
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label fw-semibold">Bộ phận</label>
-                                            <input type="text"
-                                                   class="form-control"
-                                                   id="modal-tenPhongBan"
-                                                   readonly />
+
+                                    <!-- TIẾN ĐỘ DUYỆT -->
+                                    <h6 class="fw-semibold text-muted mb-3">
+                                        <i class="bi bi-calendar-check me-1"></i>Tiến độ duyệt
+                                    </h6>
+                                    <div class="row g-3 mb-4" id="tienDoDuyetRow">
+
+                                        <!-- PDA -->
+                                        <div class="col-md-2 col-sm-4">
+                                            <label class="form-label small fw-semibold">PDA</label>
+                                            <input type="date" class="form-control form-control-sm moc-ngay"
+                                                   id="pd_NgayDuyetPDA" data-moc="PDA" />
                                         </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label fw-semibold">Mã hạng mục</label>
-                                            <input type="text"
-                                                   class="form-control"
-                                                   id="modal-maHangMuc"
-                                                   readonly />
+
+                                        <!-- PKT -->
+                                        <div class="col-md-2 col-sm-4">
+                                            <label class="form-label small fw-semibold">PKT</label>
+                                            <input type="date" class="form-control form-control-sm moc-ngay"
+                                                   id="pd_NgayDuyetPKT" data-moc="PKT"
+                                                   data-requires="pd_NgayDuyetPDA" disabled />
                                         </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label fw-semibold">Người đăng ký</label>
-                                            <input type="text"
-                                                   class="form-control"
-                                                   id="modal-nguoiDangKy"
-                                                   readonly />
-                                            <small class="text-muted" id="modal-emailNguoiDangKy"></small>
+
+                                        <!-- ERPD — chỉ hiện khi ProcessType = 1 -->
+                                        <div class="col-md-2 col-sm-4 moc-tapDoan" style="display:none;">
+                                            <label class="form-label small fw-semibold">ERPD</label>
+                                            <input type="date" class="form-control form-control-sm moc-ngay"
+                                                   id="pd_NgayDuyetERPD" data-moc="ERPD"
+                                                   data-requires="pd_NgayDuyetPKT" disabled />
                                         </div>
+
+                                        <!-- BTC — chỉ hiện khi ProcessType = 1 -->
+                                        <div class="col-md-2 col-sm-4 moc-tapDoan" style="display:none;">
+                                            <label class="form-label small fw-semibold">BTC</label>
+                                            <input type="date" class="form-control form-control-sm moc-ngay"
+                                                   id="pd_NgayDuyetBTC" data-moc="BTC"
+                                                   data-requires="pd_NgayDuyetERPD" disabled />
+                                        </div>
+
+                                        <!-- BGĐ -->
+                                        <div class="col-md-2 col-sm-4" id="colBGD">
+                                            <label class="form-label small fw-semibold">BGĐ</label>
+                                            <input type="date" class="form-control form-control-sm moc-ngay"
+                                                   id="pd_NgayDuyetBGD" data-moc="BGD"
+                                                   data-requires-congty="pd_NgayDuyetPKT"
+                                                   data-requires-tapDoan="pd_NgayDuyetBTC" disabled />
+                                        </div>
+
                                     </div>
 
-                                    <!-- Row 2: Tên hạng mục, Dự toán -->
-                                    <div class="row">
-                                        <div class="col-md-8 mb-3">
-                                            <label class="form-label fw-semibold">Tên hạng mục</label>
-                                            <input type="text"
-                                                   class="form-control"
-                                                   id="modal-tenHangMuc"
-                                                   readonly />
-                                        </div>
-
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label fw-semibold">Dự toán</label>
-                                            <input type="text"
-                                                   class="form-control"
-                                                   id="modal-duToan"
-                                                   readonly />
-                                        </div>
-                                    </div>
-
-                                    <!-- Row 3: Số tờ trình -->
-                                    <div class="mb-3">
-                                        <label class="form-label fw-semibold">Số tờ trình</label>
-                                        <input type="text"
-                                               class="form-control"
-                                               id="modal-soToTrinh"
-                                               readonly />
-                                    </div>
-
-                                    <!-- Row 4: Loại hạng mục, Mức ưu tiên, Số lượng -->
-                                    <div class="row">
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label fw-semibold">Loại hạng mục</label>
-                                            <input type="text"
-                                                   class="form-control"
-                                                   id="modal-categoryTypeName"
-                                                   readonly />
-                                        </div>
-
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label fw-semibold">Mức ưu tiên</label>
-                                            <input type="text"
-                                                   class="form-control"
-                                                   id="modal-priorityLevelName"
-                                                   readonly />
-                                        </div>
-
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label fw-semibold">Số lượng</label>
-                                            <input type="text"
-                                                   class="form-control"
-                                                   id="modal-soLuong"
-                                                   readonly />
-                                        </div>
-                                    </div>
-
-                                    <!-- Row 5: Lý do đầu tư -->
-                                    <div class="row">
-                                        <div class="col-12 mb-3">
-                                            <label class="form-label fw-semibold">Lý do đầu tư</label>
-                                            <textarea class="form-control"
-                                                      rows="4"
-                                                      id="modal-lyDoDauTu"
-                                                      readonly></textarea>
-                                        </div>
-                                    </div>
-
-                                    <!-- Row 6: Mô tả kỹ thuật -->
-                                    <div class="mb-3">
-                                        <label class="form-label fw-semibold">Mô tả kỹ thuật</label>
-                                        <textarea class="form-control"
-                                                  rows="4"
-                                                  id="modal-moTaKyThuat"
-                                                  readonly></textarea>
-                                    </div>
-
-                                    <!-- Row 7: Ngày bắt đầu, Ngày kết thúc, Ngày tạo -->
-                                    <div class="row">
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label fw-semibold">Ngày bắt đầu</label>
-                                            <input type="text"
-                                                   class="form-control"
-                                                   id="modal-ngayBatDau"
-                                                   readonly />
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label fw-semibold">Ngày kết thúc</label>
-                                            <input type="text"
-                                                   class="form-control"
-                                                   id="modal-ngayKetThuc"
-                                                   readonly />
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label fw-semibold">Ngày tạo</label>
-                                            <input type="text"
-                                                   class="form-control"
-                                                   id="modal-ngayTao"
-                                                   readonly />
-                                        </div>
-                                    </div>
-
-                                    <!-- Row 8: Hồ sơ căn cứ -->
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label fw-semibold">Hồ sơ căn cứ</label>
-                                            <div id="modal-attachments"></div>
-                                        </div>
-
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label fw-semibold">Link tài liệu liên quan</label>
-                                            <div id="modal-linkTaiLieu"></div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Row 9: Xác nhận luồng quy trình - CHỈ ADMIN/MANAGER -->
-                                    <div class="row" id="modal-workflow-container" style="display: none;">
-                                        <div class="col-12 mb-3">
-                                            <div class="alert alert-warning" role="alert">
-                                                <i class="bi bi-exclamation-triangle-fill"></i>
-                                                <strong>Lưu ý:</strong> Việc chọn luồng quy trình sẽ ảnh hưởng đến các tab hiển thị và quy trình phê duyệt.
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label fw-semibold">
-                                                Xác nhận luồng quy trình <span class="text-danger">*</span>
+                                    <!-- NGÂN SÁCH PHÊ DUYỆT -->
+                                    <!-- NGÂN SÁCH PHÊ DUYỆT -->
+                                    <h6 class="fw-semibold text-muted mb-3">
+                                        <i class="bi bi-currency-exchange me-1"></i>Ngân sách phê duyệt
+                                    </h6>
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-semibold">
+                                                Dự toán gốc
                                             </label>
-                                            <select class="form-select" id="modal-workflowType">
-                                                <option value="0">-- Chưa xác định --</option>
-                                                <option value="1">Theo luồng ngân sách đầu tư</option>
-                                                <option value="2">Theo luồng chi phí sản xuất</option>
-                                            </select>
-                                            <small class="text-muted">
-                                                <i class="bi bi-info-circle"></i>
-                                                Luồng ngân sách: Hiển thị tab Phê duyệt |
-                                                Luồng chi phí: Hiển thị cả 2 tab
-                                            </small>
+                                            <input type="text" class="form-control form-control-sm"
+                                                   id="pd_DuToanGoc" readonly />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-semibold">
+                                                Dự toán phê duyệt
+                                            </label>
+                                            <!-- *** THAY ĐỔI: bỏ input-group, bỏ button, thêm disabled mặc định *** -->
+                                            <input type="text" class="form-control form-control-sm"
+                                                   id="pd_DuToanPheDuyet"
+                                                   placeholder="Chưa có ngày duyệt BGĐ"
+                                                   disabled />
+                                        </div>
+                                        <div class="col-md-4 d-flex align-items-end">
+                                            <span class="badge fs-6 p-2" id="badgeTrangThaiPheDuyet"></span>
                                         </div>
                                     </div>
+
+                                    <!-- SỐ THÔNG BÁO + SỐ FM/IO -->
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-semibold">Số thông báo</label>
+                                            <input type="text" class="form-control form-control-sm"
+                                                   id="pd_SoThongBao" placeholder="Nhập số thông báo" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-semibold">Số FM/IO</label>
+                                            <input type="text" class="form-control form-control-sm"
+                                                   id="pd_SoFMIO" placeholder="Nhập số FM/IO" />
+                                        </div>
+                                    </div>
+
                                 </div>
+                            </div>
+                            <!-- BUTTON THÊM BỔ SUNG -->
+                            <div class="d-flex justify-content-start mb-3">
+                                <button type="button" class="btn btn-outline-success btn-sm"
+                                        id="btnThemBoSung">
+                                    <i class="bi bi-plus-circle me-1"></i>Thêm bổ sung ngân sách
+                                </button>
+                            </div>
+
+                            <!-- CONTAINER CÁC CARD BỔ SUNG (render động) -->
+                            <div id="containerBoSung"></div>
+                        </div>
+
+                        <!-- ===== TAB 4: NHẬT KÝ TIẾN ĐỘ (PLACEHOLDER) ===== -->
+                        <div class="tab-pane fade"
+                             id="detail-nhatky" role="tabpanel">
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-journal-text fs-1"></i>
+                                <p class="mt-2">
+                                    Chức năng Nhật ký tiến độ đang được phát triển.
+                                </p>
                             </div>
                         </div>
 
-                        <!-- Tab 2: Theo dõi phê duyệt -->
-                        <div class="tab-pane fade"
-                             id="modal-approval-tab-pane"
-                             role="tabpanel"
-                             aria-labelledby="modal-approval-tab"
-                             tabindex="0">
-
-                            <div class="card border-0">
-                                <div class="card-body">
-                                    <div class="alert alert-info" role="alert">
-                                        <i class="bi bi-info-circle"></i> Nội dung theo dõi phê duyệt đang được phát triển.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Tab 3: Theo dõi tiến độ -->
-                        <div class="tab-pane fade"
-                             id="modal-progress-tab-pane"
-                             role="tabpanel"
-                             aria-labelledby="modal-progress-tab"
-                             tabindex="0">
-
-                            <div class="card border-0">
-                                <div class="card-body">
-                                    <div class="alert alert-info" role="alert">
-                                        <i class="bi bi-info-circle"></i> Nội dung theo dõi tiến độ đang được phát triển.
-                                    </div>
-                                </div>
+                    </div><!-- end tab-content -->
+                    <!-- ===== DROPDOWN XÁC NHẬN LUỒNG (Admin + Manager) ===== -->
+                    <div id="workflowSection" style="display:none;">
+                        <hr />
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-diagram-3 me-1"></i>
+                                    Xác nhận luồng
+                                </label>
+                                <select class="form-select" id="modal_WorkflowType">
+                                    <option value="">-- Chưa xác nhận --</option>
+                                    <option value="1">
+                                        Theo luồng ngân sách đầu tư
+                                    </option>
+                                    <option value="2">
+                                        Theo luồng chi phí sản xuất
+                                    </option>
+                                    <option value="3">
+                                        Hồ sơ thiếu thông tin
+                                    </option>
+                                </select>
                             </div>
                         </div>
                     </div>
-                </div>
+
+                </div><!-- end modalContent -->
+            </div><!-- end modal-body -->
+            <!-- FOOTER -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Đóng
+                </button>
+                <button type="button" class="btn btn-primary" id="btnSaveDetailsModal">
+                    <i class="bi bi-save me-1"></i>Lưu thông tin
+                </button>
             </div>
 
-            <!-- Modal Footer -->
-            <div class="modal-footer bg-light" id="modalFooter" style="display: none;">
-                <div class="d-flex justify-content-between w-100">
-                    <div>
-                        <a href="#" id="modal-viewFullDetails" class="btn btn-outline-primary" target="_blank">
-                            <i class="bi bi-box-arrow-up-right"></i> Xem đầy đủ
-                        </a>
-                    </div>
-                    <div>
-                        <a href="#" id="modal-editBtn" class="btn btn-warning" style="display: none;">
-                            <i class="bi bi-pencil"></i> Chỉnh sửa
-                        </a>
-                        <button type="button" id="modal-deleteBtn" class="btn btn-danger" style="display: none;">
-                            <i class="bi bi-trash"></i> Xóa
-                        </button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="bi bi-x-lg"></i> Đóng
-                        </button>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -741,355 +848,75 @@
                 window.location.href = currentUrl.toString();
             });
 
-            var currentBudgetId = null;
-            var currentWorkflowType = 0;
+            //// Format date từ C# DateTime sang dd/MM/yyyy
+            //function formatDate(dateString) {
+            //    if (!dateString) return '';
 
-            // Handle view button click
-            $(document).on('click', '.btn-view-modal', function() {
-                var budgetId = $(this).data('budget-id');
-                currentBudgetId = budgetId;
-                loadBudgetDetails(budgetId);
-            });
+            //    try {
+            //        // Parse ISO string hoặc .NET JSON date format
+            //        var date;
 
-            // Load budget details via AJAX
-            function loadBudgetDetails(budgetId) {
-                // Show modal
-                var modal = new bootstrap.Modal(document.getElementById('budgetDetailModal'));
-                modal.show();
+            //        // Check if it's .NET JSON date format: /Date(1234567890000)/
+            //        if (typeof dateString === 'string' && dateString.indexOf('/Date(') === 0) {
+            //            var timestamp = parseInt(dateString.replace(/\/Date\((\d+)\)\//, '$1'));
+            //            date = new Date(timestamp);
+            //        } else {
+            //            // ISO format hoặc normal date string
+            //            date = new Date(dateString);
+            //        }
 
-                // Show loading, hide content
-                $('#modalLoading').show();
-                $('#modalContentContainer').hide();
-                $('#modalFooter').hide();
+            //        // Validate date
+            //        if (isNaN(date.getTime())) {
+            //            console.warn('Invalid date:', dateString);
+            //            return dateString; // Return original if can't parse
+            //        }
 
-                // AJAX call
-                $.ajax({
-                    url: '@Url.Action("GetDetailsModal", "Budget")',
-                    type: 'GET',
-                    data: { id: budgetId },
-                    success: function(response) {
-                        if (response.success) {
-                            populateModalData(response.data);
-                            $('#modalLoading').hide();
-                            $('#modalContentContainer').show();
-                            $('#modalFooter').show();
-                        } else {
-                            showError(response.message || 'Không thể tải thông tin chi tiết.');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        showError('Đã xảy ra lỗi khi tải dữ liệu. Vui lòng thử lại.');
-                    }
-                });
-            }
+            //        var day = String(date.getDate()).padStart(2, '0');
+            //        var month = String(date.getMonth() + 1).padStart(2, '0');
+            //        var year = date.getFullYear();
 
-            // Populate modal with data
-            function populateModalData(data) {
-                // Basic information
-                $('#modal-tenPhongBan').val(data.TenPhongBan || '');
-                $('#modal-maHangMuc').val(data.MaHangMuc || '');
-                $('#modal-nguoiDangKy').val(data.NguoiDangKy || '');
+            //        return day + '/' + month + '/' + year;
+            //    } catch (e) {
+            //        console.error('Error formatting date:', e);
+            //        return dateString;
+            //    }
+            //}
 
-                if (data.EmailNguoiDangKy) {
-                    $('#modal-emailNguoiDangKy').html('<i class="bi bi-envelope"></i> ' + data.EmailNguoiDangKy);
-                }
+            //// Format datetime từ C# DateTime sang dd/MM/yyyy HH:mm
+            //function formatDateTime(dateString) {
+            //    if (!dateString) return '';
 
-                $('#modal-tenHangMuc').val(data.TenHangMuc || '');
-                $('#modal-duToan').val(formatCurrency(data.DuToan) + ' VNĐ');
-                $('#modal-soToTrinh').val(data.SoToTrinh || '');
+            //    try {
+            //        // Parse ISO string hoặc .NET JSON date format
+            //        var date;
 
-                $('#modal-categoryTypeName').val(data.CategoryTypeName || '');
-                $('#modal-priorityLevelName').val(data.PriorityLevelName || '');
-                $('#modal-soLuong').val(data.SoLuong || '');
+            //        // Check if it's .NET JSON date format: /Date(1234567890000)/
+            //        if (typeof dateString === 'string' && dateString.indexOf('/Date(') === 0) {
+            //            var timestamp = parseInt(dateString.replace(/\/Date\((\d+)\)\//, '$1'));
+            //            date = new Date(timestamp);
+            //        } else {
+            //            // ISO format hoặc normal date string
+            //            date = new Date(dateString);
+            //        }
 
-                $('#modal-lyDoDauTu').val(data.LyDoDauTu || '');
-                $('#modal-moTaKyThuat').val(data.MoTaKyThuat || '');
+            //        // Validate date
+            //        if (isNaN(date.getTime())) {
+            //            console.warn('Invalid datetime:', dateString);
+            //            return dateString; // Return original if can't parse
+            //        }
 
-                // Dates
-                $('#modal-ngayBatDau').val(formatDate(data.NgayBatDau));
-                $('#modal-ngayKetThuc').val(formatDate(data.NgayKetThuc));
-                $('#modal-ngayTao').val(formatDateTime(data.NgayTao));
+            //        var day = String(date.getDate()).padStart(2, '0');
+            //        var month = String(date.getMonth() + 1).padStart(2, '0');
+            //        var year = date.getFullYear();
+            //        var hours = String(date.getHours()).padStart(2, '0');
+            //        var minutes = String(date.getMinutes()).padStart(2, '0');
 
-                // Attachments
-                renderAttachments(data.Attachments);
-
-                // Link tài liệu
-                renderLinkTaiLieu(data.LinkTaiLieuLienQuan);
-
-                // Workflow Type - Show/Hide based on role
-                currentWorkflowType = data.WorkflowType || 0;
-
-                if (data.IsManagerOrAdmin) {
-                    $('#modal-workflow-container').show();
-                    $('#modal-workflowType').val(currentWorkflowType).prop('disabled', false);
-                } else {
-                    $('#modal-workflow-container').hide();
-                }
-
-                // Update tabs visibility based on workflow type
-                updateTabsVisibility(currentWorkflowType);
-
-                // Action buttons
-                $('#modal-viewFullDetails').attr('href', '@Url.Action("Details", "Budget")/' + data.BudgetRegistrationId);
-
-                if (data.CanEdit) {
-                    $('#modal-editBtn').show().attr('href', '@Url.Action("Edit", "Budget")/' + data.BudgetRegistrationId);
-                } else {
-                    $('#modal-editBtn').hide();
-                }
-
-                if (data.CanDelete) {
-                    $('#modal-deleteBtn').show().data('budget-id', data.BudgetRegistrationId).data('budget-name', data.TenHangMuc);
-                } else {
-                    $('#modal-deleteBtn').hide();
-                }
-            }
-
-            // Update tabs visibility based on workflow type
-            function updateTabsVisibility(workflowType) {
-                // Reset: Hide all tabs except info tab
-                $('#modal-approval-tab-li').hide();
-                $('#modal-progress-tab-li').hide();
-
-                // Show tabs based on workflow type
-                switch(parseInt(workflowType)) {
-                    case 1: // Ngân sách đầu tư
-                        $('#modal-approval-tab-li').show();
-                        $('#modal-progress-tab-li').hide();
-                        break;
-
-                    case 2: // Chi phí sản xuất
-                        $('#modal-approval-tab-li').show();
-                        $('#modal-progress-tab-li').show();
-                        break;
-
-                    case 0: // Chưa xác định
-                    default:
-                        $('#modal-approval-tab-li').hide();
-                        $('#modal-progress-tab-li').hide();
-                        break;
-                }
-
-                // Reset to info tab if current tab is hidden
-                var activeTab = $('#budgetDetailModalTabs .nav-link.active').attr('id');
-                if ((activeTab === 'modal-approval-tab' && !$('#modal-approval-tab-li').is(':visible')) ||
-                    (activeTab === 'modal-progress-tab' && !$('#modal-progress-tab-li').is(':visible'))) {
-                    var infoTab = new bootstrap.Tab(document.querySelector('#modal-info-tab'));
-                    infoTab.show();
-                }
-            }
-
-            // Handle workflow type change
-            $(document).on('change', '#modal-workflowType', function() {
-                var newWorkflowType = parseInt($(this).val());
-
-                if (newWorkflowType === currentWorkflowType) {
-                    return; // No change
-                }
-
-                // Confirm change
-                if (!confirm('Bạn có chắc chắn muốn thay đổi luồng quy trình không?\n\nThao tác này sẽ ảnh hưởng đến quy trình phê duyệt và các tab hiển thị.')) {
-                    $(this).val(currentWorkflowType); // Revert
-                    return;
-                }
-
-                // Show loading
-                var $dropdown = $(this);
-                var originalHtml = $dropdown.html();
-                $dropdown.prop('disabled', true);
-
-                // AJAX call to update workflow type
-                $.ajax({
-                    url: '@Url.Action("UpdateWorkflowType", "Budget")',
-                    type: 'POST',
-                    data: {
-                        budgetId: currentBudgetId,
-                        workflowType: newWorkflowType
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            currentWorkflowType = newWorkflowType;
-                            updateTabsVisibility(newWorkflowType);
-                            showNotification('success', 'Cập nhật luồng quy trình thành công!');
-                        } else {
-                            showNotification('error', response.message || 'Không thể cập nhật luồng quy trình.');
-                            $dropdown.val(currentWorkflowType); // Revert
-                        }
-                    },
-                    error: function() {
-                        showNotification('error', 'Đã xảy ra lỗi khi cập nhật. Vui lòng thử lại.');
-                        $dropdown.val(currentWorkflowType); // Revert
-                    },
-                    complete: function() {
-                        $dropdown.prop('disabled', false);
-                    }
-                });
-            });
-
-            // Show notification
-            function showNotification(type, message) {
-                var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-                var icon = type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill';
-
-                var alertHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show position-fixed top-0 end-0 m-3" role="alert" style="z-index: 9999;">' +
-                    '<i class="bi bi-' + icon + '"></i> ' + message +
-                    '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
-                    '</div>';
-
-                $('body').append(alertHtml);
-
-                // Auto dismiss after 3 seconds
-                setTimeout(function() {
-                    $('.alert').alert('close');
-                }, 3000);
-            }
-
-            // Reset modal when closed
-            $('#budgetDetailModal').on('hidden.bs.modal', function () {
-                $('#modalLoading').show();
-                $('#modalContentContainer').hide();
-                $('#modalFooter').hide();
-
-                // Reset workflow
-                currentBudgetId = null;
-                currentWorkflowType = 0;
-
-                // Hide all tabs except info
-                $('#modal-approval-tab-li').hide();
-                $('#modal-progress-tab-li').hide();
-
-                // Reset to first tab
-                var firstTab = new bootstrap.Tab(document.querySelector('#modal-info-tab'));
-                firstTab.show();
-            });
-
-            // Existing helper functions...
-            // formatCurrency, formatDate, formatDateTime, renderAttachments, renderLinkTaiLieu, etc.
-
-            // Render attachments
-            function renderAttachments(attachments) {
-                var container = $('#modal-attachments');
-                container.empty();
-
-                if (attachments && attachments.length > 0) {
-                    var html = '<div class="list-group">';
-                    attachments.forEach(function(file) {
-                        html += '<div class="list-group-item">';
-                        html += '  <div class="d-flex justify-content-between align-items-center">';
-                        html += '    <div class="flex-grow-1">';
-                        html += '      <div class="d-flex align-items-center mb-1">';
-                        html += '        <i class="bi bi-file-earmark-' + getFileIcon(file.FileExtension) + ' me-2"></i>';
-                        html += '        <strong>' + file.FileName + '</strong>';
-                        html += '      </div>';
-                        html += '      <small class="text-muted">' + file.FileSizeFormatted + '</small>';
-                        html += '    </div>';
-                        html += '    <div class="btn-group" role="group">';
-                        html += '      <a href="@Url.Action("DownloadFile", "Budget")/' + file.AttachmentId + '" class="btn btn-sm btn-outline-primary" target="_blank" title="Tải xuống">';
-                        html += '        <i class="bi bi-download"></i>';
-                        html += '      </a>';
-                        html += '    </div>';
-                        html += '  </div>';
-                        html += '</div>';
-                    });
-                    html += '</div>';
-                    container.html(html);
-                } else {
-                    container.html('<input type="text" class="form-control" value="" readonly />');
-                }
-            }
-
-            // Render link tài liệu
-            function renderLinkTaiLieu(link) {
-                var container = $('#modal-linkTaiLieu');
-                container.empty();
-
-                if (link) {
-                    var html = '<div class="input-group">';
-                    html += '  <input type="text" class="form-control" value="' + link + '" readonly />';
-                    html += '  <a href="' + link + '" class="btn btn-primary" target="_blank">';
-                    html += '    <i class="bi bi-link-45deg"></i> Mở';
-                    html += '  </a>';
-                    html += '</div>';
-                    container.html(html);
-                } else {
-                    container.html('<input type="text" class="form-control" value="" readonly />');
-                }
-            }
-
-            // Helper functions
-            function formatCurrency(value) {
-                return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-            }
-
-            // Format date từ C# DateTime sang dd/MM/yyyy
-            function formatDate(dateString) {
-                if (!dateString) return '';
-
-                try {
-                    // Parse ISO string hoặc .NET JSON date format
-                    var date;
-
-                    // Check if it's .NET JSON date format: /Date(1234567890000)/
-                    if (typeof dateString === 'string' && dateString.indexOf('/Date(') === 0) {
-                        var timestamp = parseInt(dateString.replace(/\/Date\((\d+)\)\//, '$1'));
-                        date = new Date(timestamp);
-                    } else {
-                        // ISO format hoặc normal date string
-                        date = new Date(dateString);
-                    }
-
-                    // Validate date
-                    if (isNaN(date.getTime())) {
-                        console.warn('Invalid date:', dateString);
-                        return dateString; // Return original if can't parse
-                    }
-
-                    var day = String(date.getDate()).padStart(2, '0');
-                    var month = String(date.getMonth() + 1).padStart(2, '0');
-                    var year = date.getFullYear();
-
-                    return day + '/' + month + '/' + year;
-                } catch (e) {
-                    console.error('Error formatting date:', e);
-                    return dateString;
-                }
-            }
-
-            // Format datetime từ C# DateTime sang dd/MM/yyyy HH:mm
-            function formatDateTime(dateString) {
-                if (!dateString) return '';
-
-                try {
-                    // Parse ISO string hoặc .NET JSON date format
-                    var date;
-
-                    // Check if it's .NET JSON date format: /Date(1234567890000)/
-                    if (typeof dateString === 'string' && dateString.indexOf('/Date(') === 0) {
-                        var timestamp = parseInt(dateString.replace(/\/Date\((\d+)\)\//, '$1'));
-                        date = new Date(timestamp);
-                    } else {
-                        // ISO format hoặc normal date string
-                        date = new Date(dateString);
-                    }
-
-                    // Validate date
-                    if (isNaN(date.getTime())) {
-                        console.warn('Invalid datetime:', dateString);
-                        return dateString; // Return original if can't parse
-                    }
-
-                    var day = String(date.getDate()).padStart(2, '0');
-                    var month = String(date.getMonth() + 1).padStart(2, '0');
-                    var year = date.getFullYear();
-                    var hours = String(date.getHours()).padStart(2, '0');
-                    var minutes = String(date.getMinutes()).padStart(2, '0');
-
-                    return day + '/' + month + '/' + year + ' ' + hours + ':' + minutes;
-                } catch (e) {
-                    console.error('Error formatting datetime:', e);
-                    return dateString;
-                }
-            }
+            //        return day + '/' + month + '/' + year + ' ' + hours + ':' + minutes;
+            //    } catch (e) {
+            //        console.error('Error formatting datetime:', e);
+            //        return dateString;
+            //    }
+            //}
 
             function getFileIcon(extension) {
                 if (!extension) return 'text';
@@ -1114,41 +941,806 @@
                 return icons[extension] || 'text';
             }
 
-            function showError(message) {
-                $('#modalLoading').hide();
-                $('#modalContentContainer').hide();
-                $('#modalBodyContent').html(
-                    '<div class="alert alert-danger text-center" role="alert">' +
-                    '  <i class="bi bi-exclamation-triangle-fill"></i> ' +
-                    '  <p class="mb-0">' + message + '</p>' +
-                    '</div>'
-                );
+            // Dữ liệu dropdown dùng cho tab Phân nhiệm trong modal
+            var dsPhongBan = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.DsPhongBanModal));
+            var dsChucNang = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.DsChucNangModal));
+
+            var currentBudgetId = 0;
+            var modalRowIndex   = 0;
+
+            // ── Mở modal khi click nút Xem ──────────────────────────────
+            $(document).on('click', '.btn-view-modal', function () {
+                currentBudgetId = $(this).data('budget-id');
+                modalRowIndex   = 0;
+
+                // Reset về trạng thái loading
+                $('#modalLoading').show();
+                $('#modalContent').hide();
+                $('#detail-phieu-btn').tab('show');
+
+                $('#budgetDetailsModal').modal('show');
+                loadDetailsModal(currentBudgetId);
+            });
+
+            // ── Gọi API GetDetailsModal ──────────────────────────────────
+            function loadDetailsModal(id) {
+                $.ajax({
+                    url: '@Url.Action("GetDetailsModal", "Budget")',
+                    type: 'GET',
+                    data: { id: id },
+                    success: function (res) {
+                        if (!res.success) {
+                            alert(res.message);
+                            $('#budgetDetailsModal').modal('hide');
+                            return;
+                        }
+                        bindModalData(res.data);
+                        $('#modalLoading').hide();
+                        $('#modalContent').show();
+                    },
+                    error: function () {
+                        alert('Đã xảy ra lỗi khi tải dữ liệu.');
+                        $('#budgetDetailsModal').modal('hide');
+                    }
+                });
             }
 
-            // Handle delete button in modal
-            $(document).on('click', '#modal-deleteBtn', function() {
-                var budgetId = $(this).data('budget-id');
-                var budgetName = $(this).data('budget-name');
+            // ── Bind dữ liệu vào các field ──────────────────────────────
+            function bindModalData(data) {
 
-                if (confirm('Bạn có chắc chắn muốn xóa đăng ký "' + budgetName + '" không?\n\nHành động này không thể hoàn tác!')) {
-                    // Close modal first
-                    bootstrap.Modal.getInstance(document.getElementById('budgetDetailModal')).hide();
+                // Header
+                $('#modalMaHangMuc').text(data.MaHangMuc);
 
-                    // Trigger delete action
-                    window.location.href = '@Url.Action("Delete", "Budget")/' + budgetId;
+                // Tab Phiếu đăng ký
+                $('#modal_AreaName').val(data.ProjectAreaId);
+                $('#modal_TenPhongBan').val(data.TenPhongBan);
+                $('#modal_MaHangMuc').val(data.MaHangMuc);
+                $('#modal_TenHangMuc').val(data.TenHangMuc);
+                $('#modal_DuToan').val(formatCurrency(data.DuToan));
+                $('#modal_SoToTrinh').val(data.SoToTrinh);
+                $('#modal_CategoryTypeName').val(data.CategoryTypeName);
+                $('#modal_PriorityLevelName').val(data.PriorityLevelName);
+                $('#modal_SoLuong').val(data.SoLuong);
+                $('#modal_NgayBatDau').val(formatDate(data.NgayBatDau));
+                $('#modal_NgayKetThuc').val(formatDate(data.NgayKetThuc));
+                $('#modal_TenNguoiDangKy').val(data.TenNguoiDangKy);
+                $('#modal_LyDoDauTu').val(data.LyDoDauTu);
+                $('#modal_MoTaKyThuat').val(data.MoTaKyThuat);
+                $('#modal_LinkTaiLieu').val(data.LinkTaiLieuLienQuan);
+
+                // Attachments
+                renderAttachments(data.Attachments);
+
+                // Workflow dropdown
+                if (data.IsManagerOrAdmin) {
+                    $('#workflowSection').show();
+                    $('#modal_WorkflowType').val(data.WorkflowType || '');
+                    applyWorkflowTabs(data.WorkflowType);
+                } else {
+                    $('#workflowSection').hide();
                 }
+
+                // Tab Phân nhiệm
+                renderModalPhanNhiem(data.DanhSachPhanNhiem || []);
+
+                // *** THÊM MỚI — gọi bind tab Phê duyệt ***
+                //bindPheDuyetData(data.ThongTinPheDuyet, data.IsManagerOrAdmin);
+                bindPheDuyetData(data.NganSachGoc, data.IsManagerOrAdmin);
+                renderDanhSachBoSung(data.DanhSachBoSung);
+            }
+
+            // ── Render Attachments ───────────────────────────────────────
+            function renderAttachments(attachments) {
+                var html = '';
+                if (!attachments || attachments.length === 0) {
+                    html = '<span class="text-muted small">Không có file đính kèm.</span>';
+                } else {
+                    $.each(attachments, function (i, a) {
+                        html += '<div class="d-flex align-items-center gap-2 py-1 border-bottom">'
+                            + '<i class="bi bi-file-earmark text-primary"></i>'
+                            + '<a href="/' + a.FilePath + '" '
+                            + 'download="' + a.FileName + '" '   // *** THÊM download ***
+                            + 'class="text-truncate flex-fill">'
+                            + a.FileName
+                            + '</a>'
+                            + '<span class="text-muted small">' + a.FileSizeFormatted + '</span>'
+                            + '<span class="text-muted small">'
+                            + formatDate(a.UploadedDate) + ' — ' + a.UploadedBy
+                            + '</span>'
+                            + '</div>';
+                    });
+                }
+                $('#modal_AttachmentsList').html(html);
+            }
+
+            // ── Hiển thị/ẩn tab Phê duyệt & Nhật ký theo WorkflowType ──
+            function applyWorkflowTabs(workflowType) {
+                if (parseInt(workflowType) === 1) {
+                    $('#tabPheDuyetItem').removeClass('d-none');
+                    $('#tabNhatKyItem').removeClass('d-none');
+                } else {
+                    $('#tabPheDuyetItem').addClass('d-none');
+                    $('#tabNhatKyItem').addClass('d-none');
+                    // Nếu đang ở tab bị ẩn thì quay về tab Phiếu
+                    if ($('#detail-pheduyet').hasClass('active') ||
+                        $('#detail-nhatky').hasClass('active')) {
+                        $('#detail-phieu-btn').tab('show');
+                    }
+                }
+            }
+
+            // ── Lắng nghe thay đổi WorkflowType ─────────────────────────
+            $(document).on('change', '#modal_WorkflowType', function () {
+                applyWorkflowTabs($(this).val());
             });
 
-            // Reset modal when closed
-            $('#budgetDetailModal').on('hidden.bs.modal', function () {
-                $('#modalLoading').show();
-                $('#modalContentContainer').hide();
-                $('#modalFooter').hide();
+            // ── Render tab Phân nhiệm từ dữ liệu có sẵn ─────────────────
+            function renderModalPhanNhiem(list) {
+                $('#modalPhanNhiemBody').empty();
+                modalRowIndex = 0;
+                $.each(list, function (i, pn) {
+                    var row = taoHtmlDongModal(modalRowIndex++);
+                    var $row = $(row);
 
-                // Reset to first tab
-                var firstTab = new bootstrap.Tab(document.querySelector('#modal-info-tab'));
-                firstTab.show();
+                    // Set giá trị dropdown Phòng ban
+                    $row.find('select[name*=PhongBanId]').val(pn.PhongBanId);
+
+                    // Set dropdown Chức năng (nếu có Id)
+                    if (pn.ChucNangNhiemVuId) {
+                        $row.find('.ddModalChucNang').val(pn.ChucNangNhiemVuId);
+                    }
+                    // Set textbox nhập tay
+                    $row.find('.txtModalChucNangTay').val(pn.TenChucNangNhapTay || '');
+
+                    $row.find('input[name*=Email]').val(pn.Email || '');
+                    $row.find('input[name*=GhiChu]').val(pn.GhiChu || '');
+
+                    $('#modalPhanNhiemBody').append($row);
+                });
+                capNhatSTTModal();
+            }
+
+            // ── Tạo HTML 1 dòng Phân nhiệm trong modal ──────────────────
+            function taoHtmlDongModal(idx) {
+                var optionsPhongBan = '<option value="">-- Chọn --</option>';
+                $.each(dsPhongBan, function (i, pb) {
+                    optionsPhongBan += '<option value="' + pb.value + '">'
+                                     + pb.text + '</option>';
+                });
+
+                var optionsChucNang = '<option value="">-- Chọn hoặc nhập tay --</option>';
+                $.each(dsChucNang, function (i, cn) {
+                    optionsChucNang += '<option value="' + cn.value + '">'
+                                     + cn.text + '</option>';
+                });
+
+                return '<tr data-index="' + idx + '">'
+                    + '<td class="text-center stt-modal"></td>'
+                    + '<td>'
+                    + '<select name="DanhSachPhanNhiem[' + idx + '].PhongBanId" '
+                    +         'class="form-select form-select-sm" required>'
+                    + optionsPhongBan + '</select>'
+                    + '</td>'
+                    + '<td>'
+                    + '<select name="DanhSachPhanNhiem[' + idx + '].ChucNangNhiemVuId" '
+                    +         'class="form-select form-select-sm mb-1 ddModalChucNang">'
+                    + optionsChucNang + '</select>'
+                    + '<input type="text" '
+                    +        'name="DanhSachPhanNhiem[' + idx + '].TenChucNangNhapTay" '
+                    +        'class="form-control form-control-sm txtModalChucNangTay" '
+                    +        'placeholder="Hoặc nhập tay tại đây..." />'
+                    + '</td>'
+                    + '<td>'
+                    + '<input type="email" '
+                    +        'name="DanhSachPhanNhiem[' + idx + '].Email" '
+                    +        'class="form-control form-control-sm" '
+                    +        'placeholder="email@example.com" />'
+                    + '</td>'
+                    + '<td>'
+                    + '<input type="text" '
+                    +        'name="DanhSachPhanNhiem[' + idx + '].GhiChu" '
+                    +        'class="form-control form-control-sm" '
+                    +        'placeholder="Ghi chú..." />'
+                    + '</td>'
+                    + '<td class="text-center">'
+                    + '<button type="button" class="btn btn-danger btn-sm btnModalXoaDong">'
+                    + '<i class="bi bi-trash"></i></button>'
+                    + '</td>'
+                    + '</tr>';
+            }
+
+            // ── Cập nhật STT + badge đếm dòng modal ─────────────────────
+            function capNhatSTTModal() {
+                var rows = $('#modalPhanNhiemBody tr');
+                rows.each(function (i) {
+                    $(this).find('.stt-modal').text(i + 1);
+                });
+                var count = rows.length;
+                $('#modalPhanNhiemCount').text(count)
+                    .toggleClass('bg-secondary', count === 0)
+                    .toggleClass('bg-primary',   count > 0);
+            }
+
+            // ── Thêm dòng Phân nhiệm trong modal ────────────────────────
+            $(document).on('click', '#btnModalThemDong', function () {
+                $('#modalPhanNhiemBody').append(taoHtmlDongModal(modalRowIndex++));
+                capNhatSTTModal();
             });
+
+            // ── Xóa dòng Phân nhiệm trong modal ─────────────────────────
+            $(document).on('click', '.btnModalXoaDong', function () {
+                $(this).closest('tr').remove();
+                capNhatSTTModal();
+            });
+
+            // ── Nút Lưu thông tin ────────────────────────────────────────
+            $(document).on('click', '#btnSaveDetailsModal', function () {
+                var $btn = $(this);
+
+                // Thu thập dữ liệu Phân nhiệm từ các dòng trong bảng
+                var danhSachPhanNhiem = [];
+                $('#modalPhanNhiemBody tr').each(function () {
+                    var $row    = $(this);
+                    var idx     = $row.data('index');
+                    var phongBanId = $row.find('select[name*=PhongBanId]').val();
+                    if (!phongBanId) return; // bỏ dòng chưa chọn phòng ban
+
+                    danhSachPhanNhiem.push({
+                        PhongBanId:         phongBanId,
+                        ChucNangNhiemVuId:  $row.find('.ddModalChucNang').val() || null,
+                        TenChucNangNhapTay: $row.find('.txtModalChucNangTay').val() || null,
+                        Email:              $row.find('input[name*=Email]').val() || null,
+                        GhiChu:             $row.find('input[name*=GhiChu]').val() || null
+                    });
+                });
+
+                var payload = {
+                    BudgetRegistrationId: currentBudgetId,
+                    WorkflowType:         $('#modal_WorkflowType').val() || null,
+                    DanhSachPhanNhiem: danhSachPhanNhiem,
+                    // *** THÊM MỚI ***
+                    //ThongTinPheDuyet: {
+                    //    BudgetRegistrationId: currentBudgetId,
+                    //    ProcessType: parseInt($('#pd_ProcessType').val()) || 1,
+                    //    NgayDuyetPDA: $('#pd_NgayDuyetPDA').val() || null,
+                    //    NgayDuyetPKT: $('#pd_NgayDuyetPKT').val() || null,
+                    //    NgayDuyetERPD: $('#pd_NgayDuyetERPD').val() || null,
+                    //    NgayDuyetBTC: $('#pd_NgayDuyetBTC').val() || null,
+                    //    NgayDuyetBGD: $('#pd_NgayDuyetBGD').val() || null,
+                    //    // *** THAY ĐỔI: lấy giá trị từ input thay vì hardcode 0 ***
+                    //    // Thay đoạn DuToanPheDuyet trong payload
+                    //    DuToanPheDuyet: (function () {
+                    //        if ($('#pd_DuToanPheDuyet').prop('disabled')) return null;
+                    //        var raw = $('#pd_DuToanPheDuyet').val()
+                    //            .replace(/,/g, '')  // bỏ dấu phẩy en-US
+                    //            .replace(/\./g, ''); // bỏ dấu chấm (nếu có)
+                    //        return raw ? parseFloat(raw) : null;
+                    //    })(),
+                    //    SoThongBao: $('#pd_SoThongBao').val() || null,
+                    //    SoFMIO: $('#pd_SoFMIO').val() || null
+                    //}
+                    // Thay toàn bộ phần ThongTinPheDuyet cũ trong payload
+
+                    // Ngân sách gốc
+                    NganSachGoc: {
+                        BudgetRegistrationId: currentBudgetId,
+                        ProcessType: parseInt($('#pd_ProcessType').val()) || 1,
+                        NgayDuyetPDA: $('#pd_NgayDuyetPDA').val() || null,
+                        NgayDuyetPKT: $('#pd_NgayDuyetPKT').val() || null,
+                        NgayDuyetERPD: $('#pd_NgayDuyetERPD').val() || null,
+                        NgayDuyetBTC: $('#pd_NgayDuyetBTC').val() || null,
+                        NgayDuyetBGD: $('#pd_NgayDuyetBGD').val() || null,
+                        DuToanPheDuyet: (function () {
+                            if ($('#pd_DuToanPheDuyet').prop('disabled')) return null;
+                            var raw = $('#pd_DuToanPheDuyet').val()
+                                .replace(/,/g, '').replace(/\./g, '');
+                            return raw ? parseFloat(raw) : null;
+                        })(),
+                        SoThongBao: $('#pd_SoThongBao').val() || null,
+                        SoFMIO: $('#pd_SoFMIO').val() || null,
+                        IsSupplementary: false,
+                        SupplementaryOrder: 0
+                    },
+
+                    // Danh sách đợt bổ sung
+                    DanhSachBoSung: (function () {
+                        var list = [];
+                        $('#containerBoSung .card-bo-sung').each(function () {
+                            var $card = $(this);
+                            var idx = $card.data('index');
+                            var rawNS = $('#bs_NganSach_' + idx).val()
+                                .replace(/,/g, '').replace(/\./g, '');
+                            list.push({
+                                BudgetRegistrationId: currentBudgetId,
+                                ProcessType: parseInt($card.find('.bs-ProcessType').val()) || 1,
+                                NgayDuyetPDA: $('#bs_PDA_' + idx).val() || null,
+                                NgayDuyetPKT: $('#bs_PKT_' + idx).val() || null,
+                                NgayDuyetERPD: $('#bs_ERPD_' + idx).val() || null,
+                                NgayDuyetBTC: $('#bs_BTC_' + idx).val() || null,
+                                NgayDuyetBGD: $('#bs_BGD_' + idx).val() || null,
+                                LyDoBoSung: $('#bs_LyDo_' + idx).val() || null,
+                                NganSachBoSung: rawNS ? parseFloat(rawNS) : 0,
+                                IsSupplementary: true
+                            });
+                        });
+                        return list;
+                    })()
+                };
+
+                $btn.prop('disabled', true)
+                    .html('<i class="bi bi-hourglass-split me-1"></i> Đang lưu...');
+
+                $.ajax({
+                    url:         '@Url.Action("SaveDetailsModal", "Budget")',
+                    type:        'POST',
+                    contentType: 'application/json',
+                    data:        JSON.stringify(payload),
+                    success: function (res) {
+                        if (res.success) {
+                            // Hiện thông báo thành công ngay trong modal
+                            showModalAlert('success', res.message);
+                        } else {
+                            showModalAlert('danger', res.message);
+                        }
+                    },
+                    error: function () {
+                        showModalAlert('danger', 'Đã xảy ra lỗi khi lưu thông tin.');
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false)
+                            .html('<i class="bi bi-save me-1"></i> Lưu thông tin');
+                    }
+                });
+            });
+
+            // ── Helper: hiện alert trong modal ──────────────────────────
+            function showModalAlert(type, message) {
+                var html = '<div class="alert alert-' + type + ' alert-dismissible '
+                         + 'fade show mt-3" role="alert">'
+                         + '<i class="bi bi-' + (type === 'success'
+                             ? 'check-circle-fill' : 'exclamation-triangle-fill')
+                         + ' me-2"></i>' + message
+                         + '<button type="button" class="btn-close" '
+                         +          'data-bs-dismiss="alert"></button>'
+                         + '</div>';
+                // Chèn alert vào đầu modal-body
+                $('#modalContent').prepend(html);
+                setTimeout(function () {
+                    $('#modalContent .alert').fadeOut('slow', function () {
+                        $(this).remove();
+                    });
+                }, 4000);
+            }
+
+            // ── Helper: format ngày từ JSON date .NET ───────────────────
+            function formatDate(jsonDate) {
+                if (!jsonDate) return '';
+                var ms = parseInt(jsonDate.replace(/\/Date\((\d+)\)\//, '$1'));
+                var d  = new Date(ms);
+                return ('0' + d.getDate()).slice(-2) + '/'
+                     + ('0' + (d.getMonth() + 1)).slice(-2) + '/'
+                     + d.getFullYear();
+            }
+
+            // ── Helper: format số tiền ───────────────────────────────────
+            function formatCurrency(value) {
+                if (!value) return '0';
+                return Number(value).toLocaleString('en-US');
+            }
+
+            window.bindPheDuyetData = function (pd, isManagerOrAdmin) {
+                if (!pd) pd = { ProcessType: 1, TrangThaiPheDuyet: 0 };
+
+                // Dropdown Khởi tạo quy trình
+                if (isManagerOrAdmin) {
+                    $('#processTypeSection').show();
+                } else {
+                    $('#processTypeSection').hide();
+                }
+                $('#pd_ProcessType').val(pd.ProcessType || 1);
+                applyProcessType(pd.ProcessType || 1);
+
+                // Mốc ngày
+                $('#pd_NgayDuyetPDA').val(toDateInputValue(pd.NgayDuyetPDA));
+                $('#pd_NgayDuyetPKT').val(toDateInputValue(pd.NgayDuyetPKT));
+                $('#pd_NgayDuyetERPD').val(toDateInputValue(pd.NgayDuyetERPD));
+                $('#pd_NgayDuyetBTC').val(toDateInputValue(pd.NgayDuyetBTC));
+                $('#pd_NgayDuyetBGD').val(toDateInputValue(pd.NgayDuyetBGD));
+
+                // Dự toán
+                $('#pd_DuToanGoc').val(pd.DuToanGoc
+                    ? Number(pd.DuToanGoc).toLocaleString('en-US') : '');
+                $('#pd_DuToanPheDuyet').val(pd.DuToanPheDuyet || '');
+
+                // Textbox
+                $('#pd_SoThongBao').val(pd.SoThongBao || '');
+                $('#pd_SoFMIO').val(pd.SoFMIO || '');
+
+                // Trạng thái
+                applyTrangThaiPheDuyet(pd.TrangThaiPheDuyet || 0, isManagerOrAdmin);
+
+                // Cập nhật disable/enable mốc ngày
+                updateMocNgayState();
+            };
+
+            // ── Hiển thị/ẩn ERPD, BTC theo ProcessType ──────────────────
+            function applyProcessType(processType) {
+                if (parseInt(processType) === 1) {
+                    $('.moc-tapDoan').show();
+                } else {
+                    $('.moc-tapDoan').hide();
+                    $('#pd_NgayDuyetERPD').val('');
+                    $('#pd_NgayDuyetBTC').val('');
+                }
+                updateMocNgayState();
+            }
+
+            $(document).on('change', '#pd_ProcessType', function () {
+                applyProcessType($(this).val());
+            });
+
+            // ── Enable/disable mốc ngày theo tuần tự ────────────────────
+            function updateMocNgayState() {
+                var processType = parseInt($('#pd_ProcessType').val()) || 1;
+
+                var pdaVal = $('#pd_NgayDuyetPDA').val();
+                var pktVal = $('#pd_NgayDuyetPKT').val();
+                var erpdVal = $('#pd_NgayDuyetERPD').val();
+                var btcVal = $('#pd_NgayDuyetBTC').val();
+                var bgdVal = $('#pd_NgayDuyetBGD').val();
+
+                // Enable/disable theo tuần tự
+                toggleMocNgay('#pd_NgayDuyetPKT', !!pdaVal);
+
+                if (processType === 1) {
+                    toggleMocNgay('#pd_NgayDuyetERPD', !!pktVal);
+                    toggleMocNgay('#pd_NgayDuyetBTC', !!erpdVal);
+                    toggleMocNgay('#pd_NgayDuyetBGD', !!btcVal);
+                } else {
+                    toggleMocNgay('#pd_NgayDuyetBGD', !!pktVal);
+                }
+
+                // *** THÊM MỚI: Tính trạng thái realtime theo logic mới ***
+                var isManagerOrAdmin = !!$('#processTypeSection').is(':visible');
+                var trangThai;
+                if (!!bgdVal) {
+                    trangThai = 2;
+                } else if (!!pdaVal || !!pktVal || !!erpdVal || !!btcVal) {
+                    trangThai = 1;
+                } else {
+                    trangThai = 0;
+                }
+                applyTrangThaiPheDuyet(trangThai, isManagerOrAdmin);
+            }
+
+            function toggleMocNgay(selector, enabled) {
+                var $el = $(selector);
+                if (enabled) {
+                    $el.prop('disabled', false).removeClass('bg-light');
+                } else {
+                    $el.prop('disabled', true).addClass('bg-light').val('');
+                }
+            }
+
+            // Lắng nghe thay đổi trên tất cả mốc ngày
+            $(document).on('change', '.moc-ngay', function () {
+                updateMocNgayState();
+            });
+
+            // ── Hiển thị badge trạng thái + disable button ───────────────
+            function applyTrangThaiPheDuyet(trangThai, isManagerOrAdmin) {
+                var $badge = $('#badgeTrangThaiPheDuyet');
+                var $duToanInput = $('#pd_DuToanPheDuyet');
+
+                switch (trangThai) {
+                    case 0: // Chờ trình
+                        $badge.text('Chờ trình')
+                            .removeClass('bg-success bg-warning text-dark')
+                            .addClass('bg-secondary');
+                        $duToanInput.val('')
+                            .prop('disabled', true)
+                            .attr('placeholder', 'Chưa có duyệt từ BGĐ');
+                        break;
+
+                    case 1: // Đang trình
+                        var duToanGoc = $('#pd_DuToanGoc').val();
+
+                        // Format số (nếu cần)
+                        var formatted = duToanGoc
+                            ? Number(duToanGoc.replace(/[^\d]/g, '')).toLocaleString('vi-VN') + ' VND'
+                            : '';
+                        $badge.text('Đang trình' + (formatted ? ' ' + formatted : ''))
+                            .removeClass('bg-success bg-secondary')
+                            .addClass('bg-warning text-dark');
+                        $duToanInput.val('')
+                            .prop('disabled', true)
+                            .attr('placeholder', 'Chưa có duyệt từ BGĐ');
+                        break;
+
+                    case 2: // Đã phê duyệt
+                        $badge.text('Đã phê duyệt')
+                            .removeClass('bg-warning bg-secondary text-dark')
+                            .addClass('bg-success');
+
+                        // Đọc DuToanGoc (đang format vi-VN dấu chấm), strip về số thuần
+                        var duToanGocRaw = $('#pd_DuToanGoc').val()
+                            .replace(/\./g, '')   // bỏ dấu chấm vi-VN
+                            .replace(/,/g, '');   // bỏ dấu phẩy (nếu có)
+                        var duToanGocNum = parseFloat(duToanGocRaw) || 0;
+
+                        // Hiển thị format dấu phẩy (en-US: 12,000,000,000)
+                        $('#pd_DuToanPheDuyet')
+                            .val(duToanGocNum.toLocaleString('en-US'))
+                            .prop('disabled', !isManagerOrAdmin)
+                            .attr('placeholder', 'Nhập dự toán phê duyệt');
+                        break;
+                }
+            }
+
+            // ── Helper: convert JSON Date sang yyyy-MM-dd cho input date ─
+            function toDateInputValue(jsonDate) {
+                if (!jsonDate) return '';
+                var ms = parseInt(jsonDate.replace(/\/Date\((\d+)\)\//, '$1'));
+                if (isNaN(ms)) return '';
+                var d = new Date(ms);
+                return d.getFullYear() + '-'
+                     + ('0' + (d.getMonth() + 1)).slice(-2) + '-'
+                     + ('0' + d.getDate()).slice(-2);
+            }
+
+            var boSungIndex = 0; // index cho name binding
+
+            // ── Template HTML cho 1 card bổ sung ────────────────────────
+            function taoCardBoSung(idx, order, data) {
+                data = data || {};
+                var processType = data.ProcessType || 1;
+
+                return '<div class="card border-success mb-3 card-bo-sung" '
+                    + 'data-index="' + idx + '">'
+
+                    // Header card
+                    + '<div class="card-header bg-success text-white d-flex '
+                    + 'justify-content-between align-items-center py-2">'
+                    + '<span class="fw-semibold">'
+                    + '<i class="bi bi-plus-circle me-1"></i>'
+                    + '<span class="ten-dot">Đợt bổ sung lần ' + order + '</span>'
+                    + '</span>'
+                    + '<div class="d-flex align-items-center gap-2">'
+
+                    // Dropdown Khởi tạo quy trình
+                    + '<select class="form-select form-select-sm w-auto bs-ProcessType" '
+                    + 'style="min-width:180px;" '
+                    + 'data-index="' + idx + '">'
+                    + '<option value="1"'
+                    + (processType == 1 ? ' selected' : '') + '>'
+                    + 'Theo QT Tập đoàn</option>'
+                    + '<option value="2"'
+                    + (processType == 2 ? ' selected' : '') + '>'
+                    + 'Theo QT Công ty</option>'
+                    + '</select>'
+
+                    // Nút xóa
+                    + '<button type="button" '
+                    + 'class="btn btn-danger btn-sm btn-xoa-bo-sung" '
+                    + 'data-index="' + idx + '">'
+                    + '<i class="bi bi-trash"></i>'
+                    + '</button>'
+                    + '</div>'
+                    + '</div>'
+
+                    // Body card
+                    + '<div class="card-body">'
+
+                    // Tiến độ duyệt
+                    + '<h6 class="fw-semibold text-muted mb-3">'
+                    + '<i class="bi bi-calendar-check me-1"></i>Tiến độ duyệt</h6>'
+                    + '<div class="row g-3 mb-4 bs-tien-do-row">'
+
+                    // PDA
+                    + '<div class="col-md-2 col-sm-4">'
+                    + '<label class="form-label small fw-semibold">PDA</label>'
+                    + '<input type="date" class="form-control form-control-sm bs-moc-ngay" '
+                    + 'id="bs_PDA_' + idx + '" data-index="' + idx + '" data-moc="PDA" '
+                    + 'value="' + (data.NgayDuyetPDA
+                        ? toDateInputValue(data.NgayDuyetPDA) : '') + '" />'
+                    + '</div>'
+
+                    // PKT
+                    + '<div class="col-md-2 col-sm-4">'
+                    + '<label class="form-label small fw-semibold">PKT</label>'
+                    + '<input type="date" class="form-control form-control-sm bs-moc-ngay" '
+                    + 'id="bs_PKT_' + idx + '" data-index="' + idx + '" data-moc="PKT" '
+                    + 'value="' + (data.NgayDuyetPKT
+                        ? toDateInputValue(data.NgayDuyetPKT) : '') + '" disabled />'
+                    + '</div>'
+
+                    // ERPD
+                    + '<div class="col-md-2 col-sm-4 bs-moc-tapDoan-' + idx + '" '
+                    + 'style="display:' + (processType == 1 ? 'block' : 'none') + ';">'
+                    + '<label class="form-label small fw-semibold">ERPD</label>'
+                    + '<input type="date" class="form-control form-control-sm bs-moc-ngay" '
+                    + 'id="bs_ERPD_' + idx + '" data-index="' + idx + '" data-moc="ERPD" '
+                    + 'value="' + (data.NgayDuyetERPD
+                        ? toDateInputValue(data.NgayDuyetERPD) : '') + '" disabled />'
+                    + '</div>'
+
+                    // BTC
+                    + '<div class="col-md-2 col-sm-4 bs-moc-tapDoan-' + idx + '" '
+                    + 'style="display:' + (processType == 1 ? 'block' : 'none') + ';">'
+                    + '<label class="form-label small fw-semibold">BTC</label>'
+                    + '<input type="date" class="form-control form-control-sm bs-moc-ngay" '
+                    + 'id="bs_BTC_' + idx + '" data-index="' + idx + '" data-moc="BTC" '
+                    + 'value="' + (data.NgayDuyetBTC
+                        ? toDateInputValue(data.NgayDuyetBTC) : '') + '" disabled />'
+                    + '</div>'
+
+                    // BGĐ
+                    + '<div class="col-md-2 col-sm-4">'
+                    + '<label class="form-label small fw-semibold">BGĐ</label>'
+                    + '<input type="date" class="form-control form-control-sm bs-moc-ngay" '
+                    + 'id="bs_BGD_' + idx + '" data-index="' + idx + '" data-moc="BGD" '
+                    + 'value="' + (data.NgayDuyetBGD
+                        ? toDateInputValue(data.NgayDuyetBGD) : '') + '" disabled />'
+                    + '</div>'
+
+                    + '</div>' // end row tiến độ
+
+                    // Lý do bổ sung + Ngân sách bổ sung
+                    + '<div class="row g-3 mb-3">'
+                    + '<div class="col-md-6">'
+                    + '<label class="form-label small fw-semibold">Lý do bổ sung</label>'
+                    + '<input type="text" class="form-control form-control-sm" '
+                    + 'id="bs_LyDo_' + idx + '" '
+                    + 'placeholder="Nhập lý do bổ sung..." '
+                    + 'value="' + (data.LyDoBoSung || '') + '" />'
+                    + '</div>'
+                    + '<div class="col-md-3">'
+                    + '<label class="form-label small fw-semibold">Ngân sách bổ sung</label>'
+                    + '<input type="text" class="form-control form-control-sm bs-ngan-sach" '
+                    + 'id="bs_NganSach_' + idx + '" '
+                    + 'placeholder="0" '
+                    + 'value="' + formatCurrencyBS(data.NganSachBoSung || 0) + '" />'
+                    + '</div>'
+                    + '<div class="col-md-3 d-flex align-items-end">'
+                    + '<span class="badge fs-6 p-2 bs-badge-trang-thai" '
+                    + 'id="bs_Badge_' + idx + '"></span>'
+                    + '</div>'
+                    + '</div>'
+
+                    + '</div>' // end card-body
+                    + '</div>'; // end card
+            }
+
+            // ── Thêm card bổ sung mới ────────────────────────────────────
+            $(document).on('click', '#btnThemBoSung', function () {
+                var order = $('#containerBoSung .card-bo-sung').length + 1;
+                var html = taoCardBoSung(boSungIndex, order, {});
+                $('#containerBoSung').append(html);
+                capNhatMocNgayBoSung(boSungIndex);
+                capNhatBadgeBoSung(boSungIndex);
+                boSungIndex++;
+            });
+
+            // ── Xóa card bổ sung + đánh lại số thứ tự ───────────────────
+            $(document).on('click', '.btn-xoa-bo-sung', function () {
+                $(this).closest('.card-bo-sung').remove();
+                // Đánh lại số thứ tự hiển thị
+                $('#containerBoSung .card-bo-sung').each(function (i) {
+                    $(this).find('.ten-dot').text('Đợt bổ sung lần ' + (i + 1));
+                });
+            });
+
+            // ── Thay đổi ProcessType của từng card bổ sung ───────────────
+            $(document).on('change', '.bs-ProcessType', function () {
+                var idx = $(this).data('index');
+                var processType = parseInt($(this).val());
+                if (processType === 1) {
+                    $('.bs-moc-tapDoan-' + idx).show();
+                } else {
+                    $('.bs-moc-tapDoan-' + idx).hide();
+                    $('#bs_ERPD_' + idx).val('');
+                    $('#bs_BTC_' + idx).val('');
+                }
+                capNhatMocNgayBoSung(idx);
+                capNhatBadgeBoSung(idx);
+            });
+
+            // ── Enable/disable mốc ngày tuần tự cho từng card ────────────
+            function capNhatMocNgayBoSung(idx) {
+                var processType = parseInt(
+                    $('#containerBoSung .card-bo-sung[data-index="' + idx + '"] '
+                        + '.bs-ProcessType').val()) || 1;
+
+                var pdaVal = $('#bs_PDA_' + idx).val();
+                var pktVal = $('#bs_PKT_' + idx).val();
+                var erpdVal = $('#bs_ERPD_' + idx).val();
+                var btcVal = $('#bs_BTC_' + idx).val();
+
+                toggleBSMocNgay('#bs_PKT_' + idx, !!pdaVal);
+
+                if (processType === 1) {
+                    toggleBSMocNgay('#bs_ERPD_' + idx, !!pktVal);
+                    toggleBSMocNgay('#bs_BTC_' + idx, !!erpdVal);
+                    toggleBSMocNgay('#bs_BGD_' + idx, !!btcVal);
+                } else {
+                    toggleBSMocNgay('#bs_BGD_' + idx, !!pktVal);
+                }
+
+                capNhatBadgeBoSung(idx);
+            }
+
+            function toggleBSMocNgay(selector, enabled) {
+                var $el = $(selector);
+                if (enabled) {
+                    $el.prop('disabled', false).removeClass('bg-light');
+                } else {
+                    $el.prop('disabled', true).addClass('bg-light').val('');
+                }
+            }
+
+            // ── Cập nhật badge trạng thái cho từng card ──────────────────
+            function capNhatBadgeBoSung(idx) {
+                var bgdVal = $('#bs_BGD_' + idx).val();
+                var pdaVal = $('#bs_PDA_' + idx).val();
+                var pktVal = $('#bs_PKT_' + idx).val();
+                var erpdVal = $('#bs_ERPD_' + idx).val();
+                var btcVal = $('#bs_BTC_' + idx).val();
+
+                var $badge = $('#bs_Badge_' + idx);
+                if (!!bgdVal) {
+                    $badge.text('Đã phê duyệt')
+                        .removeClass('bg-secondary bg-warning text-dark')
+                        .addClass('bg-success');
+                } else if (!!pdaVal || !!pktVal || !!erpdVal || !!btcVal) {
+                    $badge.text('Đang trình')
+                        .removeClass('bg-success bg-secondary')
+                        .addClass('bg-warning text-dark');
+                } else {
+                    $badge.text('Chờ trình')
+                        .removeClass('bg-success bg-warning text-dark')
+                        .addClass('bg-secondary');
+                }
+            }
+
+            // ── Lắng nghe thay đổi mốc ngày trên card bổ sung ───────────
+            $(document).on('change', '.bs-moc-ngay', function () {
+                var idx = $(this).data('index');
+                capNhatMocNgayBoSung(idx);
+            });
+
+            // ── Render danh sách bổ sung khi load modal ──────────────────
+            window.renderDanhSachBoSung = function (danhSachBoSung) {
+                $('#containerBoSung').empty();
+                boSungIndex = 0;
+                if (!danhSachBoSung || danhSachBoSung.length === 0) return;
+
+                $.each(danhSachBoSung, function (i, item) {
+                    var html = taoCardBoSung(boSungIndex, i + 1, item);
+                    $('#containerBoSung').append(html);
+                    capNhatMocNgayBoSung(boSungIndex);
+                    capNhatBadgeBoSung(boSungIndex);
+                    boSungIndex++;
+                });
+            };
+
+            // ── Helper: format số tiền cho card bổ sung ──────────────────
+            window.formatCurrencyBS = function (value) {
+                if (!value && value !== 0) return '0';
+                return Number(value).toLocaleString('en-US');
+            };
+
+            // ── Helper: convert JSON Date (dùng lại từ scope ngoài) ──────
+            function toDateInputValue(jsonDate) {
+                if (!jsonDate) return '';
+                var ms = parseInt(jsonDate.replace(/\/Date\((\d+)\)\//, '$1'));
+                if (isNaN(ms)) return '';
+                var d = new Date(ms);
+                return d.getFullYear() + '-'
+                    + ('0' + (d.getMonth() + 1)).slice(-2) + '-'
+                    + ('0' + d.getDate()).slice(-2);
+            }
+
+
         });
     </script>
     <style>
@@ -1169,10 +1761,10 @@
             transition: all 0.2s ease;
         }
 
-        .table tbody tr:hover {
-            background-color: rgba(13, 110, 253, 0.05);
-            transform: translateX(2px);
-        }
+            .table tbody tr:hover {
+                background-color: rgba(13, 110, 253, 0.05);
+                transform: translateX(2px);
+            }
 
         .badge {
             font-weight: 500;
@@ -1193,10 +1785,10 @@
             border-right: 0;
         }
 
-        #searchInput:focus {
-            box-shadow: none;
-            border-color: #ced4da;
-        }
+            #searchInput:focus {
+                box-shadow: none;
+                border-color: #ced4da;
+            }
 
         .input-group:focus-within .input-group-text {
             border-color: #86b7fe;
@@ -1215,9 +1807,9 @@
             transition: all 0.2s ease;
         }
 
-        .user-card:hover {
-            background-color: rgba(13, 110, 253, 0.05);
-        }
+            .user-card:hover {
+                background-color: rgba(13, 110, 253, 0.05);
+            }
 
         .btn-check:checked + label {
             font-weight: 600;
@@ -1233,11 +1825,11 @@
             transition: all 0.2s ease;
         }
 
-        .page-link:hover {
-            background-color: #e7f1ff;
-            border-color: #0d6efd;
-            color: #0d6efd;
-        }
+            .page-link:hover {
+                background-color: #e7f1ff;
+                border-color: #0d6efd;
+                color: #0d6efd;
+            }
 
         .page-item.active .page-link {
             background-color: #0d6efd;
@@ -1285,9 +1877,9 @@
             width: 100%;
         }
 
-        .btn-group label {
-            flex: 1;
-        }
+            .btn-group label {
+                flex: 1;
+            }
 
         }
 
@@ -1332,9 +1924,9 @@
             border-radius: 4px;
         }
 
-        .table-responsive::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
+            .table-responsive::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
 
         /* Reset button specific styles */
         .btn-outline-info:hover {
@@ -1397,11 +1989,11 @@
             margin: 0 2px;
         }
 
-        .pagination a:hover {
-            background-color: #e7f1ff;
-            border-color: #0d6efd;
-            color: #0d6efd;
-        }
+            .pagination a:hover {
+                background-color: #e7f1ff;
+                border-color: #0d6efd;
+                color: #0d6efd;
+            }
 
         .pagination .active a,
         .pagination .active span {
@@ -1428,20 +2020,20 @@
             overflow: visible;
         }
 
-        .budget-card-horizontal:hover {
-            transform: translateX(5px);
-            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
-        }
+            .budget-card-horizontal:hover {
+                transform: translateX(5px);
+                box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
+            }
 
-        .budget-card-horizontal .card-body {
-            padding: 1.25rem;
-        }
+            .budget-card-horizontal .card-body {
+                padding: 1.25rem;
+            }
 
-        /* STT Badge styling */
-        .budget-card-horizontal .badge {
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
+            /* STT Badge styling */
+            .budget-card-horizontal .badge {
+                font-weight: 600;
+                font-size: 0.85rem;
+            }
 
         /* Budget amount box */
         .bg-success.bg-opacity-10 {
@@ -1528,6 +2120,94 @@
 
         .budget-card-horizontal:hover .position-absolute.bg-primary {
             width: 6px;
+        }
+
+        /* Approval Timeline Styles */
+        .approval-timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .approval-step {
+            position: relative;
+        }
+
+        .approval-step-badge {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #e9ecef;
+            border: 3px solid #dee2e6;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #6c757d;
+            transition: all 0.3s ease;
+        }
+
+            .approval-step-badge.active {
+                background: #0d6efd;
+                border-color: #0d6efd;
+                color: white;
+            }
+
+            .approval-step-badge.completed {
+                background: #198754;
+                border-color: #198754;
+                color: white;
+            }
+
+        .approval-step-line {
+            height: 3px;
+            background: #dee2e6;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            z-index: -1;
+        }
+
+        .approval-step:last-child .approval-step-line {
+            display: none;
+        }
+
+        .approval-step-content {
+            margin-top: 10px;
+        }
+
+        /* Mobile Timeline */
+        .approval-step-mobile {
+            padding-left: 40px;
+            position: relative;
+        }
+
+            .approval-step-mobile::before {
+                content: '';
+                position: absolute;
+                left: 15px;
+                top: 0;
+                bottom: 0;
+                width: 2px;
+                background: #dee2e6;
+            }
+
+            .approval-step-mobile::after {
+                content: '●';
+                position: absolute;
+                left: 10px;
+                top: 8px;
+                color: #0d6efd;
+                font-size: 1.2rem;
+            }
+
+        /* Responsive */
+        media (max-width: 768px) {
+            .approval-timeline
+
+        {
+            padding: 10px 0;
+        }
         }
     </style>
 }
