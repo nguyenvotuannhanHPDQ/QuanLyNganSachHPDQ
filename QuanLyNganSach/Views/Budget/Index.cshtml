@@ -146,18 +146,43 @@
                                                     <div class="badge bg-light text-dark border mb-2" style="width: 50px; height: 50px; line-height: 50px; font-size: 1.2rem; border-radius: 10px;">
                                                         #@cardIndex
                                                     </div>
-                                                    @if (item.TrangThai == 1)
-                                                    {
-                                                        <span class="badge bg-success">
-                                                            <i class="bi bi-info-circle"></i> Hồ sơ đủ thông tin
-                                                        </span>
+                                                    @{
+                                                        string badgeClass = "";
+                                                        string badgeIcon = "bi-info-circle";
+                                                        string badgeText = "";
+
+                                                        switch (item.TrangThaiHienThi)
+                                                        {
+                                                            case 0:
+                                                                badgeClass = "bg-secondary";
+                                                                badgeIcon = "bi-slash-circle";
+                                                                badgeText = "Chưa có chủ trương";
+                                                                break;
+                                                            case 1:
+                                                                badgeClass = "bg-primary";
+                                                                badgeIcon = "bi-file-earmark-plus";
+                                                                badgeText = "Đăng ký mới";
+                                                                break;
+                                                            case 2:
+                                                                badgeClass = "bg-warning text-dark";
+                                                                badgeIcon = "bi-hourglass-split";
+                                                                badgeText = "Đang xin ngân sách";
+                                                                break;
+                                                            case 3:
+                                                                badgeClass = "bg-success";
+                                                                badgeIcon = "bi-check-circle";
+                                                                badgeText = "Đã phê duyệt";
+                                                                break;
+                                                            case 4:
+                                                                badgeClass = "bg-info text-dark";
+                                                                badgeIcon = "bi-arrow-repeat";
+                                                                badgeText = "Đang bổ sung";
+                                                                break;
+                                                        }
                                                     }
-                                                    else
-                                                    {
-                                                        <span class="badge bg-warning text-dark">
-                                                            <i class="bi bi-info-circle"></i> Chưa đủ thông tin
-                                                        </span>
-                                                    }
+                                                    <span class="badge @badgeClass">
+                                                        <i class="bi @badgeIcon"></i> @badgeText
+                                                    </span>
                                                 </div>
                                             </div>
 
@@ -683,21 +708,20 @@
                                     </div>
 
                                     <!-- NGÂN SÁCH PHÊ DUYỆT -->
-                                    <!-- NGÂN SÁCH PHÊ DUYỆT -->
                                     <h6 class="fw-semibold text-muted mb-3">
                                         <i class="bi bi-currency-exchange me-1"></i>Ngân sách phê duyệt
                                     </h6>
                                     <div class="row g-3 mb-4">
                                         <div class="col-md-4">
                                             <label class="form-label small fw-semibold">
-                                                Dự toán gốc
+                                                Dự toán gốc (VND)
                                             </label>
                                             <input type="text" class="form-control form-control-sm"
                                                    id="pd_DuToanGoc" readonly />
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label small fw-semibold">
-                                                Dự toán phê duyệt
+                                                Dự toán phê duyệt (VND)
                                             </label>
                                             <!-- *** THAY ĐỔI: bỏ input-group, bỏ button, thêm disabled mặc định *** -->
                                             <input type="text" class="form-control form-control-sm"
@@ -726,6 +750,10 @@
 
                                 </div>
                             </div>
+
+                            <!-- CONTAINER CÁC CARD BỔ SUNG (render động) -->
+                            <div id="containerBoSung"></div>
+
                             <!-- BUTTON THÊM BỔ SUNG -->
                             <div class="d-flex justify-content-start mb-3">
                                 <button type="button" class="btn btn-outline-success btn-sm"
@@ -733,9 +761,6 @@
                                     <i class="bi bi-plus-circle me-1"></i>Thêm bổ sung ngân sách
                                 </button>
                             </div>
-
-                            <!-- CONTAINER CÁC CARD BỔ SUNG (render động) -->
-                            <div id="containerBoSung"></div>
                         </div>
 
                         <!-- ===== TAB 4: NHẬT KÝ TIẾN ĐỘ (PLACEHOLDER) ===== -->
@@ -1447,7 +1472,7 @@
 
                         // Format số (nếu cần)
                         var formatted = duToanGoc
-                            ? Number(duToanGoc.replace(/[^\d]/g, '')).toLocaleString('vi-VN') + ' VND'
+                            ? Number(duToanGoc.replace(/[^\d]/g, '')).toLocaleString('en-US') + ' VND'
                             : '';
                         $badge.text('Đang trình' + (formatted ? ' ' + formatted : ''))
                             .removeClass('bg-success bg-secondary')
@@ -1595,7 +1620,7 @@
                     + 'value="' + (data.LyDoBoSung || '') + '" />'
                     + '</div>'
                     + '<div class="col-md-3">'
-                    + '<label class="form-label small fw-semibold">Ngân sách bổ sung</label>'
+                    + '<label class="form-label small fw-semibold">Ngân sách bổ sung (VND)</label>'
                     + '<input type="text" class="form-control form-control-sm bs-ngan-sach" '
                     + 'id="bs_NganSach_' + idx + '" '
                     + 'placeholder="0" '
