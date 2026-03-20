@@ -30,25 +30,33 @@ namespace QuanLyNganSach.Models.ViewModels
         {
             get
             {
-                // 1. Chưa có chủ trương phê duyệt
+                // Chưa có chủ trương phê duyệt
                 if (string.IsNullOrEmpty(SoToTrinhRaw))
                     return 0;
 
-                // 2. Đăng ký mới
+                // Đăng ký mới
                 if (WorkflowType == null)
                     return 1;
 
-                // 3. Đang bổ sung ngân sách
+                // Theo luồng chi phí sản xuất — ưu tiên tuyệt đối
+                if (WorkflowType == 2)
+                    return 5;
+
+                // Chưa đủ hồ sơ — ưu tiên tuyệt đối
+                if (WorkflowType == 3)
+                    return 6;
+
+                // Đang bổ sung ngân sách
                 if (TrangThaiPheDuyetGoc == 2 && CoBoSungChuaDuyet)
                     return 4;
 
-                // 4. Đang thực hiện xin ngân sách
-                if (TrangThaiPheDuyetGoc == 1)
-                    return 2;
-
-                // 5. Đã phê duyệt ngân sách
+                // Đã phê duyệt ngân sách
                 if (TrangThaiPheDuyetGoc == 2 && !CoBoSungChuaDuyet)
                     return 3;
+
+                // Đang thực hiện xin ngân sách
+                if (WorkflowType != null)
+                    return 2;
 
                 // Mặc định: Đăng ký mới
                 return 1;

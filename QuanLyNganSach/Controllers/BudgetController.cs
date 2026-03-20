@@ -96,9 +96,22 @@ namespace QuanLyNganSach.Controllers
                     NguoiDangKy = x.User.HoTen,
                     NgayTao = x.BudgetRegistration.CreatedDate,
 
-                    TrangThai = x.BudgetRegistration.TrangThai
-                });
+                    // *** THÊM MỚI ***
+                    SoToTrinhRaw = x.BudgetRegistration.SoToTrinh,
+                    WorkflowType = x.BudgetRegistration.WorkflowType,
 
+                    // TrangThaiPheDuyet của record Ngân sách gốc (IsSupplementary = false)
+                    TrangThaiPheDuyetGoc = x.BudgetRegistration.BudgetApprovals
+                    .Where(a => !a.IsSupplementary)
+                    .Select(a => (int?)a.TrangThaiPheDuyet)
+                    .FirstOrDefault() ?? 0,
+                                // Có ít nhất 1 đợt bổ sung chưa duyệt (TrangThaiPheDuyet != 2)
+                                CoBoSungChuaDuyet = x.BudgetRegistration.BudgetApprovals
+                    .Any(a => a.IsSupplementary && a.TrangThaiPheDuyet != 2),
+                                // Có ít nhất 1 đợt bổ sung đã duyệt (TrangThaiPheDuyet = 2)
+                                CoBoSungDaDuyet = x.BudgetRegistration.BudgetApprovals
+                    .Any(a => a.IsSupplementary && a.TrangThaiPheDuyet == 2),
+                });
 
                 // Apply search filter
                 if (!string.IsNullOrWhiteSpace(search))
@@ -553,12 +566,15 @@ namespace QuanLyNganSach.Controllers
             try
             {
                 // Kiểm tra các trường bắt buộc
-                bool isComplete = !string.IsNullOrWhiteSpace(model.MaHangMuc) &&
-                                 !string.IsNullOrWhiteSpace(model.TenHangMuc) &&
-                                 model.DuToan > 0 &&
-                                 !string.IsNullOrWhiteSpace(model.SoToTrinh) &&
-                                 !string.IsNullOrWhiteSpace(model.LyDoDauTu) &&
-                                 !string.IsNullOrWhiteSpace(model.MoTaKyThuat);
+                //bool isComplete = !string.IsNullOrWhiteSpace(model.MaHangMuc) &&
+                //                 !string.IsNullOrWhiteSpace(model.TenHangMuc) &&
+                //                 model.DuToan > 0 &&
+                //                 !string.IsNullOrWhiteSpace(model.SoToTrinh) &&
+                //                 !string.IsNullOrWhiteSpace(model.LyDoDauTu) &&
+                //                 !string.IsNullOrWhiteSpace(model.MoTaKyThuat);
+
+                // Kiểm tra các trường bắt buộc
+                bool isComplete = !string.IsNullOrWhiteSpace(model.LinkTaiLieuLienQuan);
 
                 return isComplete;
             }
