@@ -16,7 +16,6 @@ namespace QuanLyNganSach.Models.ViewModels
         public List<BudgetApprovalViewModel> DanhSachBoSung { get; set; }
             = new List<BudgetApprovalViewModel>();
 
-        // Xóa dòng cũ:
-        // public BudgetApprovalViewModel ThongTinPheDuyet { get; set; }
+        public ProgressConfigViewModel ThongTinTienDo { get; set; }
     }
 }

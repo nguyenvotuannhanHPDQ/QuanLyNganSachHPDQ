@@ -774,14 +774,143 @@
                         </div>
 
                         <!-- ===== TAB 4: NHẬT KÝ TIẾN ĐỘ (PLACEHOLDER) ===== -->
-                        <div class="tab-pane fade"
-                             id="detail-nhatky" role="tabpanel">
-                            <div class="text-center py-5 text-muted">
-                                <i class="bi bi-journal-text fs-1"></i>
-                                <p class="mt-2">
-                                    Chức năng Nhật ký tiến độ đang được phát triển.
-                                </p>
+                        <div class="tab-pane fade" id="detail-nhatky" role="tabpanel">
+
+                            <!-- VÙNG 1: THÔNG TIN TỔNG QUAN TIẾN ĐỘ -->
+                            <div class="row g-3 mb-4" id="tongQuanTienDo">
+                                <div class="col">
+                                    <div class="card text-center border-primary h-100">
+                                        <div class="card-header bg-primary text-white small fw-semibold py-1">
+                                            TỔNG TIẾN ĐỘ
+                                        </div>
+                                        <div class="card-body py-2">
+                                            <div class="fs-4 fw-bold text-primary" id="td_TongTienDo">0%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="card text-center border-success h-100">
+                                        <div class="card-header bg-success text-white small fw-semibold py-1">
+                                            XÂY DỰNG <br />
+                                            <span class="badge bg-white text-success ms-1"
+                                                  id="badge_TiTrong_XayDung">0%</span>
+                                        </div>
+                                        <div class="card-body py-2">
+                                            <div class="fs-4 fw-bold text-success" id="td_XayDung">0%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="card text-center border-warning h-100">
+                                        <div class="card-header bg-warning text-dark small fw-semibold py-1">
+                                            KẾT CẤU THÉP <br />
+                                            <span class="badge bg-white text-warning ms-1"
+                                                  id="badge_TiTrong_KetCauThep">0%</span>
+                                        </div>
+                                        <div class="card-body py-2">
+                                            <div class="fs-4 fw-bold text-warning" id="td_KetCauThep">0%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="card text-center border-info h-100">
+                                        <div class="card-header bg-info text-dark small fw-semibold py-1">
+                                            LẮP ĐẶT THIẾT BỊ <br />
+                                            <span class="badge bg-white text-info ms-1"
+                                                  id="badge_TiTrong_LapDatThietBi">0%</span>
+                                        </div>
+                                        <div class="card-body py-2">
+                                            <div class="fs-4 fw-bold text-info" id="td_LapDatThietBi">0%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="card text-center border-secondary h-100">
+                                        <div class="card-header bg-secondary text-white small fw-semibold py-1">
+                                            HẠNG MỤC KHÁC <br />
+                                            <span class="badge bg-white text-secondary ms-1"
+                                                  id="badge_TiTrong_HangMucKhac">0%</span>
+                                        </div>
+                                        <div class="card-body py-2">
+                                            <div class="fs-4 fw-bold text-secondary" id="td_HangMucKhac">0%</div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+
+                            <!-- VÙNG 2: CẤU HÌNH TỈ TRỌNG -->
+                            <div class="card border-0 bg-light mb-4">
+                                <div class="card-body py-3">
+                                    <h6 class="fw-semibold mb-3">
+                                        <i class="bi bi-sliders me-1"></i>Cấu hình tỉ trọng (%)
+                                    </h6>
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-md-2">
+                                            <label class="form-label small fw-semibold text-success">Xây dựng</label>
+                                            <input type="number" class="form-control form-control-sm ti-trong"
+                                                   id="cfg_XayDung" min="0" max="100" step="0.01"
+                                                   placeholder="0" />
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small fw-semibold text-warning">Kết cấu thép</label>
+                                            <input type="number" class="form-control form-control-sm ti-trong"
+                                                   id="cfg_KetCauThep" min="0" max="100" step="0.01"
+                                                   placeholder="0" />
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small fw-semibold text-info">Lắp đặt thiết bị</label>
+                                            <input type="number" class="form-control form-control-sm ti-trong"
+                                                   id="cfg_LapDatThietBi" min="0" max="100" step="0.01"
+                                                   placeholder="0" />
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small fw-semibold text-secondary">Hạng mục khác</label>
+                                            <input type="number" class="form-control form-control-sm ti-trong"
+                                                   id="cfg_HangMucKhac" min="0" max="100" step="0.01"
+                                                   placeholder="0" />
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end">
+                                            <div>
+                                                <label class="form-label small fw-semibold text-primary">Tổng</label>
+                                                <div class="fw-bold fs-5" id="cfg_TongTiTrong">
+                                                    <span class="text-secondary">0%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small fw-semibold">Đánh giá chung</label>
+                                            <select class="form-select form-select-sm" id="cfg_DanhGiaChung">
+                                                <option value="">-- Chọn đánh giá --</option>
+                                                <option value="0">Tạm dừng</option>
+                                                <option value="1">Đạt tiến độ</option>
+                                                <option value="2">Chậm tiến độ</option>
+                                                <option value="3">Vượt tiến độ</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <!-- Thêm ngay sau row tỉ trọng -->
+                                    <div class="mt-2" id="cfg_CanhBaoTiTrong" style="display:none;">
+                                        <span class="text-danger small">
+                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                            Tổng tỉ trọng phải bằng 100%. Hiện tại:
+                                            <strong id="cfg_TongTiTrongCanhBao"></strong>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- VÙNG 3: CHI TIẾT THEO KHU VỰC -->
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-semibold mb-0">
+                                    <i class="bi bi-map me-1"></i>Chi tiết theo khu vực
+                                </h6>
+                                <button type="button" class="btn btn-outline-success btn-sm"
+                                        id="btnThemKhuVuc">
+                                    <i class="bi bi-plus-circle me-1"></i>Thêm khu vực
+                                </button>
+                            </div>
+                            <div id="containerKhuVuc"></div>
+
                         </div>
 
                     </div><!-- end tab-content -->
@@ -1062,6 +1191,8 @@
                 //bindPheDuyetData(data.ThongTinPheDuyet, data.IsManagerOrAdmin);
                 bindPheDuyetData(data.NganSachGoc, data.IsManagerOrAdmin);
                 renderDanhSachBoSung(data.DanhSachBoSung);
+                // *** THÊM MỚI trong bindModalData ***
+                bindTienDoData(data.ThongTinTienDo);
             }
 
             // ── Render Attachments ───────────────────────────────────────
@@ -1212,6 +1343,18 @@
             $(document).on('click', '#btnSaveDetailsModal', function () {
                 var $btn = $(this);
 
+                var tongTiTrong = (parseFloat($('#cfg_XayDung').val()) || 0)
+                    + (parseFloat($('#cfg_KetCauThep').val()) || 0)
+                    + (parseFloat($('#cfg_LapDatThietBi').val()) || 0)
+                    + (parseFloat($('#cfg_HangMucKhac').val()) || 0);
+
+                if (Math.abs(tongTiTrong - 100) > 0.01 && tongTiTrong > 0) {
+                    showModalAlert('danger',
+                        'Tổng tỉ trọng đang là ' + tongTiTrong.toFixed(2)
+                        + '%. Vui lòng điều chỉnh để tổng = 100% trước khi lưu.');
+                    return;
+                }
+
                 // Thu thập dữ liệu Phân nhiệm từ các dòng trong bảng
                 var danhSachPhanNhiem = [];
                 $('#modalPhanNhiemBody tr').each(function () {
@@ -1233,28 +1376,6 @@
                     BudgetRegistrationId: currentBudgetId,
                     WorkflowType:         $('#modal_WorkflowType').val() || null,
                     DanhSachPhanNhiem: danhSachPhanNhiem,
-                    // *** THÊM MỚI ***
-                    //ThongTinPheDuyet: {
-                    //    BudgetRegistrationId: currentBudgetId,
-                    //    ProcessType: parseInt($('#pd_ProcessType').val()) || 1,
-                    //    NgayDuyetPDA: $('#pd_NgayDuyetPDA').val() || null,
-                    //    NgayDuyetPKT: $('#pd_NgayDuyetPKT').val() || null,
-                    //    NgayDuyetERPD: $('#pd_NgayDuyetERPD').val() || null,
-                    //    NgayDuyetBTC: $('#pd_NgayDuyetBTC').val() || null,
-                    //    NgayDuyetBGD: $('#pd_NgayDuyetBGD').val() || null,
-                    //    // *** THAY ĐỔI: lấy giá trị từ input thay vì hardcode 0 ***
-                    //    // Thay đoạn DuToanPheDuyet trong payload
-                    //    DuToanPheDuyet: (function () {
-                    //        if ($('#pd_DuToanPheDuyet').prop('disabled')) return null;
-                    //        var raw = $('#pd_DuToanPheDuyet').val()
-                    //            .replace(/,/g, '')  // bỏ dấu phẩy en-US
-                    //            .replace(/\./g, ''); // bỏ dấu chấm (nếu có)
-                    //        return raw ? parseFloat(raw) : null;
-                    //    })(),
-                    //    SoThongBao: $('#pd_SoThongBao').val() || null,
-                    //    SoFMIO: $('#pd_SoFMIO').val() || null
-                    //}
-                    // Thay toàn bộ phần ThongTinPheDuyet cũ trong payload
 
                     // Ngân sách gốc
                     NganSachGoc: {
@@ -1276,6 +1397,9 @@
                         IsSupplementary: false,
                         SupplementaryOrder: 0
                     },
+
+                    // Thông tin tiến độ
+                    ThongTinTienDo: collectTienDoData(),
 
                     // Danh sách đợt bổ sung
                     DanhSachBoSung: (function () {
@@ -1774,6 +1898,408 @@
                     + ('0' + (d.getMonth() + 1)).slice(-2) + '-'
                     + ('0' + d.getDate()).slice(-2);
             }
+
+            var khuVucIndex = 0;
+
+            // ── Hardcode options Hạng mục công việc ─────────────────────
+            var dsHangMuc = [
+                { value: 'Xây dựng', text: 'Xây dựng' },
+                { value: 'Kết cấu thép', text: 'Kết cấu thép' },
+                { value: 'Lắp đặt thiết bị', text: 'Lắp đặt thiết bị' }
+            ];
+
+            // ── Template HTML cho 1 dòng trong bảng ─────────────────────
+            function taoHtmlDongItem(kvIdx, itemIdx) {
+                var optionsHangMuc =
+                    '<option value="">-- Chọn hoặc nhập tay --</option>';
+                $.each(dsHangMuc, function (i, hm) {
+                    optionsHangMuc += '<option value="' + hm.value + '">'
+                        + hm.text + '</option>';
+                });
+
+                return '<tr data-kv-idx="' + kvIdx + '" '
+                    + 'data-item-idx="' + itemIdx + '">'
+                    + '<td>'
+                    + '<select class="form-select form-select-sm mb-1 dd-hang-muc" '
+                    + 'data-kv-idx="' + kvIdx + '">'
+                    + optionsHangMuc
+                    + '</select>'
+                    + '<input type="text" '
+                    + 'class="form-control form-control-sm txt-hang-muc-tay" '
+                    + 'placeholder="Nhập tay..." '
+                    + 'style="display:none;" />'  // *** Mặc định ẩn textbox ***
+                    + '<button type="button" '
+                    + 'class="btn btn-link btn-sm p-0 mt-1 btn-toggle-nhap-tay" '
+                    + 'title="Nhập tay">'
+                    + '<small class="text-muted">✏️ Nhập tay</small>'
+                    + '</button>'
+                    + '</td>'
+                    + '<td>'
+                    + '<input type="text" '
+                    + 'class="form-control form-control-sm inp-dvt" '
+                    + 'placeholder="ĐVT" />'
+                    + '</td>'
+                    + '<td>'
+                    + '<input type="number" '
+                    + 'class="form-control form-control-sm inp-klhd" '
+                    + 'min="0" step="0.01" placeholder="0" />'
+                    + '</td>'
+                    + '<td>'
+                    + '<input type="number" '
+                    + 'class="form-control form-control-sm inp-kltt" '
+                    + 'min="0" step="0.01" placeholder="0" />'
+                    + '</td>'
+                    + '<td class="text-center">'
+                    + '<span class="badge bg-primary pct-tien-do">0%</span>'
+                    + '</td>'
+                    + '<td>'
+                    + '<input type="text" '
+                    + 'class="form-control form-control-sm inp-ghi-chu" '
+                    + 'placeholder="Ghi chú..." />'
+                    + '</td>'
+                    + '<td class="text-center">'
+                    + '<button type="button" '
+                    + 'class="btn btn-danger btn-sm btn-xoa-dong-item">'
+                    + '<i class="bi bi-trash"></i>'
+                    + '</button>'
+                    + '</td>'
+                    + '</tr>';
+            }
+
+            // ── Template HTML cho 1 card khu vực ────────────────────────
+            function taoCardKhuVuc(kvIdx, tenKhuVuc) {
+                return '<div class="card border-primary mb-3 card-khu-vuc" '
+                    + 'data-kv-idx="' + kvIdx + '">'
+                    + '<div class="card-header bg-light d-flex '
+                    + 'justify-content-between align-items-center py-2">'
+                    + '<div class="d-flex align-items-center gap-2 flex-fill">'
+                    + '<i class="bi bi-geo-alt text-primary"></i>'
+                    + '<input type="text" '
+                    + 'class="form-control form-control-sm inp-ten-khu-vuc" '
+                    + 'placeholder="Nhập tên khu vực..." '
+                    + 'value="' + (tenKhuVuc || '') + '" '
+                    + 'style="max-width:300px;" />'
+                    + '</div>'
+                    + '<button type="button" '
+                    + 'class="btn btn-danger btn-sm btn-xoa-khu-vuc ms-2">'
+                    + '<i class="bi bi-trash me-1"></i>Xóa khu vực'
+                    + '</button>'
+                    + '</div>'
+                    + '<div class="card-body p-2">'
+                    + '<div class="table-responsive">'
+                    + '<table class="table table-bordered table-sm '
+                    + 'align-middle mb-2 tbl-khu-vuc">'
+                    + '<thead class="table-light">'
+                    + '<tr>'
+                    + '<th style="min-width:200px">Hạng mục công việc</th>'
+                    + '<th style="width:80px">ĐVT</th>'
+                    + '<th style="width:100px">KLHĐ</th>'
+                    + '<th style="width:100px">KLTT</th>'
+                    + '<th style="width:90px">% Tiến độ</th>'
+                    + '<th>Ghi chú</th>'
+                    + '<th style="width:50px"></th>'
+                    + '</tr>'
+                    + '</thead>'
+                    + '<tbody class="tbody-items-' + kvIdx + '"></tbody>'
+                    + '</table>'
+                    + '</div>'
+                    + '<button type="button" '
+                    + 'class="btn btn-outline-success btn-sm btn-them-dong-item" '
+                    + 'data-kv-idx="' + kvIdx + '">'
+                    + '<i class="bi bi-plus-circle me-1"></i>Thêm dòng'
+                    + '</button>'
+                    + '</div>'
+                    + '</div>';
+            }
+
+            // ── Thêm khu vực mới ─────────────────────────────────────────
+            $(document).on('click', '#btnThemKhuVuc', function () {
+                var html = taoCardKhuVuc(khuVucIndex, '');
+                $('#containerKhuVuc').append(html);
+                // Thêm 1 dòng mặc định
+                themDongItem(khuVucIndex);
+                khuVucIndex++;
+            });
+
+            // ── Xóa khu vực ──────────────────────────────────────────────
+            $(document).on('click', '.btn-xoa-khu-vuc', function () {
+                $(this).closest('.card-khu-vuc').remove();
+                capNhatTongQuanTienDo();
+            });
+
+            // ── Thêm dòng vào bảng khu vực ───────────────────────────────
+            function themDongItem(kvIdx) {
+                var itemIdx = $('.tbody-items-' + kvIdx + ' tr').length;
+                var html = taoHtmlDongItem(kvIdx, itemIdx);
+                $('.tbody-items-' + kvIdx).append(html);
+            }
+
+            $(document).on('click', '.btn-them-dong-item', function () {
+                var kvIdx = $(this).data('kv-idx');
+                themDongItem(kvIdx);
+            });
+
+            // ── Xóa dòng ─────────────────────────────────────────────────
+            $(document).on('click', '.btn-xoa-dong-item', function () {
+                $(this).closest('tr').remove();
+                capNhatTongQuanTienDo();
+            });
+
+            // ── Tính % tiến độ từng dòng khi KLHĐ/KLTT thay đổi ─────────
+            $(document).on('input', '.inp-klhd, .inp-kltt', function () {
+                var $row = $(this).closest('tr');
+                var klhd = parseFloat($row.find('.inp-klhd').val()) || 0;
+                var kltt = parseFloat($row.find('.inp-kltt').val()) || 0;
+                var pct = klhd > 0 ? Math.min((kltt / klhd) * 100, 100) : 0;
+                $row.find('.pct-tien-do').text(pct.toFixed(1) + '%');
+                capNhatTongQuanTienDo();
+            });
+
+            // ── Tính tổng tỉ trọng realtime ──────────────────────────────
+            $(document).on('input', '.ti-trong', function () {
+                capNhatTongTiTrong();
+                capNhatTongQuanTienDo();
+            });
+
+            function capNhatTongTiTrong() {
+                var xd = parseFloat($('#cfg_XayDung').val()) || 0;
+                var kct = parseFloat($('#cfg_KetCauThep').val()) || 0;
+                var ldt = parseFloat($('#cfg_LapDatThietBi').val()) || 0;
+                var hmk = parseFloat($('#cfg_HangMucKhac').val()) || 0;
+                var tong = xd + kct + ldt + hmk;
+
+                var la100 = Math.abs(tong - 100) < 0.01;
+
+                $('#cfg_TongTiTrong').html('<span class="'
+                    + (la100 ? 'text-success' : 'text-danger')
+                    + '">' + tong.toFixed(2) + '%</span>');
+
+                // Hiện/ẩn cảnh báo động ***
+                if (!la100 && tong > 0) {
+                    $('#cfg_TongTiTrongCanhBao').text(tong.toFixed(2) + '%');
+                    $('#cfg_CanhBaoTiTrong').show();
+                } else {
+                    $('#cfg_CanhBaoTiTrong').hide();
+                }
+
+                // Cập nhật badge tỉ trọng trong card tổng quan ***
+                $('#badge_TiTrong_XayDung').text('Trọng số: ' + xd.toFixed(1) + '%');
+                $('#badge_TiTrong_KetCauThep').text('Trọng số: ' + kct.toFixed(1) + '%');
+                $('#badge_TiTrong_LapDatThietBi').text('Trọng số: ' + ldt.toFixed(1) + '%');
+                $('#badge_TiTrong_HangMucKhac').text('Trọng số: ' + hmk.toFixed(1) + '%');
+            }
+
+            // ── Tính tiến độ tổng quan theo từng loại hạng mục ──────────
+            function capNhatTongQuanTienDo() {
+                var tiTrong = {
+                    'Xây dựng': parseFloat($('#cfg_XayDung').val()) || 0,
+                    'Kết cấu thép': parseFloat($('#cfg_KetCauThep').val()) || 0,
+                    'Lắp đặt thiết bị': parseFloat($('#cfg_LapDatThietBi').val()) || 0,
+                    'Khác': parseFloat($('#cfg_HangMucKhac').val()) || 0
+                };
+
+                // Tính % tiến độ trung bình theo từng loại
+                var sumPct = {
+                    'Xây dựng': 0, 'Kết cấu thép': 0,
+                    'Lắp đặt thiết bị': 0, 'Khác': 0
+                };
+                var count = {
+                    'Xây dựng': 0, 'Kết cấu thép': 0,
+                    'Lắp đặt thiết bị': 0, 'Khác': 0
+                };
+
+                $('#containerKhuVuc .tbl-khu-vuc tbody tr').each(function () {
+                    var $row = $(this);
+                    var hangMuc = $row.find('.dd-hang-muc').val()
+                        || $row.find('.txt-hang-muc-tay').val()
+                        || '';
+                    var klhd = parseFloat($row.find('.inp-klhd').val()) || 0;
+                    var kltt = parseFloat($row.find('.inp-kltt').val()) || 0;
+                    var pct = klhd > 0
+                        ? Math.min((kltt / klhd) * 100, 100) : 0;
+
+                    var key = hangMuc;
+                    if (!sumPct.hasOwnProperty(key)) key = 'Khác';
+                    sumPct[key] += pct;
+                    count[key]++;
+                });
+
+                // Tính % trung bình từng loại
+                var avgXayDung = count['Xây dựng'] > 0
+                    ? sumPct['Xây dựng'] / count['Xây dựng'] : 0;
+                var avgKetCauThep = count['Kết cấu thép'] > 0
+                    ? sumPct['Kết cấu thép'] / count['Kết cấu thép'] : 0;
+                var avgLapDatThietBi = count['Lắp đặt thiết bị'] > 0
+                    ? sumPct['Lắp đặt thiết bị'] / count['Lắp đặt thiết bị'] : 0;
+                var avgKhac = count['Khác'] > 0
+                    ? sumPct['Khác'] / count['Khác'] : 0;
+
+                // Tổng tiến độ = bình quân gia quyền theo tỉ trọng
+                var tongTienDo = (avgXayDung * tiTrong['Xây dựng']
+                    + avgKetCauThep * tiTrong['Kết cấu thép']
+                    + avgLapDatThietBi * tiTrong['Lắp đặt thiết bị']
+                    + avgKhac * tiTrong['Khác']) / 100;
+
+                $('#td_XayDung').text(avgXayDung.toFixed(1) + '%');
+                $('#td_KetCauThep').text(avgKetCauThep.toFixed(1) + '%');
+                $('#td_LapDatThietBi').text(avgLapDatThietBi.toFixed(1) + '%');
+                $('#td_HangMucKhac').text(avgKhac.toFixed(1) + '%');
+                $('#td_TongTienDo').text(tongTienDo.toFixed(1) + '%');
+            }
+
+            // ── Bind dữ liệu khi load modal ──────────────────────────────
+            window.bindTienDoData = function (data) {
+                if (!data) {
+                    // Reset về mặc định
+                    $('#cfg_XayDung, #cfg_KetCauThep, '
+                        + '#cfg_LapDatThietBi, #cfg_HangMucKhac').val('');
+                    $('#cfg_DanhGiaChung').val(0);
+                    $('#containerKhuVuc').empty();
+                    khuVucIndex = 0;
+                    // Thêm 1 card khu vực mặc định
+                    var html = taoCardKhuVuc(khuVucIndex, '');
+                    $('#containerKhuVuc').append(html);
+                    themDongItem(khuVucIndex);
+                    khuVucIndex++;
+                    capNhatTongTiTrong();
+                    capNhatTongQuanTienDo();
+                    return;
+                }
+
+                // Bind cấu hình tỉ trọng
+                $('#cfg_XayDung').val(data.TiTrongXayDung || 0);
+                $('#cfg_KetCauThep').val(data.TiTrongKetCauThep || 0);
+                $('#cfg_LapDatThietBi').val(data.TiTrongLapDatThietBi || 0);
+                $('#cfg_HangMucKhac').val(data.TiTrongHangMucKhac || 0);
+                $('#cfg_DanhGiaChung').val(
+                    data.DanhGiaChung !== null && data.DanhGiaChung !== undefined
+                        ? data.DanhGiaChung
+                        : ''
+                );
+                capNhatTongTiTrong();
+
+                // Bind danh sách khu vực
+                $('#containerKhuVuc').empty();
+                khuVucIndex = 0;
+
+                if (!data.DanhSachKhuVuc || data.DanhSachKhuVuc.length === 0) {
+                    // Thêm 1 card mặc định nếu chưa có dữ liệu
+                    var html = taoCardKhuVuc(khuVucIndex, '');
+                    $('#containerKhuVuc').append(html);
+                    themDongItem(khuVucIndex);
+                    khuVucIndex++;
+                } else {
+                    $.each(data.DanhSachKhuVuc, function (i, kv) {
+                        var html = taoCardKhuVuc(khuVucIndex, kv.TenKhuVuc);
+                        $('#containerKhuVuc').append(html);
+                        var kvIdx = khuVucIndex;
+
+                        // Bind các dòng
+                        if (kv.DanhSachDong && kv.DanhSachDong.length > 0) {
+                            $.each(kv.DanhSachDong, function (j, dong) {
+                                themDongItem(kvIdx);
+                                var $lastRow = $('.tbody-items-' + kvIdx
+                                    + ' tr:last');
+                                // Set giá trị từng dòng
+                                if (dong.HangMucCongViec) {
+                                    $lastRow.find('.dd-hang-muc').val(dong.HangMucCongViec);
+                                    // Dropdown hiện, textbox ẩn (mặc định)
+                                } else if (dong.HangMucNhapTay) {
+                                    // *** THÊM MỚI: có nhập tay → ẩn dropdown, hiện textbox ***
+                                    $lastRow.find('.dd-hang-muc').hide().val('');
+                                    $lastRow.find('.txt-hang-muc-tay').show()
+                                        .val(dong.HangMucNhapTay);
+                                    $lastRow.find('.btn-toggle-nhap-tay')
+                                        .html('<small class="text-muted">🔽 Chọn danh sách</small>');
+                                }
+                                $lastRow.find('.txt-hang-muc-tay')
+                                    .val(dong.HangMucNhapTay || '');
+                                $lastRow.find('.inp-dvt')
+                                    .val(dong.DVT || '');
+                                $lastRow.find('.inp-klhd')
+                                    .val(dong.KLHD || 0);
+                                $lastRow.find('.inp-kltt')
+                                    .val(dong.KLTT || 0);
+                                $lastRow.find('.inp-ghi-chu')
+                                    .val(dong.GhiChu || '');
+
+                                // Tính % tiến độ
+                                var klhd = parseFloat(dong.KLHD) || 0;
+                                var kltt = parseFloat(dong.KLTT) || 0;
+                                var pct = klhd > 0
+                                    ? Math.min((kltt / klhd) * 100, 100) : 0;
+                                $lastRow.find('.pct-tien-do')
+                                    .text(pct.toFixed(1) + '%');
+                            });
+                        } else {
+                            themDongItem(kvIdx);
+                        }
+                        khuVucIndex++;
+                    });
+                }
+                capNhatTongQuanTienDo();
+            };
+
+            // ── Thu thập dữ liệu để lưu ──────────────────────────────────
+            window.collectTienDoData = function () {
+                var danhSachKhuVuc = [];
+                $('#containerKhuVuc .card-khu-vuc').each(function () {
+                    var $card = $(this);
+                    var kvIdx = $card.data('kv-idx');
+                    var tenKV = $card.find('.inp-ten-khu-vuc').val().trim();
+                    if (!tenKV) return; // bỏ qua card chưa nhập tên
+
+                    var danhSachDong = [];
+                    $card.find('.tbl-khu-vuc tbody tr').each(function () {
+                        var $row = $(this);
+                        danhSachDong.push({
+                            HangMucCongViec: $row.find('.dd-hang-muc').val() || null,
+                            HangMucNhapTay: $row.find('.txt-hang-muc-tay').val() || null,
+                            DVT: $row.find('.inp-dvt').val() || null,
+                            KLHD: parseFloat($row.find('.inp-klhd').val()) || 0,
+                            KLTT: parseFloat($row.find('.inp-kltt').val()) || 0,
+                            GhiChu: $row.find('.inp-ghi-chu').val() || null
+                        });
+                    });
+
+                    danhSachKhuVuc.push({
+                        TenKhuVuc: tenKV,
+                        DanhSachDong: danhSachDong
+                    });
+                });
+
+                return {
+                    TiTrongXayDung: parseFloat($('#cfg_XayDung').val()) || 0,
+                    TiTrongKetCauThep: parseFloat($('#cfg_KetCauThep').val()) || 0,
+                    TiTrongLapDatThietBi: parseFloat($('#cfg_LapDatThietBi').val()) || 0,
+                    TiTrongHangMucKhac: parseFloat($('#cfg_HangMucKhac').val()) || 0,
+                    DanhGiaChung: $('#cfg_DanhGiaChung').val() !== ''
+                        ? parseInt($('#cfg_DanhGiaChung').val())
+                        : null,
+                    DanhSachKhuVuc: danhSachKhuVuc
+                };
+            };
+
+            // ── Toggle nhập tay / dropdown Hạng mục ─────────────────────
+            $(document).on('click', '.btn-toggle-nhap-tay', function () {
+                var $td = $(this).closest('td');
+                var $dd = $td.find('.dd-hang-muc');
+                var $txt = $td.find('.txt-hang-muc-tay');
+                var $btn = $(this);
+                var isNhapTay = $dd.is(':visible');
+
+                if (isNhapTay) {
+                    // Chuyển sang nhập tay
+                    $dd.hide().val('');
+                    $txt.show().focus();
+                    $btn.html('<small class="text-muted">🔽 Chọn danh sách</small>');
+                } else {
+                    // Chuyển về dropdown
+                    $txt.hide().val('');
+                    $dd.show();
+                    $btn.html('<small class="text-muted">✏️ Nhập thủ công</small>');
+                }
+            });
 
 
         });
