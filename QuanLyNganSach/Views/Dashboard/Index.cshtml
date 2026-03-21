@@ -1,0 +1,380 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid mt-4 mb-5">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "Home")">
+                    <i class="bi bi-house-door"></i> Trang chủ
+                </a>
+            </li>
+            <li class="breadcrumb-item active">Dashboard tổng quan</li>
+        </ol>
+    </nav>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header text-bg-primary py-3">
+            <h5 class="mb-0">
+                <i class="bi bi-bar-chart-line me-2"></i>
+                Dashboard tổng quan ngân sách
+            </h5>
+        </div>
+        <div class="card-body p-4">
+
+            <!-- ===== VÙNG 1: BỘ LỌC ===== -->
+            <div class="row g-3 mb-4 align-items-end"
+                 id="filterSection">
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">
+                        Khu vực
+                    </label>
+                    <select class="form-select form-select-sm filter-control"
+                            id="filter_ProjectArea">
+                        <option value="">-- Tất cả --</option>
+                        @foreach (SelectListItem item in
+                            (IEnumerable<SelectListItem>)ViewBag.DsProjectArea)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">
+                        Bộ phận
+                    </label>
+                    <select class="form-select form-select-sm filter-control"
+                            id="filter_PhongBan">
+                        <option value="">-- Tất cả --</option>
+                        @foreach (SelectListItem item in
+                            (IEnumerable<SelectListItem>)ViewBag.DsPhongBan)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">
+                        Năm
+                    </label>
+                    <select class="form-select form-select-sm filter-control"
+                            id="filter_Nam">
+                        <option value="">-- Tất cả --</option>
+                        @foreach (SelectListItem item in
+                            (IEnumerable<SelectListItem>)ViewBag.DsNam)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">
+                        Ưu tiên
+                    </label>
+                    <select class="form-select form-select-sm filter-control"
+                            id="filter_Priority">
+                        <option value="">-- Tất cả --</option>
+                        @foreach (SelectListItem item in
+                            (IEnumerable<SelectListItem>)ViewBag.DsPriorityLevel)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">
+                        Loại
+                    </label>
+                    <select class="form-select form-select-sm filter-control"
+                            id="filter_Category">
+                        <option value="">-- Tất cả --</option>
+                        @foreach (SelectListItem item in
+                            (IEnumerable<SelectListItem>)ViewBag.DsCategoryType)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button"
+                            class="btn btn-outline-secondary btn-sm w-100"
+                            id="btnResetFilter">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>
+                        Đặt lại
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading indicator -->
+            <div id="dashboardLoading"
+                 class="text-center py-4" style="display:none;">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted small">Đang tải dữ liệu...</p>
+            </div>
+
+            <!-- ===== VÙNG 2: TỔNG QUAN SỐ LIỆU ===== -->
+            <div class="row g-3 mb-4" id="summarySection">
+                <!-- Card Tổng ngân sách -->
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100
+                                border-start border-primary border-4">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between
+                                        align-items-start">
+                                <div>
+                                    <p class="text-muted small mb-1">
+                                        Tổng ngân sách
+                                    </p>
+                                    <h4 class="fw-bold text-primary mb-0"
+                                        id="card_TongNganSach">
+                                        --
+                                    </h4>
+                                </div>
+                                <div class="bg-primary bg-opacity-10
+                                            rounded p-2">
+                                    <i class="bi bi-wallet2 text-primary fs-4"></i>
+                                </div>
+                            </div>
+                            <p class="text-muted small mt-2 mb-0">
+                                Bao gồm ngân sách gốc và bổ sung
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Số hạng mục -->
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100
+                                border-start border-success border-4">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between
+                                        align-items-start">
+                                <div>
+                                    <p class="text-muted small mb-1">
+                                        Số hạng mục
+                                    </p>
+                                    <h4 class="fw-bold text-success mb-0"
+                                        id="card_SoHangMuc">
+                                        --
+                                    </h4>
+                                </div>
+                                <div class="bg-success bg-opacity-10
+                                            rounded p-2">
+                                    <i class="bi bi-list-check
+                                              text-success fs-4"></i>
+                                </div>
+                            </div>
+                            <p class="text-muted small mt-2 mb-0">
+                                Tổng hồ sơ trong hệ thống
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Hạng mục chưa duyệt -->
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100
+                                border-start border-warning border-4">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between
+                                        align-items-start">
+                                <div>
+                                    <p class="text-muted small mb-1">
+                                        Hạng mục chưa duyệt
+                                    </p>
+                                    <h4 class="fw-bold text-warning mb-0"
+                                        id="card_HangMucChuaDuyet">
+                                        --
+                                    </h4>
+                                </div>
+                                <div class="bg-warning bg-opacity-10
+                                            rounded p-2">
+                                    <i class="bi bi-hourglass-split
+                                              text-warning fs-4"></i>
+                                </div>
+                            </div>
+                            <p class="text-muted small mt-2 mb-0">
+                                Hồ sơ chưa ở trạng thái đã phê duyệt
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== VÙNG 3: BIỂU ĐỒ ===== -->
+            <div class="row g-3" id="chartSection">
+
+                <!-- Biểu đồ tròn -->
+                <div class="col-md-5">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white fw-semibold
+                                    border-bottom">
+                            <i class="bi bi-pie-chart me-1 text-primary"></i>
+                            Trạng thái ngân sách
+                        </div>
+                        <div class="card-body d-flex justify-content-center
+                                    align-items-center">
+                            <div style="position:relative;
+                                        width:100%; max-width:350px;">
+                                <canvas id="chartTrangThai"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Biểu đồ cột (placeholder) -->
+                <div class="col-md-7">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white fw-semibold
+                                    border-bottom">
+                            <i class="bi bi-bar-chart me-1 text-success"></i>
+                            Phân bổ theo năm
+                        </div>
+                        <div class="card-body d-flex justify-content-center
+                                    align-items-center text-muted">
+                            <div class="text-center">
+                                <i class="bi bi-bar-chart fs-1 opacity-25"></i>
+                                <p class="mt-2 small">
+                                    Đang phát triển...
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+$(document).ready(function () {
+
+    var chartTrangThai = null;
+
+    // ── Khởi tạo biểu đồ tròn ────────────────────────────────
+    function initChartTrangThai() {
+        var ctx = document.getElementById('chartTrangThai')
+                          .getContext('2d');
+        chartTrangThai = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Chưa trình', 'Đang trình', 'Đã phê duyệt'],
+                datasets: [{
+                    data: [0, 0, 0],
+                    backgroundColor: [
+                        '#6c757d', // Chưa trình - secondary
+                        '#ffc107', // Đang trình - warning
+                        '#198754'  // Đã phê duyệt - success
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive:          true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 15, font: { size: 12 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (ctx) {
+                                var val = ctx.parsed;
+                                return ' '
+                                    + ctx.label + ': '
+                                    + formatCurrencyDashboard(val);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // ── Load dữ liệu Dashboard ────────────────────────────────
+    function loadDashboardData() {
+        $('#dashboardLoading').show();
+
+        var params = {
+            ProjectAreaId:   $('#filter_ProjectArea').val() || null,
+            PhongBanId:      $('#filter_PhongBan').val()    || null,
+            Nam:             $('#filter_Nam').val()         || null,
+            PriorityLevelId: $('#filter_Priority').val()    || null,
+            CategoryTypeId:  $('#filter_Category').val()    || null
+        };
+
+        $.ajax({
+            url:  '@Url.Action("GetDashboardData", "Dashboard")',
+            type: 'GET',
+            data: params,
+            success: function (res) {
+                if (!res.success) {
+                    alert(res.message);
+                    return;
+                }
+                bindDashboardData(res.data);
+            },
+            error: function () {
+                alert('Đã xảy ra lỗi khi tải dữ liệu dashboard.');
+            },
+            complete: function () {
+                $('#dashboardLoading').hide();
+            }
+        });
+    }
+
+    // ── Bind dữ liệu vào UI ───────────────────────────────────
+    function bindDashboardData(data) {
+        // Cards
+        $('#card_TongNganSach').text(
+            formatCurrencyDashboard(data.TongNganSach));
+        $('#card_SoHangMuc').text(data.SoHangMuc);
+        $('#card_HangMucChuaDuyet').text(data.HangMucChuaDuyet);
+
+        // Biểu đồ tròn
+        chartTrangThai.data.datasets[0].data = [
+            data.TongChuaTrinh,
+            data.TongDangTrinh,
+            data.TongDaPheduyet
+        ];
+        chartTrangThai.update();
+    }
+
+    // ── Format tiền tệ ────────────────────────────────────────
+    function formatCurrencyDashboard(value) {
+        if (!value && value !== 0) return '0 ₫';
+        if (value >= 1000000000)
+            return (value / 1000000000).toFixed(2) + ' tỷ ₫';
+        if (value >= 1000000)
+            return (value / 1000000).toFixed(1) + ' triệu ₫';
+        return Number(value).toLocaleString('en-US') + ' ₫';
+    }
+
+    // ── Lắng nghe thay đổi bộ lọc ────────────────────────────
+    $(document).on('change', '.filter-control', function () {
+        loadDashboardData();
+    });
+
+    // ── Nút đặt lại bộ lọc ───────────────────────────────────
+    $('#btnResetFilter').on('click', function () {
+        $('.filter-control').val('');
+        loadDashboardData();
+    });
+
+    // ── Khởi tạo ─────────────────────────────────────────────
+    initChartTrangThai();
+    loadDashboardData();
+
+});
+    </script>
+}
