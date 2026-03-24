@@ -125,6 +125,92 @@
                                 </select>
                             </div>
                         </div>
+                        <!-- HÀNG 2: FILTER TIẾN ĐỘ + TRẠNG THÁI HỒ SƠ -->
+                        <div class="row align-items-center g-2 mt-1">
+
+                            <!-- Filter Tiến độ -->
+                            <div class="col-12 col-md-4 col-lg-3">
+                                <select id="filterTienDo"
+                                        name="filterTienDo"
+                                        class="form-select form-select-sm">
+                                    <option value="">-- Tất cả tiến độ --</option>
+                                    <option value="-1"
+                                            @(ViewBag.CurrentFilterTienDo != null && (int)ViewBag.CurrentFilterTienDo == -1 ? "selected" : "")>
+                                        Chưa xác định
+                                    </option>
+                                    <option value="0"
+                                            @(ViewBag.CurrentFilterTienDo != null && (int)ViewBag.CurrentFilterTienDo == 0 ? "selected" : "")>
+                                        Tạm dừng
+                                    </option>
+                                    <option value="1"
+                                            @(ViewBag.CurrentFilterTienDo != null && (int)ViewBag.CurrentFilterTienDo == 1 ? "selected" : "")>
+                                        Đạt tiến độ
+                                    </option>
+                                    <option value="2"
+                                            @(ViewBag.CurrentFilterTienDo != null && (int)ViewBag.CurrentFilterTienDo == 2 ? "selected" : "")>
+                                        Chậm tiến độ
+                                    </option>
+                                    <option value="3"
+                                            @(ViewBag.CurrentFilterTienDo != null && (int)ViewBag.CurrentFilterTienDo == 3 ? "selected" : "")>
+                                        Vượt tiến độ
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Filter Trạng thái hồ sơ -->
+                            <div class="col-12 col-md-5 col-lg-4">
+                                <select id="filterTrangThai"
+                                        name="filterTrangThai"
+                                        class="form-select form-select-sm">
+                                    <option value="">-- Tất cả trạng thái --</option>
+                                    <option value="0"
+                                            @(ViewBag.CurrentFilterTrangThai != null && (int)ViewBag.CurrentFilterTrangThai == 0 ? "selected" : "")>
+                                        Chưa có chủ trương phê duyệt
+                                    </option>
+                                    <option value="1"
+                                            @(ViewBag.CurrentFilterTrangThai != null && (int)ViewBag.CurrentFilterTrangThai == 1 ? "selected" : "")>
+                                        Đăng ký mới
+                                    </option>
+                                    <option value="2"
+                                            @(ViewBag.CurrentFilterTrangThai != null && (int)ViewBag.CurrentFilterTrangThai == 2 ? "selected" : "")>
+                                        Đang thực hiện xin ngân sách
+                                    </option>
+                                    <option value="3"
+                                            @(ViewBag.CurrentFilterTrangThai != null && (int)ViewBag.CurrentFilterTrangThai == 3 ? "selected" : "")>
+                                        Đã phê duyệt ngân sách
+                                    </option>
+                                    <option value="4"
+                                            @(ViewBag.CurrentFilterTrangThai != null && (int)ViewBag.CurrentFilterTrangThai == 4 ? "selected" : "")>
+                                        Đang bổ sung ngân sách
+                                    </option>
+                                    <option value="5"
+                                            @(ViewBag.CurrentFilterTrangThai != null && (int)ViewBag.CurrentFilterTrangThai == 5 ? "selected" : "")>
+                                        Theo luồng chi phí sản xuất
+                                    </option>
+                                    <option value="6"
+                                            @(ViewBag.CurrentFilterTrangThai != null && (int)ViewBag.CurrentFilterTrangThai == 6 ? "selected" : "")>
+                                        Chưa đủ hồ sơ
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Nút xóa filter (chỉ hiện khi có filter) -->
+                            @if (ViewBag.CurrentFilterTienDo != null
+                              || ViewBag.CurrentFilterTrangThai != null)
+                            {
+                                <div class="col-auto">
+                                    <a href="@Url.Action("Index", "Budget", new {
+                                        search    = ViewBag.CurrentSearch,
+                                        sortOrder = ViewBag.CurrentSort,
+                                        phongBanId = ViewBag.CurrentPhongBanId
+                                     })"
+                                       class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Đặt lại
+                                    </a>
+                                </div>
+                            }
+
+                        </div>
                     }
 
                 </div>
@@ -140,12 +226,60 @@
                                 <div class="card mb-3 shadow-sm border-0 budget-card-horizontal">
                                     <div class="card-body">
                                         <div class="row align-items-center g-3">
+                                            <div class="badge bg-light text-dark border mb-2" style="width: 50px; height: 50px; line-height: 50px; font-size: 1.2rem; border-radius: 10px;">
+                                                #@cardIndex
+                                            </div>
+                                            <!-- Column 2: Mã hạng mục & Ngày tạo -->
+                                            <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                                                <div class="mb-2">
+                                                    <span class="badge bg-secondary bg-gradient px-3 py-2 w-100">
+                                                        <i class="bi bi-tag-fill"></i> @item.MaHangMuc
+                                                    </span>
+                                                </div>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-calendar-plus"></i>
+                                                    @item.NgayTao.ToString("dd/MM/yyyy")
+                                                </small>
+                                            </div>
+
+                                            <!-- Column 3: Tên hạng mục & Phòng ban -->
+                                            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                                                <h6 class="mb-1 fw-bold">
+                                                    <a href="@Url.Action("Details", "Budget", new { id = item.BudgetRegistrationId })"
+                                                       class="text-decoration-none text-dark"
+                                                       title="@item.TenHangMuc">
+                                                        @item.TenHangMuc
+                                                    </a>
+                                                </h6>
+                                                <div class="text-muted small">
+                                                    <i class="bi bi-building text-primary"></i>
+                                                    @item.TenPhongBan
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(item.NguoiDangKy))
+                                                {
+                                                    <div class="text-muted small mt-1">
+                                                        <i class="bi bi-journal-text"></i>
+                                                        @item.NguoiDangKy
+                                                    </div>
+                                                }
+                                            </div>
+
+                                            <!-- Column 4: Dự toán - Highlighted -->
+                                            <div class="col-6 col-sm-6 col-md-3 col-lg-2">
+                                                <div class="p-2 bg-success bg-opacity-10 rounded text-center">
+                                                    <small class="text-muted d-block">
+                                                        <i class="bi bi-currency-dollar"></i> Dự toán
+                                                    </small>
+                                                    <div class="fw-bold text-success fs-5">
+                                                        @item.DuToan.ToString("N0")
+                                                    </div>
+                                                    <small class="text-muted">VNĐ</small>
+                                                </div>
+                                            </div>
                                             <!-- Column 1: STT & Status Badge -->
                                             <div class="col-auto">
                                                 <div class="text-center">
-                                                    <div class="badge bg-light text-dark border mb-2" style="width: 50px; height: 50px; line-height: 50px; font-size: 1.2rem; border-radius: 10px;">
-                                                        #@cardIndex
-                                                    </div>
+
                                                     @{
                                                         string badgeClass = "";
                                                         string badgeIcon = "bi-info-circle";
@@ -195,81 +329,58 @@
                                                     </span>
                                                 </div>
                                             </div>
-
-                                            <!-- Column 2: Mã hạng mục & Ngày tạo -->
-                                            <div class="col-12 col-sm-6 col-md-3 col-lg-2">
-                                                <div class="mb-2">
-                                                    <span class="badge bg-secondary bg-gradient px-3 py-2 w-100">
-                                                        <i class="bi bi-tag-fill"></i> @item.MaHangMuc
-                                                    </span>
-                                                </div>
-                                                <small class="text-muted">
-                                                    <i class="bi bi-calendar-plus"></i>
-                                                    @item.NgayTao.ToString("dd/MM/yyyy")
-                                                </small>
-                                            </div>
-
-                                            <!-- Column 3: Tên hạng mục & Phòng ban -->
-                                            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                                                <h6 class="mb-1 fw-bold">
-                                                    <a href="@Url.Action("Details", "Budget", new { id = item.BudgetRegistrationId })"
-                                                       class="text-decoration-none text-dark"
-                                                       title="@item.TenHangMuc">
-                                                        @item.TenHangMuc
-                                                    </a>
-                                                </h6>
-                                                <div class="text-muted small">
-                                                    <i class="bi bi-building text-primary"></i>
-                                                    @item.TenPhongBan
-                                                </div>
-                                                @if (!string.IsNullOrEmpty(item.NguoiDangKy))
-                                                {
-                                                    <div class="text-muted small mt-1">
-                                                        <i class="bi bi-journal-text"></i>
-                                                        @item.NguoiDangKy
-                                                    </div>
-                                                }
-                                            </div>
-
-                                            <!-- Column 4: Dự toán - Highlighted -->
-                                            <div class="col-6 col-sm-6 col-md-3 col-lg-2">
-                                                <div class="p-2 bg-success bg-opacity-10 rounded text-center">
-                                                    <small class="text-muted d-block">
-                                                        <i class="bi bi-currency-dollar"></i> Dự toán
-                                                    </small>
-                                                    <div class="fw-bold text-success fs-5">
-                                                        @item.DuToan.ToString("N0")
-                                                    </div>
-                                                    <small class="text-muted">VNĐ</small>
-                                                </div>
-                                            </div>
-
                                             <!-- Column 5: Thời gian -->
                                             <div class="col-6 col-sm-6 col-md-2 col-lg-2">
-                                                <div class="small">
-                                                    <div class="mb-1">
-                                                        <i class="bi bi-calendar-event text-primary"></i>
-                                                        @if (item.NgayBatDau.HasValue)
+                                                @{
+                                                    bool coTienDo = item.TongTienDo.HasValue;
+                                                    bool coDanhGia = item.DanhGiaChung.HasValue;
+                                                }
+                                                @if (coTienDo || coDanhGia)
+                                                {
+                                                    <div class="small">
+                                                        @if (coTienDo)
                                                         {
-                                                            <span class="text-muted">@item.NgayBatDau.Value.ToString("dd/MM/yyyy")</span>
+                                                            <div class="mb-1">
+                                                                <i class="bi bi-bar-chart-line text-primary"></i>
+                                                                <span class="text-muted">
+                                                                    Tiến độ:
+                                                                    <strong class="text-primary">
+                                                                        @item.TongTienDo.Value.ToString("0.#")%
+                                                                    </strong>
+                                                                </span>
+                                                            </div>
                                                         }
-                                                        else
+                                                        @if (coDanhGia)
                                                         {
-                                                            <span class="text-muted">--</span>
+                                                            string danhGiaText = "";
+                                                            string danhGiaClass = "";
+                                                            switch (item.DanhGiaChung)
+                                                            {
+                                                                case 0:
+                                                                    danhGiaText = "Tạm dừng";
+                                                                    danhGiaClass = "bg-secondary";
+                                                                    break;
+                                                                case 1:
+                                                                    danhGiaText = "Đạt tiến độ";
+                                                                    danhGiaClass = "bg-success";
+                                                                    break;
+                                                                case 2:
+                                                                    danhGiaText = "Chậm tiến độ";
+                                                                    danhGiaClass = "bg-danger";
+                                                                    break;
+                                                                case 3:
+                                                                    danhGiaText = "Vượt tiến độ";
+                                                                    danhGiaClass = "bg-info text-dark";
+                                                                    break;
+                                                            }
+                                                            <div>
+                                                                <span class="badge @danhGiaClass">
+                                                                    @danhGiaText
+                                                                </span>
+                                                            </div>
                                                         }
                                                     </div>
-                                                    <div>
-                                                        <i class="bi bi-calendar-check text-success"></i>
-                                                        @if (item.NgayBatDau.HasValue)
-                                                        {
-                                                            <span class="text-muted">@item.NgayKetThuc.Value.ToString("dd/MM/yyyy")</span>
-                                                        }
-                                                        else
-                                                        {
-                                                            <span class="text-muted">--</span>
-                                                        }
-                                                    </div>
-                                                </div>
+                                                }
                                             </div>
 
                                             <!-- Column 6: Actions -->
@@ -312,13 +423,36 @@
                                 <div class="pagination-wrapper">
                                     @if (Model.PageCount > 1)
                                     {
+                                        @* Khai báo routeValues dùng chung cho toàn bộ các link *@
+                                        {
+                                            var pgRoute = new
+                                            {
+                                                search = ViewBag.CurrentSearch,
+                                                sortOrder = ViewBag.CurrentSort,
+                                                phongBanId = ViewBag.CurrentPhongBanId,
+                                                filterTienDo = ViewBag.CurrentFilterTienDo,
+                                                filterTrangThai = ViewBag.CurrentFilterTrangThai
+                                            };
+                                        }
+
                                         <nav aria-label="Phân trang">
-                                            <ul class="pagination pagination-sm mb-0 justify-content-center justify-content-md-end">
+                                            <ul class="pagination pagination-sm mb-0
+                           justify-content-center justify-content-md-end">
+
                                                 <!-- First page -->
                                                 <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
                                                     @if (Model.HasPreviousPage)
                                                     {
-                                                        <a class="page-link" href="@Url.Action("Index", new { page = 1, search = ViewBag.CurrentSearch, status = ViewBag.CurrentStatus })">Đầu</a>
+                                                        <a class="page-link"
+                                                           href="@Url.Action("Index", new {
+                                                           page             = 1,
+                                                           search           = ViewBag.CurrentSearch,
+                                                           sortOrder        = ViewBag.CurrentSort,
+                                                           phongBanId       = ViewBag.CurrentPhongBanId,
+                                                           filterTienDo     = ViewBag.CurrentFilterTienDo,
+                                                           filterTrangThai  = ViewBag.CurrentFilterTrangThai
+                                                        })">Đầu
+                                                        </a>
                                                     }
                                                     else
                                                     {
@@ -330,7 +464,16 @@
                                                 <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
                                                     @if (Model.HasPreviousPage)
                                                     {
-                                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber - 1, search = ViewBag.CurrentSearch, status = ViewBag.CurrentStatus })">Trước</a>
+                                                        <a class="page-link"
+                                                           href="@Url.Action("Index", new {
+                                                           page             = Model.PageNumber - 1,
+                                                           search           = ViewBag.CurrentSearch,
+                                                           sortOrder        = ViewBag.CurrentSort,
+                                                           phongBanId       = ViewBag.CurrentPhongBanId,
+                                                           filterTienDo     = ViewBag.CurrentFilterTienDo,
+                                                           filterTrangThai  = ViewBag.CurrentFilterTrangThai
+                                                        })">Trước
+                                                        </a>
                                                     }
                                                     else
                                                     {
@@ -342,18 +485,15 @@
                                                 @{
                                                     int startPage = Math.Max(1, Model.PageNumber - 2);
                                                     int endPage = Math.Min(Model.PageCount, Model.PageNumber + 2);
-
                                                     if (Model.PageNumber <= 3)
                                                     {
                                                         endPage = Math.Min(5, Model.PageCount);
                                                     }
-
                                                     if (Model.PageNumber >= Model.PageCount - 2)
                                                     {
                                                         startPage = Math.Max(1, Model.PageCount - 4);
                                                     }
                                                 }
-
                                                 @for (int i = startPage; i <= endPage; i++)
                                                 {
                                                     <li class="page-item @(i == Model.PageNumber ? "active" : "")">
@@ -363,7 +503,16 @@
                                                         }
                                                         else
                                                         {
-                                                            <a class="page-link" href="@Url.Action("Index", new { page = i, search = ViewBag.CurrentSearch, status = ViewBag.CurrentStatus })">@i</a>
+                                                            <a class="page-link"
+                                                               href="@Url.Action("Index", new {
+                                                                   page             = i,
+                                                                   search           = ViewBag.CurrentSearch,
+                                                                   sortOrder        = ViewBag.CurrentSort,
+                                                                   phongBanId       = ViewBag.CurrentPhongBanId,
+                                                                   filterTienDo     = ViewBag.CurrentFilterTienDo,
+                                                                   filterTrangThai  = ViewBag.CurrentFilterTrangThai
+                                                               })">@i
+                                                            </a>
                                                         }
                                                     </li>
                                                 }
@@ -372,7 +521,16 @@
                                                 <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
                                                     @if (Model.HasNextPage)
                                                     {
-                                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber + 1, search = ViewBag.CurrentSearch, status = ViewBag.CurrentStatus })">Sau</a>
+                                                        <a class="page-link"
+                                                           href="@Url.Action("Index", new {
+                                                           page             = Model.PageNumber + 1,
+                                                           search           = ViewBag.CurrentSearch,
+                                                           sortOrder        = ViewBag.CurrentSort,
+                                                           phongBanId       = ViewBag.CurrentPhongBanId,
+                                                           filterTienDo     = ViewBag.CurrentFilterTienDo,
+                                                           filterTrangThai  = ViewBag.CurrentFilterTrangThai
+                                                        })">Sau
+                                                        </a>
                                                     }
                                                     else
                                                     {
@@ -384,13 +542,23 @@
                                                 <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
                                                     @if (Model.HasNextPage)
                                                     {
-                                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.PageCount, search = ViewBag.CurrentSearch, status = ViewBag.CurrentStatus })">Cuối</a>
+                                                        <a class="page-link"
+                                                           href="@Url.Action("Index", new {
+                                                           page             = Model.PageCount,
+                                                           search           = ViewBag.CurrentSearch,
+                                                           sortOrder        = ViewBag.CurrentSort,
+                                                           phongBanId       = ViewBag.CurrentPhongBanId,
+                                                           filterTienDo     = ViewBag.CurrentFilterTienDo,
+                                                           filterTrangThai  = ViewBag.CurrentFilterTrangThai
+                                                        })">Cuối
+                                                    </a>
                                                     }
                                                     else
                                                     {
                                                         <span class="page-link">Cuối</span>
                                                     }
                                                 </li>
+
                                             </ul>
                                         </nav>
                                     }
@@ -452,7 +620,6 @@
                                       class="badge bg-secondary ms-1">0</span>
                             </button>
                         </li>
-                        <!-- Tab Phê duyệt — chỉ hiện khi WorkflowType = 1 -->
                         <li class="nav-item d-none" id="tabPheDuyetItem" role="presentation">
                             <button class="nav-link" id="detail-pheduyet-btn"
                                     data-bs-toggle="tab" data-bs-target="#detail-pheduyet"
@@ -460,7 +627,6 @@
                                 <i class="bi bi-check2-circle me-1"></i>Phê duyệt
                             </button>
                         </li>
-                        <!-- Tab Nhật ký tiến độ — chỉ hiện khi WorkflowType = 1 -->
                         <li class="nav-item d-none" id="tabNhatKyItem" role="presentation">
                             <button class="nav-link" id="detail-nhatky-btn"
                                     data-bs-toggle="tab" data-bs-target="#detail-nhatky"
@@ -631,8 +797,9 @@
                                             </th>
                                             <th style="width:25%">
                                                 Chức năng / Nhiệm vụ
+                                                <span class="text-danger">*</span>
                                             </th>
-                                            <th style="width:20%">Email liên hệ</th>
+                                            <th style="width:20%">Email liên hệ <span class="text-danger">*</span></th>
                                             <th style="width:22%">Ghi chú</th>
                                             <th style="width:6%"></th>
                                         </tr>
@@ -892,7 +1059,7 @@
                                     <div class="mt-2" id="cfg_CanhBaoTiTrong" style="display:none;">
                                         <span class="text-danger small">
                                             <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                                            Tổng tỉ trọng phải bằng 100%. Hiện tại:
+                                            Tổng tỉ trọng phải bằng 100% để có thể lưu. Hiện tại:
                                             <strong id="cfg_TongTiTrongCanhBao"></strong>
                                         </span>
                                     </div>
@@ -984,10 +1151,10 @@
             });
 
             // Auto-submit when department filter changes (for Manager/Admin)
-            $('#phongBanId').on('change', function () {
+            $('#phongBanId, #filterTienDo, #filterTrangThai').on('change', function () {
                 $('#searchForm').submit();
             });
-
+            
             // Clear search button
             $('#clearSearch').on('click', function () {
                 $('#searchInput').val('');
@@ -1011,76 +1178,6 @@
                 currentUrl.searchParams.delete('page'); // Reset về trang 1
                 window.location.href = currentUrl.toString();
             });
-
-            //// Format date từ C# DateTime sang dd/MM/yyyy
-            //function formatDate(dateString) {
-            //    if (!dateString) return '';
-
-            //    try {
-            //        // Parse ISO string hoặc .NET JSON date format
-            //        var date;
-
-            //        // Check if it's .NET JSON date format: /Date(1234567890000)/
-            //        if (typeof dateString === 'string' && dateString.indexOf('/Date(') === 0) {
-            //            var timestamp = parseInt(dateString.replace(/\/Date\((\d+)\)\//, '$1'));
-            //            date = new Date(timestamp);
-            //        } else {
-            //            // ISO format hoặc normal date string
-            //            date = new Date(dateString);
-            //        }
-
-            //        // Validate date
-            //        if (isNaN(date.getTime())) {
-            //            console.warn('Invalid date:', dateString);
-            //            return dateString; // Return original if can't parse
-            //        }
-
-            //        var day = String(date.getDate()).padStart(2, '0');
-            //        var month = String(date.getMonth() + 1).padStart(2, '0');
-            //        var year = date.getFullYear();
-
-            //        return day + '/' + month + '/' + year;
-            //    } catch (e) {
-            //        console.error('Error formatting date:', e);
-            //        return dateString;
-            //    }
-            //}
-
-            //// Format datetime từ C# DateTime sang dd/MM/yyyy HH:mm
-            //function formatDateTime(dateString) {
-            //    if (!dateString) return '';
-
-            //    try {
-            //        // Parse ISO string hoặc .NET JSON date format
-            //        var date;
-
-            //        // Check if it's .NET JSON date format: /Date(1234567890000)/
-            //        if (typeof dateString === 'string' && dateString.indexOf('/Date(') === 0) {
-            //            var timestamp = parseInt(dateString.replace(/\/Date\((\d+)\)\//, '$1'));
-            //            date = new Date(timestamp);
-            //        } else {
-            //            // ISO format hoặc normal date string
-            //            date = new Date(dateString);
-            //        }
-
-            //        // Validate date
-            //        if (isNaN(date.getTime())) {
-            //            console.warn('Invalid datetime:', dateString);
-            //            return dateString; // Return original if can't parse
-            //        }
-
-            //        var day = String(date.getDate()).padStart(2, '0');
-            //        var month = String(date.getMonth() + 1).padStart(2, '0');
-            //        var year = date.getFullYear();
-            //        var hours = String(date.getHours()).padStart(2, '0');
-            //        var minutes = String(date.getMinutes()).padStart(2, '0');
-
-            //        return day + '/' + month + '/' + year + ' ' + hours + ':' + minutes;
-            //    } catch (e) {
-            //        console.error('Error formatting datetime:', e);
-            //        return dateString;
-            //    }
-            //}
 
             function getFileIcon(extension) {
                 if (!extension) return 'text';
@@ -1188,10 +1285,8 @@
                 renderModalPhanNhiem(data.DanhSachPhanNhiem || []);
 
                 // *** THÊM MỚI — gọi bind tab Phê duyệt ***
-                //bindPheDuyetData(data.ThongTinPheDuyet, data.IsManagerOrAdmin);
                 bindPheDuyetData(data.NganSachGoc, data.IsManagerOrAdmin);
                 renderDanhSachBoSung(data.DanhSachBoSung);
-                // *** THÊM MỚI trong bindModalData ***
                 bindTienDoData(data.ThongTinTienDo);
             }
 
@@ -1339,9 +1434,59 @@
                 capNhatSTTModal();
             });
 
+            // ── Validate tab Phân nhiệm trước khi lưu ────────────────────
+            function validatePhanNhiem() {
+                var $rows = $('#modalPhanNhiemBody tr');
+
+                // Chưa có dòng nào
+                if ($rows.length === 0) {
+                    showModalAlert('danger',
+                        'Vui lòng thêm ít nhất một dòng phân nhiệm trước khi lưu.');
+                    return false;
+                }
+
+                var isValid = true;
+                var dongLoi = [];
+
+                $rows.each(function (i) {
+                    var $row = $(this);
+                    var stt = i + 1;
+                    var phongBan = $row.find('select[name*=PhongBanId]').val();
+                    var chucNang = $row.find('.ddModalChucNang').val();
+                    var nhapTay = $row.find('.txtModalChucNangTay').val().trim();
+                    var email = $row.find('input[name*=Email]').val().trim();
+
+                    var loi = [];
+
+                    if (!phongBan)
+                        loi.push('Bộ phận');
+
+                    if (!chucNang && !nhapTay)
+                        loi.push('Chức năng / Nhiệm vụ');
+
+                    if (!email)
+                        loi.push('Email liên hệ');
+
+                    if (loi.length > 0) {
+                        dongLoi.push('Dòng ' + stt + ': thiếu ' + loi.join(', '));
+                        isValid = false;
+                    }
+                });
+
+                if (!isValid) {
+                    showModalAlert('danger',
+                        'Vui lòng điền đầy đủ thông tin bắt buộc ở tab Phân nhiệm:<br>'
+                        + dongLoi.join('<br>'));
+                }
+
+                return isValid;
+            }
+
             // ── Nút Lưu thông tin ────────────────────────────────────────
             $(document).on('click', '#btnSaveDetailsModal', function () {
                 var $btn = $(this);
+
+                if (!validatePhanNhiem()) return;
 
                 var tongTiTrong = (parseFloat($('#cfg_XayDung').val()) || 0)
                     + (parseFloat($('#cfg_KetCauThep').val()) || 0)
@@ -2276,7 +2421,10 @@
                     DanhGiaChung: $('#cfg_DanhGiaChung').val() !== ''
                         ? parseInt($('#cfg_DanhGiaChung').val())
                         : null,
-                    DanhSachKhuVuc: danhSachKhuVuc
+                    DanhSachKhuVuc: danhSachKhuVuc,
+                    TongTienDo: parseFloat(
+                        $('#td_TongTienDo').text().replace('%', '')
+                    ) || 0
                 };
             };
 

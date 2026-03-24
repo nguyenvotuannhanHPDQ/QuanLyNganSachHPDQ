@@ -16,6 +16,7 @@ namespace QuanLyNganSach.Models.ViewModels
         public int? DanhGiaChung { get; set; }
         public List<ProgressAreaViewModel> DanhSachKhuVuc { get; set; }
             = new List<ProgressAreaViewModel>();
+        public decimal? TongTienDo { get; set; }
     }
 
     public class ProgressAreaViewModel

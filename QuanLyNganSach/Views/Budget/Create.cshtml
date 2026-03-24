@@ -245,8 +245,8 @@
                                             <tr>
                                                 <th style="width:5%">#</th>
                                                 <th style="width:22%">Tên Bộ phận <span class="text-danger">*</span></th>
-                                                <th style="width:25%">Chức năng / Nhiệm vụ</th>
-                                                <th style="width:20%">Email liên hệ</th>
+                                                <th style="width:25%">Chức năng / Nhiệm vụ <span class="text-danger">*</span></th>
+                                                <th style="width:20%">Email liên hệ <span class="text-danger">*</span></th>
                                                 <th style="width:22%">Ghi chú</th>
                                                 <th style="width:6%"></th>
                                             </tr>
@@ -402,11 +402,61 @@
 
                 // ── Chống double-submit ─────────────────────────────────────────
                 $('#mainForm').submit(function () {
-                    if ($(this).valid()) {
-                        $(this).find('button[type="submit"]')
-                            .prop('disabled', true)
-                            .html('<i class="bi bi-hourglass-split me-1"></i> Đang xử lý...');
+                    if (!$(this).valid()) return;
+
+                    // *** THÊM MỚI: Validate tab Phân nhiệm ***
+                    var $rows = $('#phanNhiemBody tr');
+                    var isValid = true;
+                    var dongLoi = [];
+
+                    if ($rows.length === 0) {
+                        alert('Vui lòng thêm ít nhất một dòng phân nhiệm trước khi lưu.');
+                        // Chuyển sang tab Phân nhiệm để user thấy
+                        $('#tab-phannhiem-btn').tab('show');
+                        return false;
                     }
+
+                    $rows.each(function (i) {
+                        var $row = $(this);
+                        var stt = i + 1;
+                        var phongBan = $row.find('select[name*=PhongBanId]').val();
+                        var chucNang = $row.find('.ddChucNang').val();
+                        var nhapTay = $row.find('.txtChucNangTay').val().trim();
+                        var email = $row.find('input[name*=Email]').val().trim();
+                        var loi = [];
+
+                        if (!phongBan) loi.push('Bộ phận');
+                        if (!chucNang && !nhapTay) loi.push('Chức năng / Nhiệm vụ');
+                        if (!email) loi.push('Email liên hệ');
+
+                        if (loi.length > 0) {
+                            dongLoi.push('Dòng ' + stt + ': thiếu ' + loi.join(', '));
+                            isValid = false;
+                        }
+                    });
+
+                    if (!isValid) {
+                        // Chuyển sang tab Phân nhiệm và hiển thị lỗi
+                        $('#tab-phannhiem-btn').tab('show');
+                        // Hiện alert lỗi ngay trong tab
+                        var alertHtml = '<div class="alert alert-danger alert-dismissible '
+                            + 'fade show" role="alert">'
+                            + '<i class="bi bi-exclamation-triangle-fill me-2"></i>'
+                            + '<strong>Vui lòng điền đầy đủ thông tin bắt buộc '
+                            + 'ở tab Phân nhiệm:</strong><br>'
+                            + dongLoi.join('<br>')
+                            + '<button type="button" class="btn-close" '
+                            + 'data-bs-dismiss="alert"></button>'
+                            + '</div>';
+                        // Chèn alert vào đầu tab Phân nhiệm
+                        $('#tab-phannhiem').prepend(alertHtml);
+                        return false;
+                    }
+
+                    // Tất cả hợp lệ — disable button chống double submit
+                    $(this).find('button[type="submit"]')
+                        .prop('disabled', true)
+                        .html('<i class="bi bi-hourglass-split me-1"></i> Đang xử lý...');
                 });
 
                 // Auto-generate MaHangMuc when CategoryTypeId changes

@@ -59,11 +59,20 @@ namespace QuanLyNganSach.Controllers
                     Text = c.CategoryTypeName
                 }).ToList();
 
-            ViewBag.DsNam = new[]
+            // Tự động sinh danh sách năm từ 2026 đến năm hiện tại
+            var namHienTai = DateTime.Now.Year;
+            var danhSachNam = new List<SelectListItem>();
+
+            for (int nam = 2025; nam <= namHienTai; nam++)
             {
-                new SelectListItem { Value = "2026", Text = "2026" },
-                new SelectListItem { Value = "2027", Text = "2027" }
-            };
+                danhSachNam.Add(new SelectListItem
+                {
+                    Value = nam.ToString(),
+                    Text = nam.ToString()
+                });
+            }
+
+            ViewBag.DsNam = danhSachNam;
 
             return View();
         }
@@ -103,10 +112,8 @@ namespace QuanLyNganSach.Controllers
                     query = query.Where(x =>
                         x.PhongBanId == filter.PhongBanId.Value);
 
-                //if (filter.Nam.HasValue)
-                //    query = query.Where(x =>
-                //        x.CreatedDate.HasValue &&
-                //        x.CreatedDate.Value.Year == filter.Nam.Value);
+                if (filter.Nam.HasValue)
+                    query = query.Where(x => x.CreatedDate.Year == filter.Nam.Value);
 
                 if (filter.PriorityLevelId.HasValue)
                     query = query.Where(x =>

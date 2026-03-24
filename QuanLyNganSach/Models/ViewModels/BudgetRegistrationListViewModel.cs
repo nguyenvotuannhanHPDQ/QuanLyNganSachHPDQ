@@ -24,6 +24,8 @@ namespace QuanLyNganSach.Models.ViewModels
         public int TrangThaiPheDuyetGoc { get; set; } // TrangThaiPheDuyet của IsSupplementary=0
         public bool CoBoSungChuaDuyet { get; set; } // Có đợt bổ sung chưa duyệt
         public bool CoBoSungDaDuyet { get; set; } // Có ít nhất 1 đợt bổ sung đã duyệt
+        public decimal? TongTienDo { get; set; }
+        public int? DanhGiaChung { get; set; }
 
         // Property tính trạng thái theo thứ tự ưu tiên
         public int TrangThaiHienThi

@@ -18,7 +18,7 @@ namespace QuanLyNganSach.Controllers
         private const int PageSize = 10;
 
         // GET: Budget/Index - Danh sách đăng ký ngân sách
-        public ActionResult Index(int? page, string search, string sortOrder, int? phongBanId)
+        public ActionResult Index(int? page, string search, string sortOrder, int? phongBanId,int? filterTienDo, int? filterTrangThai)
         {
             try
             {
@@ -111,7 +111,89 @@ namespace QuanLyNganSach.Controllers
                                 // Có ít nhất 1 đợt bổ sung đã duyệt (TrangThaiPheDuyet = 2)
                                 CoBoSungDaDuyet = x.BudgetRegistration.BudgetApprovals
                     .Any(a => a.IsSupplementary && a.TrangThaiPheDuyet == 2),
+
+                    TongTienDo = x.BudgetRegistration.ProgressConfigs
+                        .Select(p => (decimal?)p.TongTienDo)
+                        .FirstOrDefault(),
+
+                    DanhGiaChung = x.BudgetRegistration.ProgressConfigs
+                        .Select(p => p.DanhGiaChung)
+                        .FirstOrDefault(),
                 });
+
+                // *** THÊM MỚI: Filter theo tiến độ (DanhGiaChung) ***
+                // filterTienDo = -1 nghĩa là "Chưa xác định" (NULL)
+                if (filterTienDo.HasValue)
+                {
+                    if (filterTienDo.Value == -1)
+                    {
+                        // Chưa xác định: DanhGiaChung IS NULL
+                        viewModelQuery = viewModelQuery
+                            .Where(b => b.DanhGiaChung == null);
+                    }
+                    else
+                    {
+                        viewModelQuery = viewModelQuery
+                            .Where(b => b.DanhGiaChung == filterTienDo.Value);
+                    }
+                }
+
+                // *** THÊM MỚI: Filter theo trạng thái hồ sơ ***
+                // Chuyển logic TrangThaiHienThi sang điều kiện SQL trực tiếp
+                if (filterTrangThai.HasValue)
+                {
+                    switch (filterTrangThai.Value)
+                    {
+                        case 0: // Chưa có chủ trương: SoToTrinh IS NULL
+                            viewModelQuery = viewModelQuery
+                                .Where(b => b.SoToTrinhRaw == null
+                                         || b.SoToTrinhRaw == "");
+                            break;
+
+                        case 1: // Đăng ký mới: SoToTrinh != NULL && WorkflowType IS NULL
+                            viewModelQuery = viewModelQuery
+                                .Where(b => (b.SoToTrinhRaw != null
+                                          && b.SoToTrinhRaw != "")
+                                         && b.WorkflowType == null);
+                            break;
+
+                        case 2: // Đang thực hiện xin ngân sách:
+                                // WorkflowType != NULL && != 2 && != 3
+                                // && TrangThaiPheDuyetGoc != 2
+                            viewModelQuery = viewModelQuery
+                                .Where(b => b.WorkflowType != null
+                                         && b.WorkflowType != 2
+                                         && b.WorkflowType != 3
+                                         && b.TrangThaiPheDuyetGoc != 2
+                                         && (b.SoToTrinhRaw != null
+                                          && b.SoToTrinhRaw != ""));
+                            break;
+
+                        case 3: // Đã phê duyệt:
+                                // TrangThaiPheDuyetGoc = 2 && !CoBoSungChuaDuyet
+                            viewModelQuery = viewModelQuery
+                                .Where(b => b.TrangThaiPheDuyetGoc == 2
+                                         && !b.CoBoSungChuaDuyet);
+                            break;
+
+                        case 4: // Đang bổ sung:
+                                // TrangThaiPheDuyetGoc = 2 && CoBoSungChuaDuyet
+                            viewModelQuery = viewModelQuery
+                                .Where(b => b.TrangThaiPheDuyetGoc == 2
+                                         && b.CoBoSungChuaDuyet);
+                            break;
+
+                        case 5: // Theo luồng chi phí SX: WorkflowType = 2
+                            viewModelQuery = viewModelQuery
+                                .Where(b => b.WorkflowType == 2);
+                            break;
+
+                        case 6: // Chưa đủ hồ sơ: WorkflowType = 3
+                            viewModelQuery = viewModelQuery
+                                .Where(b => b.WorkflowType == 3);
+                            break;
+                    }
+                }
 
                 // Apply search filter
                 if (!string.IsNullOrWhiteSpace(search))
@@ -184,6 +266,8 @@ namespace QuanLyNganSach.Controllers
                 ViewBag.CurrentSort = sortOrder;
                 ViewBag.CurrentPhongBanId = phongBanId;
                 ViewBag.IsManagerOrAdmin = isManagerOrAdmin;
+                ViewBag.CurrentFilterTienDo = filterTienDo;
+                ViewBag.CurrentFilterTrangThai = filterTrangThai;
 
                 // *** THÊM MỚI: Truyền dropdown Phòng ban + Chức năng xuống View cho modal ***
                 ViewBag.DsPhongBanModal = db.PhongBans
@@ -315,6 +399,42 @@ namespace QuanLyNganSach.Controllers
 
             db.BudgetRegistrations.Add(entity);
             db.SaveChanges();
+
+            // *** THÊM MỚI: Validate Phân nhiệm phía server ***
+            if (model.DanhSachPhanNhiem == null
+             || !model.DanhSachPhanNhiem.Any(p => p.PhongBanId != null))
+            {
+                ModelState.AddModelError("",
+                    "Vui lòng thêm ít nhất một dòng phân nhiệm.");
+                ReloadDropdowns(model);
+                return View(model);
+            }
+
+            var dongThieuInfo = model.DanhSachPhanNhiem
+                .Where(p => p.PhongBanId != null)
+                .Select((p, i) => new {
+                    Index = i + 1,
+                    ThieuChucNang = string.IsNullOrEmpty(p.TenChucNangNhapTay)
+                                 && p.ChucNangNhiemVuId == null,
+                    ThieuEmail = string.IsNullOrEmpty(p.Email?.Trim())
+                })
+                .Where(p => p.ThieuChucNang || p.ThieuEmail)
+                .ToList();
+
+            if (dongThieuInfo.Any())
+            {
+                foreach (var dong in dongThieuInfo)
+                {
+                    if (dong.ThieuChucNang)
+                        ModelState.AddModelError("",
+                            $"Dòng {dong.Index}: thiếu Chức năng / Nhiệm vụ.");
+                    if (dong.ThieuEmail)
+                        ModelState.AddModelError("",
+                            $"Dòng {dong.Index}: thiếu Email liên hệ.");
+                }
+                ReloadDropdowns(model);
+                return View(model);
+            }
 
             // *** THÊM MỚI: Lưu các dòng Phân nhiệm ***
             if (model.DanhSachPhanNhiem != null && model.DanhSachPhanNhiem.Any())
@@ -927,7 +1047,8 @@ namespace QuanLyNganSach.Controllers
                                     GhiChu = i.GhiChu,
                                     SortOrder = i.SortOrder
                                 }).ToList()
-                        }).ToList()
+                        }).ToList(),
+                    TongTienDo = config?.TongTienDo
                 };
 
                 return Json(new { success = true, data = viewModel }, JsonRequestBehavior.AllowGet);
@@ -1387,6 +1508,7 @@ namespace QuanLyNganSach.Controllers
             existingConfig.TiTrongLapDatThietBi = model.TiTrongLapDatThietBi;
             existingConfig.TiTrongHangMucKhac = model.TiTrongHangMucKhac;
             existingConfig.DanhGiaChung = model.DanhGiaChung;
+            existingConfig.TongTienDo = model.TongTienDo;
 
             // Xóa toàn bộ ProgressAreas + ProgressAreaItems cũ
             var oldAreas = db.ProgressAreas
