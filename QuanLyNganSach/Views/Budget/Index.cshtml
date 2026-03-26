@@ -245,7 +245,7 @@
                                             <!-- Column 3: Tên hạng mục & Phòng ban -->
                                             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                                                 <h6 class="mb-1 fw-bold">
-                                                    <a href="@Url.Action("Details", "Budget", new { id = item.BudgetRegistrationId })"
+                                                    <a href="#"
                                                        class="text-decoration-none text-dark"
                                                        title="@item.TenHangMuc">
                                                         @item.TenHangMuc
@@ -1217,9 +1217,19 @@
                 // Reset về trạng thái loading
                 $('#modalLoading').show();
                 $('#modalContent').hide();
-                $('#detail-phieu-btn').tab('show');
+                //$('#detail-phieu-btn').tab('show');
 
-                $('#budgetDetailsModal').modal('show');
+                var tabEl = document.querySelector('#detail-phieu-btn');
+                if (tabEl) {
+                    var tab = new bootstrap.Tab(tabEl);
+                    tab.show();
+                }
+
+                // Modal Bootstrap 5 cũng nên dùng JS API
+                var modal = new bootstrap.Modal(document.getElementById('budgetDetailsModal'));
+                modal.show();
+
+                //$('#budgetDetailsModal').modal('show');
                 loadDetailsModal(currentBudgetId);
             });
 
@@ -1246,8 +1256,12 @@
                 });
             }
 
+            var isManagerOrAdminGlobal = false;
+
             // ── Bind dữ liệu vào các field ──────────────────────────────
             function bindModalData(data) {
+
+                isManagerOrAdminGlobal = data.IsManagerOrAdmin;
 
                 // Header
                 $('#modalMaHangMuc').text(data.MaHangMuc);
@@ -1279,6 +1293,8 @@
                     applyWorkflowTabs(data.WorkflowType);
                 } else {
                     $('#workflowSection').hide();
+                    // *** THÊM MỚI: Chủ hồ sơ thấy tab Nhật ký nếu WorkflowType = 1 ***
+                    applyWorkflowTabs(data.WorkflowType);
                 }
 
                 // Tab Phân nhiệm
@@ -1314,18 +1330,24 @@
                 $('#modal_AttachmentsList').html(html);
             }
 
-            // ── Hiển thị/ẩn tab Phê duyệt & Nhật ký theo WorkflowType ──
             function applyWorkflowTabs(workflowType) {
                 if (parseInt(workflowType) === 1) {
-                    $('#tabPheDuyetItem').removeClass('d-none');
+                    // *** THAY ĐỔI: Tab Phê duyệt chỉ hiện với Admin/Manager ***
+                    if (isManagerOrAdminGlobal) {
+                        $('#tabPheDuyetItem').removeClass('d-none');
+                    }
                     $('#tabNhatKyItem').removeClass('d-none');
                 } else {
                     $('#tabPheDuyetItem').addClass('d-none');
                     $('#tabNhatKyItem').addClass('d-none');
-                    // Nếu đang ở tab bị ẩn thì quay về tab Phiếu
                     if ($('#detail-pheduyet').hasClass('active') ||
                         $('#detail-nhatky').hasClass('active')) {
-                        $('#detail-phieu-btn').tab('show');
+                        //$('#detail-phieu-btn').tab('show');
+                        var tabEl = document.querySelector('#detail-phieu-btn');
+                        if (tabEl) {
+                            var tab = new bootstrap.Tab(tabEl);
+                            tab.show();
+                        }
                     }
                 }
             }

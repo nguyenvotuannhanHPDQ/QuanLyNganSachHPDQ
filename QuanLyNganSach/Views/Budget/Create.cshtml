@@ -131,6 +131,7 @@
                                         {
                                             @class = "form-control",
                                             type = "number",
+                                            min = 0
                                         })
 
                                         @Html.ValidationMessageFor(m => m.DuToan, "", new { @class = "text-danger small mt-1" })
@@ -165,7 +166,8 @@
                                         {
                                             @class = "form-control",
                                             type = "number",
-                                            placeholder = "Nhập số lượng"
+                                            placeholder = "Nhập số lượng",
+                                            min = 0
                                         })
 
                                         @Html.ValidationMessageFor(m => m.SoLuong, "", new { @class = "text-danger small mt-1" })
