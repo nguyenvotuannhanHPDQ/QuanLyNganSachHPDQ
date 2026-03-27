@@ -2066,6 +2066,29 @@
                     + ('0' + d.getDate()).slice(-2);
             }
 
+            $(document).on('keydown', '.bs-ngan-sach', function (e) {
+                var allowed = [
+                    'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+                    'ArrowLeft', 'ArrowRight', 'Home', 'End'
+                ];
+                if (e.ctrlKey || e.metaKey) return;
+                if (allowed.includes(e.key)) return;
+                if (!/^\d$/.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+
+            $(document).on('input', '.bs-ngan-sach', function () {
+                var raw = $(this).val().replace(/,/g, '');
+                var num = parseFloat(raw) || 0;
+
+                if (raw === '' || raw === '0') {
+                    $(this).val('');
+                    return;
+                }
+                $(this).val(num.toLocaleString('en-US'));
+            });
+
             var khuVucIndex = 0;
 
             // ── Hardcode options Hạng mục công việc ─────────────────────

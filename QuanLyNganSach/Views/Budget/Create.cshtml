@@ -127,12 +127,25 @@
                                             Dự toán
                                         </label>
 
-                                        @Html.TextBoxFor(m => m.DuToan, new
+                                        @*@Html.TextBoxFor(m => m.DuToan, new
                                         {
                                             @class = "form-control",
                                             type = "number",
                                             min = 0
-                                        })
+                                        })*@
+
+                                        @* Hidden field giữ giá trị số thuần gửi lên server *@
+                                        @Html.HiddenFor(m => m.DuToan, new { id = "DuToan_Hidden" })
+
+                                        @* Input hiển thị format tiền tệ *@
+                                        <input type="text"
+                                               id="DuToan_Display"
+                                               class="form-control"
+                                               placeholder="Nhập dự toán..."
+                                               autocomplete="off" />
+
+                                        @Html.ValidationMessageFor(m => m.DuToan, "",
+                                            new { @class = "text-danger small mt-1" })
 
                                         @Html.ValidationMessageFor(m => m.DuToan, "", new { @class = "text-danger small mt-1" })
                                     </div>
@@ -300,6 +313,57 @@
     @Scripts.Render("~/bundles/jqueryval")
     <script>
             $(document).ready(function () {
+
+                var $display = $('#DuToan_Display');
+                var $hidden = $('#DuToan_Hidden');
+
+                // Khởi tạo: nếu hidden đã có giá trị thì hiển thị format
+                var initVal = parseFloat($hidden.val()) || 0;
+                if (initVal > 0) {
+                    $display.val(initVal.toLocaleString('en-US'));
+                }
+
+                // Chỉ cho nhập số và các phím điều hướng
+                $display.on('keydown', function (e) {
+                    var allowed = [
+                        'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+                        'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+                        'Home', 'End'
+                    ];
+                    // Cho phép Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                    if (e.ctrlKey || e.metaKey) return;
+                    // Cho phép các phím đặc biệt
+                    if (allowed.includes(e.key)) return;
+                    // Chỉ cho nhập chữ số
+                    if (!/^\d$/.test(e.key)) {
+                        e.preventDefault();
+                    }
+                });
+
+                // Format khi nhập
+                $display.on('input', function () {
+                    var raw = $(this).val().replace(/,/g, '');
+                    var num = parseFloat(raw) || 0;
+
+                    // Cập nhật hidden field (số thuần)
+                    $hidden.val(num > 0 ? num : '');
+
+                    // Format hiển thị
+                    if (raw === '' || raw === '0') {
+                        $(this).val('');
+                        return;
+                    }
+                    var formatted = num.toLocaleString('en-US');
+                    $(this).val(formatted);
+                });
+
+                // Validate trước khi submit
+                $('#mainForm').on('submit', function () {
+                    var raw = $display.val().replace(/,/g, '');
+                    var num = parseFloat(raw) || 0;
+                    $hidden.val(num > 0 ? num : '');
+                });
+
                 // ── Dữ liệu dropdown từ Razor ──────────────────────────────────
                 var dsPhongBan  = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(
                     Model.DanhSachPhongBan.Select(x => new { value = x.Value, text = x.Text })
