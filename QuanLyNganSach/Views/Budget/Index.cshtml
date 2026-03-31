@@ -795,6 +795,7 @@
                                                 Tên Bộ phận
                                                 <span class="text-danger">*</span>
                                             </th>
+                                            <th style="width:22%">Nhân viên <span class="text-danger">*</span></th>
                                             <th style="width:25%">
                                                 Chức năng / Nhiệm vụ
                                                 <span class="text-danger">*</span>
@@ -817,6 +818,56 @@
                         <!-- ===== TAB 3: PHÊ DUYỆT (PLACEHOLDER) ===== -->
                         <div class="tab-pane fade"
                              id="detail-pheduyet" role="tabpanel">
+                            <!-- 2 CARD TỔNG HỢP -->
+                            <div class="row g-3 mb-3">
+
+                                <!-- Card Đang trình -->
+                                <div class="col-md-6">
+                                    <div class="card border-0 shadow-sm h-100 border-start border-warning border-4">
+                                        <div class="card-body py-3">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <p class="text-muted small mb-1">
+                                                        <i class="bi bi-hourglass-split me-1"></i>
+                                                        Tổng ngân sách đang trình
+                                                    </p>
+                                                    <h5 class="fw-bold text-warning mb-0"
+                                                        id="card_TongDangTrinh">
+                                                        0 ₫
+                                                    </h5>
+                                                </div>
+                                                <div class="bg-warning bg-opacity-10 rounded p-2">
+                                                    <i class="bi bi-clock text-warning fs-5"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card Đã duyệt -->
+                                <div class="col-md-6">
+                                    <div class="card border-0 shadow-sm h-100 border-start border-success border-4">
+                                        <div class="card-body py-3">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <p class="text-muted small mb-1">
+                                                        <i class="bi bi-check-circle me-1"></i>
+                                                        Tổng ngân sách đã duyệt
+                                                    </p>
+                                                    <h5 class="fw-bold text-success mb-0"
+                                                        id="card_TongDaDuyet">
+                                                        0 ₫
+                                                    </h5>
+                                                </div>
+                                                <div class="bg-success bg-opacity-10 rounded p-2">
+                                                    <i class="bi bi-check2-circle text-success fs-5"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
                             <!-- CARD NGÂN SÁCH GỐC -->
                             <div class="card border-primary mb-3" id="cardNganSachGoc">
                                 <div class="card-header bg-primary text-white d-flex
@@ -898,7 +949,7 @@
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label small fw-semibold">
-                                                Dự toán phê duyệt (VND)
+                                                Ngân sách phê duyệt (VND)
                                             </label>
                                             <!-- *** THAY ĐỔI: bỏ input-group, bỏ button, thêm disabled mặc định *** -->
                                             <input type="text" class="form-control form-control-sm"
@@ -1154,7 +1205,7 @@
             $('#phongBanId, #filterTienDo, #filterTrangThai').on('change', function () {
                 $('#searchForm').submit();
             });
-            
+
             // Clear search button
             $('#clearSearch').on('click', function () {
                 $('#searchInput').val('');
@@ -1366,7 +1417,19 @@
                     var $row = $(row);
 
                     // Set giá trị dropdown Phòng ban
-                    $row.find('select[name*=PhongBanId]').val(pn.PhongBanId);
+                    //$row.find('select[name*=PhongBanId]').val(pn.PhongBanId);
+                    // Thay đoạn set giá trị trong renderModalPhanNhiem
+                    // Sau khi set PhongBanId, load User tương ứng
+                    var phongBanId = pn.PhongBanId;
+                    var userId = pn.UserId;
+
+                    $row.find('select[name*=PhongBanId]').val(phongBanId);
+
+                    // Load user theo phòng ban và set selected
+                    var $ddUser = $row.find('.dd-modal-user');
+                    if (phongBanId) {
+                        loadUsersByPhongBan(phongBanId, $ddUser, userId, pn.TenUser);
+                    }
 
                     // Set dropdown Chức năng (nếu có Id)
                     if (pn.ChucNangNhiemVuId) {
@@ -1404,6 +1467,13 @@
                     +         'class="form-select form-select-sm" required>'
                     + optionsPhongBan + '</select>'
                     + '</td>'
+                    // Thêm sau cột Phòng ban trong taoHtmlDongModal
+                    + '<td>'
+                    + '<select name="DanhSachPhanNhiem[' + idx + '].UserId" '
+                    + 'class="form-select form-select-sm dd-modal-user" required>'
+                    + '<option value="">-- Chọn nhân viên --</option>'
+                    + '</select>'
+                    + '</td>'
                     + '<td>'
                     + '<select name="DanhSachPhanNhiem[' + idx + '].ChucNangNhiemVuId" '
                     +         'class="form-select form-select-sm mb-1 ddModalChucNang">'
@@ -1431,6 +1501,54 @@
                     + '</td>'
                     + '</tr>';
             }
+
+            // ── Hàm load User theo PhongBanId (dùng chung cho cả 2 context) ──
+            function loadUsersByPhongBan(phongBanId, $ddUser,
+                                          selectedUserId, selectedText) {
+                $ddUser.html('<option value="">Đang tải...</option>')
+                       .prop('disabled', true);
+
+                if (!phongBanId) {
+                    $ddUser.html('<option value="">-- Chọn nhân viên --</option>')
+                           .prop('disabled', false);
+                    return;
+                }
+
+                $.ajax({
+                    url:  '@Url.Action("GetUsersByPhongBan", "Budget")',
+                    type: 'GET',
+                    data: { phongBanId: phongBanId },
+                    success: function (res) {
+                        var options =
+                            '<option value="">-- Chọn nhân viên --</option>';
+                        if (res.success && res.data.length > 0) {
+                            $.each(res.data, function (i, u) {
+                                var selected = selectedUserId
+                                    && u.value == selectedUserId
+                                    ? 'selected' : '';
+                                options += '<option value="' + u.value + '" '
+                                         + selected + '>'
+                                         + u.text + '</option>';
+                            });
+                        }
+                        $ddUser.html(options).prop('disabled', false);
+                    },
+                    error: function () {
+                        $ddUser.html('<option value="">-- Lỗi tải dữ liệu --</option>')
+                               .prop('disabled', false);
+                    }
+                });
+            }
+
+            // ── Modal: Load User khi đổi Phòng ban ───────────────────────
+            $(document).on('change',
+                '#modalPhanNhiemBody select[name*=PhongBanId]',
+                function () {
+                    var phongBanId = $(this).val();
+                    var $ddUser = $(this).closest('tr').find('.dd-modal-user');
+                    loadUsersByPhongBan(phongBanId, $ddUser, null, null);
+                }
+            );
 
             // ── Cập nhật STT + badge đếm dòng modal ─────────────────────
             function capNhatSTTModal() {
@@ -1474,6 +1592,7 @@
                     var $row = $(this);
                     var stt = i + 1;
                     var phongBan = $row.find('select[name*=PhongBanId]').val();
+                    var userId = $row.find('.dd-modal-user').val();
                     var chucNang = $row.find('.ddModalChucNang').val();
                     var nhapTay = $row.find('.txtModalChucNangTay').val().trim();
                     var email = $row.find('input[name*=Email]').val().trim();
@@ -1482,6 +1601,9 @@
 
                     if (!phongBan)
                         loi.push('Bộ phận');
+
+                    if (!userId)
+                        loi.push('Nhân viên');
 
                     if (!chucNang && !nhapTay)
                         loi.push('Chức năng / Nhiệm vụ');
@@ -1531,7 +1653,8 @@
                     if (!phongBanId) return; // bỏ dòng chưa chọn phòng ban
 
                     danhSachPhanNhiem.push({
-                        PhongBanId:         phongBanId,
+                        PhongBanId: phongBanId,
+                        UserId: $row.find('.dd-modal-user').val() || null,
                         ChucNangNhiemVuId:  $row.find('.ddModalChucNang').val() || null,
                         TenChucNangNhapTay: $row.find('.txtModalChucNangTay').val() || null,
                         Email:              $row.find('input[name*=Email]').val() || null,
@@ -1687,6 +1810,8 @@
 
                 // Cập nhật disable/enable mốc ngày
                 updateMocNgayState();
+
+                capNhatCardTongHop(); // *** THÊM MỚI ***
             };
 
             // ── Hiển thị/ẩn ERPD, BTC theo ProcessType ──────────────────
@@ -1737,7 +1862,13 @@
                     trangThai = 0;
                 }
                 applyTrangThaiPheDuyet(trangThai, isManagerOrAdmin);
+
+                capNhatCardTongHop(); // *** THÊM MỚI ***
             }
+
+            $(document).on('input', '#pd_DuToanPheDuyet', function () {
+                capNhatCardTongHop(); // *** THÊM MỚI ***
+            });
 
             function toggleMocNgay(selector, enabled) {
                 var $el = $(selector);
@@ -1801,6 +1932,75 @@
                             .attr('placeholder', 'Nhập dự toán phê duyệt');
                         break;
                 }
+            }
+
+            // ── Tính và cập nhật 2 card tổng hợp ────────────────────────
+            function capNhatCardTongHop() {
+                var tongDangTrinh = 0;
+                var tongDaDuyet = 0;
+
+                // ── Xử lý Ngân sách gốc ──────────────────────────────────
+                var bgdGoc = $('#pd_NgayDuyetBGD').val();
+                var pdaGoc = $('#pd_NgayDuyetPDA').val();
+                var pktGoc = $('#pd_NgayDuyetPKT').val();
+                var erpdGoc = $('#pd_NgayDuyetERPD').val();
+                var btcGoc = $('#pd_NgayDuyetBTC').val();
+
+                var coItNhat1NgayGoc = !!pdaGoc || !!pktGoc
+                    || !!erpdGoc || !!btcGoc || !!bgdGoc;
+
+                if (!!bgdGoc) {
+                    // Đã duyệt đủ → lấy DuToanPheDuyet
+                    var rawGoc = $('#pd_DuToanPheDuyet').val()
+                        .replace(/,/g, '').replace(/\./g, '');
+                    tongDaDuyet += parseFloat(rawGoc) || 0;
+                } else if (coItNhat1NgayGoc) {
+                    // Đang trình → lấy DuToanGoc
+                    var rawGocTrinh = $('#pd_DuToanGoc').val()
+                        .replace(/\./g, '').replace(/,/g, '');
+                    tongDangTrinh += parseFloat(rawGocTrinh) || 0;
+                }
+
+                // ── Xử lý các card Bổ sung ───────────────────────────────
+                $('#containerBoSung .card-bo-sung').each(function () {
+                    var $card = $(this);
+                    var idx = $card.data('index');
+
+                    var bgdBS = $('#bs_BGD_' + idx).val();
+                    var pdaBS = $('#bs_PDA_' + idx).val();
+                    var pktBS = $('#bs_PKT_' + idx).val();
+                    var erpdBS = $('#bs_ERPD_' + idx).val();
+                    var btcBS = $('#bs_BTC_' + idx).val();
+
+                    var coItNhat1NgayBS = !!pdaBS || !!pktBS
+                        || !!erpdBS || !!btcBS || !!bgdBS;
+
+                    var rawBS = $('#bs_NganSach_' + idx).val()
+                        .replace(/,/g, '').replace(/\./g, '');
+                    var soBS = parseFloat(rawBS) || 0;
+
+                    if (!!bgdBS) {
+                        // Đã duyệt đủ
+                        tongDaDuyet += soBS;
+                    } else if (coItNhat1NgayBS) {
+                        // Đang trình
+                        tongDangTrinh += soBS;
+                    }
+                });
+
+                // ── Cập nhật UI ──────────────────────────────────────────
+                $('#card_TongDangTrinh').text(formatCurrencyPD(tongDangTrinh));
+                $('#card_TongDaDuyet').text(formatCurrencyPD(tongDaDuyet));
+            }
+
+            // ── Helper format tiền tệ cho tab Phê duyệt ─────────────────
+            function formatCurrencyPD(value) {
+                if (!value || value === 0) return '0 ₫';
+                if (value >= 1000000000)
+                    return (value / 1000000000).toFixed(2) + ' tỷ ₫';
+                if (value >= 1000000)
+                    return (value / 1000000).toFixed(1) + ' triệu ₫';
+                return Number(value).toLocaleString('en-US') + ' ₫';
             }
 
             // ── Helper: convert JSON Date sang yyyy-MM-dd cho input date ─
@@ -1945,6 +2145,8 @@
                 capNhatMocNgayBoSung(boSungIndex);
                 capNhatBadgeBoSung(boSungIndex);
                 boSungIndex++;
+
+                capNhatCardTongHop(); // *** THÊM MỚI ***
             });
 
             // ── Xóa card bổ sung + đánh lại số thứ tự ───────────────────
@@ -1954,6 +2156,8 @@
                 $('#containerBoSung .card-bo-sung').each(function (i) {
                     $(this).find('.ten-dot').text('Đợt bổ sung lần ' + (i + 1));
                 });
+
+                capNhatCardTongHop(); // *** THÊM MỚI ***
             });
 
             // ── Thay đổi ProcessType của từng card bổ sung ───────────────
@@ -1993,6 +2197,8 @@
                 }
 
                 capNhatBadgeBoSung(idx);
+
+                capNhatCardTongHop(); // *** THÊM MỚI ***
             }
 
             function toggleBSMocNgay(selector, enabled) {
@@ -2087,6 +2293,8 @@
                     return;
                 }
                 $(this).val(num.toLocaleString('en-US'));
+
+                capNhatCardTongHop();
             });
 
             var khuVucIndex = 0;

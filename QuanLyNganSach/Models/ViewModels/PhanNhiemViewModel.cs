@@ -19,5 +19,7 @@ namespace QuanLyNganSach.Models.ViewModels
         public string GhiChu { get; set; }
         public string TenPhongBan { get; set; }   // Thêm mới
         public string TenChucNang { get; set; }   // Thêm mới
+        public int? UserId { get; set; }
+        public string TenUser { get; set; } // Dạng "MaNhanVien — HoTen"
     }
 }

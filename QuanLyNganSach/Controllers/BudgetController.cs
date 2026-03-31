@@ -416,7 +416,8 @@ namespace QuanLyNganSach.Controllers
                     Index = i + 1,
                     ThieuChucNang = string.IsNullOrEmpty(p.TenChucNangNhapTay)
                                  && p.ChucNangNhiemVuId == null,
-                    ThieuEmail = string.IsNullOrEmpty(p.Email?.Trim())
+                    ThieuEmail = string.IsNullOrEmpty(p.Email?.Trim()),
+                    ThieuUser = p.UserId == null
                 })
                 .Where(p => p.ThieuChucNang || p.ThieuEmail)
                 .ToList();
@@ -431,6 +432,9 @@ namespace QuanLyNganSach.Controllers
                     if (dong.ThieuEmail)
                         ModelState.AddModelError("",
                             $"Dòng {dong.Index}: thiếu Email liên hệ.");
+                    if (dong.ThieuUser)
+                        ModelState.AddModelError("",
+                            $"Dòng {dong.Index}: thiếu thông tin Nhân viên.");
                 }
                 ReloadDropdowns(model);
                 return View(model);
@@ -451,7 +455,8 @@ namespace QuanLyNganSach.Controllers
                         ChucNangNhiemVuId = pn.ChucNangNhiemVuId,
                         TenChucNangNhapTay = pn.TenChucNangNhapTay?.Trim(),
                         Email = pn.Email?.Trim(),
-                        GhiChu = pn.GhiChu?.Trim()
+                        GhiChu = pn.GhiChu?.Trim(),
+                        UserId = pn.UserId
                     };
 
                     db.BudgetRegistrationPhanNhiems.Add(phanNhiem);
@@ -507,6 +512,35 @@ namespace QuanLyNganSach.Controllers
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"SaveHoSoCanCuAndAttachment Error: {ex.Message}");
+            }
+        }
+
+        // ── GET: Budget/GetUsersByPhongBan ───────────────────────────
+        [HttpGet]
+        public ActionResult GetUsersByPhongBan(int phongBanId)
+        {
+            try
+            {
+                var users = db.Users
+                    .Where(u => u.PhongBanId == phongBanId
+                             && u.TinhTrangLamViec == 1)
+                    .OrderBy(u => u.HoTen)
+                    .Select(u => new
+                    {
+                        value = u.UserId,
+                        text = u.MaNhanVien + " – " + u.HoTen
+                    })
+                    .ToList();
+
+                return Json(new { success = true, data = users },
+                    JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"GetUsersByPhongBan Error: {ex.Message}");
+                return Json(new { success = false, data = new object[] { } },
+                    JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -877,6 +911,7 @@ namespace QuanLyNganSach.Controllers
                 .Include(x => x.BudgetApprovals)
                 .Include(x => x.ProgressConfigs)
                 .Include(x => x.ProgressAreas.Select(a => a.ProgressAreaItems))
+                .Include(x => x.BudgetRegistrationPhanNhiems.Select(p => p.User))
                 .FirstOrDefault(x => x.BudgetRegistrationId == id.Value);
 
                 // Check if record exists
@@ -946,10 +981,14 @@ namespace QuanLyNganSach.Controllers
                         TenChucNang = p.ChucNang_NhiemVu?.TenChucNang,
                         TenChucNangNhapTay = p.TenChucNangNhapTay,
                         Email = p.Email,
-                        GhiChu = p.GhiChu
+                        GhiChu = p.GhiChu,
+                        // *** THÊM MỚI ***
+                        UserId = p.UserId,
+                        TenUser = p.UserId.HasValue
+                        ? p.User.MaNhanVien + " — " + p.User.HoTen
+                        : null
                     })
                     .ToList(),
-
 
                     Attachments = budgetRegistration.BudgetAttachments
                         .OrderByDescending(a => a.UploadedDate)
@@ -1350,7 +1389,8 @@ namespace QuanLyNganSach.Controllers
                                 ChucNangNhiemVuId = pn.ChucNangNhiemVuId,
                                 TenChucNangNhapTay = pn.TenChucNangNhapTay?.Trim(),
                                 Email = pn.Email?.Trim(),
-                                GhiChu = pn.GhiChu?.Trim()
+                                GhiChu = pn.GhiChu?.Trim(),
+                                UserId = pn.UserId
                             });
                     }
                 }

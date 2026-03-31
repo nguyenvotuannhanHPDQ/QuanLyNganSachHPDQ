@@ -260,6 +260,7 @@
                                             <tr>
                                                 <th style="width:5%">#</th>
                                                 <th style="width:22%">Tên Bộ phận <span class="text-danger">*</span></th>
+                                                <th style="width:22%">Nhân viên <span class="text-danger">*</span></th>
                                                 <th style="width:25%">Chức năng / Nhiệm vụ <span class="text-danger">*</span></th>
                                                 <th style="width:20%">Email liên hệ <span class="text-danger">*</span></th>
                                                 <th style="width:22%">Ghi chú</th>
@@ -311,7 +312,7 @@
 
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
-    <script>
+<script>
             $(document).ready(function () {
 
                 var $display = $('#DuToan_Display');
@@ -401,6 +402,14 @@
                         + '</select>'
                         + '</td>'
 
+                        // User
+                        + '<td>'
+                        + '<select name="DanhSachPhanNhiem[' + idx + '].UserId" '
+                        + 'class="form-select form-select-sm dd-user" required>'
+                        + '<option value="">-- Chọn nhân viên --</option>'
+                        + '</select>'
+                        + '</td>'
+
                         // Chức năng — dropdown + textbox nhập tay
                         + '<td>'
                         + '<select name="DanhSachPhanNhiem[' + idx + '].ChucNangNhiemVuId" '
@@ -438,6 +447,54 @@
                         + '</td>'
                         + '</tr>';
                 }
+
+                // ── Hàm load User theo PhongBanId (dùng chung cho cả 2 context) ──
+                function loadUsersByPhongBan(phongBanId, $ddUser,
+                                              selectedUserId, selectedText) {
+                    $ddUser.html('<option value="">Đang tải...</option>')
+                           .prop('disabled', true);
+
+                    if (!phongBanId) {
+                        $ddUser.html('<option value="">-- Chọn nhân viên --</option>')
+                               .prop('disabled', false);
+                        return;
+                    }
+
+                    $.ajax({
+                        url:  '@Url.Action("GetUsersByPhongBan", "Budget")',
+                        type: 'GET',
+                        data: { phongBanId: phongBanId },
+                        success: function (res) {
+                            var options =
+                                '<option value="">-- Chọn nhân viên --</option>';
+                            if (res.success && res.data.length > 0) {
+                                $.each(res.data, function (i, u) {
+                                    var selected = selectedUserId
+                                        && u.value == selectedUserId
+                                        ? 'selected' : '';
+                                    options += '<option value="' + u.value + '" '
+                                             + selected + '>'
+                                             + u.text + '</option>';
+                                });
+                            }
+                            $ddUser.html(options).prop('disabled', false);
+                        },
+                        error: function () {
+                            $ddUser.html('<option value="">-- Lỗi tải dữ liệu --</option>')
+                                   .prop('disabled', false);
+                        }
+                    });
+                }
+
+                // ── Trang Create: Load User khi đổi Phòng ban ────────────────
+                $(document).on('change',
+                    '#phanNhiemBody select[name*=PhongBanId]',
+                    function () {
+                        var phongBanId = $(this).val();
+                        var $ddUser = $(this).closest('tr').find('.dd-user');
+                        loadUsersByPhongBan(phongBanId, $ddUser, null, null);
+                    }
+                );
 
                 // ── Cập nhật số thứ tự và badge đếm dòng ──────────────────────
                 function capNhatSTT() {
@@ -486,12 +543,14 @@
                         var $row = $(this);
                         var stt = i + 1;
                         var phongBan = $row.find('select[name*=PhongBanId]').val();
+                        var userId = $row.find('.dd-user').val();
                         var chucNang = $row.find('.ddChucNang').val();
                         var nhapTay = $row.find('.txtChucNangTay').val().trim();
                         var email = $row.find('input[name*=Email]').val().trim();
                         var loi = [];
 
                         if (!phongBan) loi.push('Bộ phận');
+                        if (!userId) loi.push('Nhân viên');
                         if (!chucNang && !nhapTay) loi.push('Chức năng / Nhiệm vụ');
                         if (!email) loi.push('Email liên hệ');
 
@@ -563,7 +622,7 @@
                 });
 
             });
-    </script>
+</script>
     <style>
         /* Custom styles matching layout theme */
         .card {
