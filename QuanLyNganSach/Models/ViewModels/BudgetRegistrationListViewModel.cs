@@ -26,6 +26,8 @@ namespace QuanLyNganSach.Models.ViewModels
         public bool CoBoSungDaDuyet { get; set; } // Có ít nhất 1 đợt bổ sung đã duyệt
         public decimal? TongTienDo { get; set; }
         public int? DanhGiaChung { get; set; }
+        public decimal TongTienDaDuyet { get; set; }
+        public bool CoThongTinPheDuyet { get; set; }
 
         // Property tính trạng thái theo thứ tự ưu tiên
         public int TrangThaiHienThi

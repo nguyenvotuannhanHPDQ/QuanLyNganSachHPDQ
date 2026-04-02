@@ -105,11 +105,11 @@ namespace QuanLyNganSach.Controllers
                     .Where(a => !a.IsSupplementary)
                     .Select(a => (int?)a.TrangThaiPheDuyet)
                     .FirstOrDefault() ?? 0,
-                                // Có ít nhất 1 đợt bổ sung chưa duyệt (TrangThaiPheDuyet != 2)
-                                CoBoSungChuaDuyet = x.BudgetRegistration.BudgetApprovals
+                    // Có ít nhất 1 đợt bổ sung chưa duyệt (TrangThaiPheDuyet != 2)
+                    CoBoSungChuaDuyet = x.BudgetRegistration.BudgetApprovals
                     .Any(a => a.IsSupplementary && a.TrangThaiPheDuyet != 2),
-                                // Có ít nhất 1 đợt bổ sung đã duyệt (TrangThaiPheDuyet = 2)
-                                CoBoSungDaDuyet = x.BudgetRegistration.BudgetApprovals
+                    // Có ít nhất 1 đợt bổ sung đã duyệt (TrangThaiPheDuyet = 2)
+                    CoBoSungDaDuyet = x.BudgetRegistration.BudgetApprovals
                     .Any(a => a.IsSupplementary && a.TrangThaiPheDuyet == 2),
 
                     TongTienDo = x.BudgetRegistration.ProgressConfigs
@@ -119,6 +119,30 @@ namespace QuanLyNganSach.Controllers
                     DanhGiaChung = x.BudgetRegistration.ProgressConfigs
                         .Select(p => p.DanhGiaChung)
                         .FirstOrDefault(),
+
+                    // *** THÊM MỚI ***
+
+                    // Có thông tin phê duyệt không
+                    // (tồn tại ít nhất 1 record BudgetApprovals có TrangThaiPheDuyet = 2)
+                    CoThongTinPheDuyet = x.BudgetRegistration.BudgetApprovals
+                    .Any(a => a.TrangThaiPheDuyet == 2),
+
+                    // Tổng tiền đã duyệt:
+                    // Ngân sách gốc đã duyệt (IsSupplementary=false, TrangThaiPheDuyet=2)
+                    // + Tổng ngân sách bổ sung đã duyệt (IsSupplementary=true, TrangThaiPheDuyet=2)
+                    TongTienDaDuyet =
+                    // Ngân sách gốc đã duyệt → lấy DuToanPheDuyet
+                    (x.BudgetRegistration.BudgetApprovals
+                        .Where(a => !a.IsSupplementary
+                                 && a.TrangThaiPheDuyet == 2)
+                        .Select(a => (decimal?)a.DuToanPheDuyet)
+                        .FirstOrDefault() ?? 0)
+                    +
+                    // Các đợt bổ sung đã duyệt → lấy NganSachBoSung
+                    (x.BudgetRegistration.BudgetApprovals
+                        .Where(a => a.IsSupplementary
+                                 && a.TrangThaiPheDuyet == 2)
+                        .Sum(a => (decimal?)a.NganSachBoSung) ?? 0),
                 });
 
                 // *** THÊM MỚI: Filter theo tiến độ (DanhGiaChung) ***
