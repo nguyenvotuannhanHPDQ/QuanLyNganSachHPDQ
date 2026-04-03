@@ -347,7 +347,7 @@ namespace QuanLyNganSach.Controllers
                 var model = new CreateBudgetRegistrationViewModel
                 {
                     // Generate MaHangMuc with default CategoryTypeId = 1
-                    MaHangMuc = GenerateMaHangMuc(1),
+                    //MaHangMuc = GenerateMaHangMuc(1),
 
                     // Set default CategoryTypeId
                     CategoryTypeId = 1,
@@ -402,7 +402,8 @@ namespace QuanLyNganSach.Controllers
             // Create entity from view model
             var entity = new BudgetRegistration
             {
-                MaHangMuc = model.MaHangMuc,
+                //MaHangMuc = model.MaHangMuc,
+                MaHangMuc = null,
                 TenHangMuc = model.TenHangMuc?.Trim(),
                 DuToan = model.DuToan,
                 SoToTrinh = model.SoToTrinh?.Trim(),
@@ -1319,6 +1320,32 @@ namespace QuanLyNganSach.Controllers
                     // Lưu WorkflowType
                     entity.WorkflowType = model.WorkflowType;
 
+                    // *** THÊM MỚI: Xử lý MaHangMuc theo WorkflowType ***
+                    if (model.WorkflowType == 1)
+                    {
+                        // Chỉ generate nếu chưa có mã
+                        if (string.IsNullOrEmpty(entity.MaHangMuc))
+                        {
+                            // Lấy thông tin phòng ban của chủ hồ sơ
+                            var chuHoSo = db.Users
+                                .Include(u => u.PhongBan)
+                                .FirstOrDefault(u => u.UserId == entity.UserId);
+
+                            if (chuHoSo?.PhongBan != null)
+                            {
+                                entity.MaHangMuc = GenerateMaHangMucForUser(
+                                    chuHoSo.PhongBan.MaPhongBan,
+                                    chuHoSo.PhongBanId ?? 0,
+                                    entity.CategoryTypeId);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // WorkflowType != 1 → reset MaHangMuc
+                        entity.MaHangMuc = null;
+                    }
+
                     // Hàm tính trạng thái dùng chung
                     Func<BudgetApprovalViewModel, int> tinhTrangThai = (pd) =>
                     {
@@ -1580,6 +1607,35 @@ namespace QuanLyNganSach.Controllers
                 System.Diagnostics.Debug.WriteLine($"DownloadFile Error - ID: {id}, Message: {ex.Message}");
                 TempData["Error"] = "Đã xảy ra lỗi khi tải file. Vui lòng thử lại.";
                 return RedirectToAction("Index");
+            }
+        }
+
+        private string GenerateMaHangMucForUser(string maPhongBan,
+                                         int phongBanId,
+                                         int loaiHangMucId = 1)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(maPhongBan)
+                 || phongBanId <= 0) return string.Empty;
+
+                if (loaiHangMucId <= 0) loaiHangMucId = 1;
+
+                string currentMonthYear = DateTime.Now.ToString("MMyy");
+                int sequence = CalculateSequence(
+                    phongBanId, loaiHangMucId, currentMonthYear);
+
+                string maPB = maPhongBan.Trim().ToUpper();
+                string loaiHM = loaiHangMucId.ToString("D2");
+                string sequenceFormatted = sequence.ToString("D2");
+
+                return $"{maPB}.{loaiHM}.{currentMonthYear}.{sequenceFormatted}";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"GenerateMaHangMucForUser Error: {ex.Message}");
+                return string.Empty;
             }
         }
 

@@ -232,9 +232,10 @@
                                             <!-- Column 2: Mã hạng mục & Ngày tạo -->
                                             <div class="col-12 col-sm-6 col-md-3 col-lg-2">
                                                 <div class="mb-2">
-                                                    <span class="badge bg-secondary bg-gradient px-3 py-2 w-100">
-                                                        <i class="bi bi-tag-fill"></i> @item.MaHangMuc
-                                                    </span>
+                                                    @if (!string.IsNullOrEmpty(item.MaHangMuc))
+                                                    {
+                                                        <span class="badge bg-secondary">@item.MaHangMuc</span>
+                                                    }
                                                 </div>
                                                 <small class="text-muted">
                                                     <i class="bi bi-calendar-plus"></i>
@@ -600,8 +601,12 @@
                 <h5 class="modal-title" id="budgetDetailsModalLabel">
                     <i class="bi bi-file-earmark-text me-2"></i>
                     Chi tiết hồ sơ ngân sách
+                    @*<span class="badge bg-light text-primary ms-2 fs-6"
+                        id="modalMaHangMuc"></span>*@
                     <span class="badge bg-light text-primary ms-2 fs-6"
-                          id="modalMaHangMuc"></span>
+                          id="modalMaHangMuc"
+                          style="display:none;">
+                    </span>
                 </h5>
                 <button type="button" class="btn-close btn-close-white"
                         data-bs-dismiss="modal" aria-label="Close"></button>
@@ -1347,7 +1352,15 @@
                 isManagerOrAdminGlobal = data.IsManagerOrAdmin;
 
                 // Header
-                $('#modalMaHangMuc').text(data.MaHangMuc);
+                //$('#modalMaHangMuc').text(data.MaHangMuc);
+                // *** THAY ĐỔI: Ẩn/hiện MaHangMuc theo giá trị ***
+                if (data.MaHangMuc) {
+                    $('#modalMaHangMuc').text(data.MaHangMuc).show();
+                    $('#modal_MaHangMuc').closest('.col-md-4').show();
+                } else {
+                    $('#modalMaHangMuc').text('').hide();
+                    $('#modal_MaHangMuc').closest('.col-md-4').hide();
+                }
 
                 // Tab Phiếu đăng ký
                 $('#modal_AreaName').val(data.ProjectAreaId);

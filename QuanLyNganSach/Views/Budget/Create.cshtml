@@ -108,11 +108,12 @@
                                     </div>
 
                                     <!-- Mã hạng mục — giữ nguyên -->
-                                    <div class="col-md-4 mb-3">
+                                    @*<div class="col-md-4 mb-3">
                                         <label class="form-label fw-semibold">Mã hạng mục</label>
                                         @Html.TextBoxFor(m => m.MaHangMuc,
                                             new { @class = "form-control", @readonly = "readonly" })
-                                    </div>
+                                    </div>*@
+                                    @Html.HiddenFor(m => m.MaHangMuc)
                                 </div>
 
                                 <div class="row">
