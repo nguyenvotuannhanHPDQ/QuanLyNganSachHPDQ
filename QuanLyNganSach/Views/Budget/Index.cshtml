@@ -2433,6 +2433,7 @@
                     + '<div class="table-responsive">'
                     + '<table class="table table-bordered table-sm '
                     + 'align-middle mb-2 tbl-khu-vuc">'
+                    // Thay đoạn thead cũ trong taoCardKhuVuc
                     + '<thead class="table-light">'
                     + '<tr>'
                     + '<th style="min-width:200px">Hạng mục công việc</th>'
@@ -2442,6 +2443,33 @@
                     + '<th style="width:90px">% Tiến độ</th>'
                     + '<th>Ghi chú</th>'
                     + '<th style="width:50px"></th>'
+                    + '</tr>'
+                    // *** THÊM MỚI: Hàng summary tiến độ ***
+                    + '<tr class="table-info">'
+                    + '<td colspan="7" class="py-1 px-2">'
+                    + '<div class="d-flex flex-wrap gap-2 align-items-center">'
+                    + '<small class="fw-semibold text-dark">'
+                    + '<i class="bi bi-bar-chart-fill me-1"></i>Tiến độ:</small>'
+
+                    // Tiến độ chung
+                    + '<span class="badge bg-primary summary-chung-' + kvIdx + '">'
+                    + 'Chung: 0%</span>'
+
+                    // Tiến độ từng hạng mục
+                    + '<span class="badge bg-success summary-xd-' + kvIdx + '">'
+                    + 'Xây dựng: 0%</span>'
+
+                    + '<span class="badge bg-warning text-dark summary-kct-' + kvIdx + '">'
+                    + 'Kết cấu thép: 0%</span>'
+
+                    + '<span class="badge bg-info text-dark summary-ldt-' + kvIdx + '">'
+                    + 'Lắp đặt thiết bị: 0%</span>'
+
+                    + '<span class="badge bg-secondary summary-khac-' + kvIdx + '">'
+                    + 'Hạng mục khác: 0%</span>'
+
+                    + '</div>'
+                    + '</td>'
                     + '</tr>'
                     + '</thead>'
                     + '<tbody class="tbody-items-' + kvIdx + '"></tbody>'
@@ -2485,8 +2513,10 @@
 
             // ── Xóa dòng ─────────────────────────────────────────────────
             $(document).on('click', '.btn-xoa-dong-item', function () {
+                var kvIdx = $(this).closest('.card-khu-vuc').data('kv-idx');
                 $(this).closest('tr').remove();
                 capNhatTongQuanTienDo();
+                capNhatSummaryKhuVuc(kvIdx); // *** THÊM MỚI ***
             });
 
             // ── Tính % tiến độ từng dòng khi KLHĐ/KLTT thay đổi ─────────
@@ -2497,6 +2527,16 @@
                 var pct = klhd > 0 ? Math.min((kltt / klhd) * 100, 100) : 0;
                 $row.find('.pct-tien-do').text(pct.toFixed(1) + '%');
                 capNhatTongQuanTienDo();
+
+                // *** THÊM MỚI ***
+                var kvIdx = $row.closest('.card-khu-vuc').data('kv-idx');
+                capNhatSummaryKhuVuc(kvIdx);
+            });
+
+            // Khi thay đổi dropdown hạng mục
+            $(document).on('change', '.dd-hang-muc', function () {
+                var kvIdx = $(this).closest('.card-khu-vuc').data('kv-idx');
+                capNhatSummaryKhuVuc(kvIdx); // *** THÊM MỚI ***
             });
 
             // ── Tính tổng tỉ trọng realtime ──────────────────────────────
@@ -2591,6 +2631,96 @@
                 $('#td_TongTienDo').text(tongTienDo.toFixed(1) + '%');
             }
 
+            // ── Tính và cập nhật summary tiến độ từng khu vực ────────────
+            function capNhatSummaryKhuVuc(kvIdx) {
+                var tongPct = 0;
+                var tongDong = 0;
+
+                var sumHM = {
+                    'Xây dựng': { tong: 0, count: 0 },
+                    'Kết cấu thép': { tong: 0, count: 0 },
+                    'Lắp đặt thiết bị': { tong: 0, count: 0 },
+                    'Khác': { tong: 0, count: 0 }
+                };
+
+                $('.tbody-items-' + kvIdx + ' tr').each(function () {
+                    var $row = $(this);
+                    var klhd = parseFloat($row.find('.inp-klhd').val()) || 0;
+                    var kltt = parseFloat($row.find('.inp-kltt').val()) || 0;
+                    var pct = klhd > 0
+                        ? Math.min((kltt / klhd) * 100, 100) : 0;
+
+                    tongPct += pct;
+                    tongDong++;
+
+                    // Xác định nhóm hạng mục
+                    var ddVal = $row.find('.dd-hang-muc').val();
+                    var txtVal = $row.find('.txt-hang-muc-tay').val().trim();
+
+                    var nhom;
+                    if (ddVal && ddVal !== '') {
+                        // Chọn từ dropdown
+                        nhom = ddVal; // 'Xây dựng', 'Kết cấu thép', 'Lắp đặt thiết bị'
+                    } else {
+                        // Nhập tay → Hạng mục khác
+                        nhom = 'Khác';
+                    }
+
+                    if (!sumHM.hasOwnProperty(nhom)) nhom = 'Khác';
+                    sumHM[nhom].tong += pct;
+                    sumHM[nhom].count++;
+                });
+
+                // Tính tiến độ chung
+                var chung = tongDong > 0
+                    ? (tongPct / tongDong).toFixed(1) : 0;
+
+                // Tính tiến độ từng hạng mục
+                var avgXD = sumHM['Xây dựng'].count > 0
+                    ? (sumHM['Xây dựng'].tong / sumHM['Xây dựng'].count).toFixed(1)
+                    : null;
+                var avgKCT = sumHM['Kết cấu thép'].count > 0
+                    ? (sumHM['Kết cấu thép'].tong / sumHM['Kết cấu thép'].count).toFixed(1)
+                    : null;
+                var avgLDT = sumHM['Lắp đặt thiết bị'].count > 0
+                    ? (sumHM['Lắp đặt thiết bị'].tong / sumHM['Lắp đặt thiết bị'].count).toFixed(1)
+                    : null;
+                var avgKhac = sumHM['Khác'].count > 0
+                    ? (sumHM['Khác'].tong / sumHM['Khác'].count).toFixed(1)
+                    : null;
+
+                // Cập nhật badge — ẩn nếu không có dữ liệu
+                $('.summary-chung-' + kvIdx).text('Chung: ' + chung + '%');
+
+                if (avgXD !== null) {
+                    $('.summary-xd-' + kvIdx)
+                        .text('Xây dựng: ' + avgXD + '%').show();
+                } else {
+                    $('.summary-xd-' + kvIdx).hide();
+                }
+
+                if (avgKCT !== null) {
+                    $('.summary-kct-' + kvIdx)
+                        .text('Kết cấu thép: ' + avgKCT + '%').show();
+                } else {
+                    $('.summary-kct-' + kvIdx).hide();
+                }
+
+                if (avgLDT !== null) {
+                    $('.summary-ldt-' + kvIdx)
+                        .text('Lắp đặt thiết bị: ' + avgLDT + '%').show();
+                } else {
+                    $('.summary-ldt-' + kvIdx).hide();
+                }
+
+                if (avgKhac !== null) {
+                    $('.summary-khac-' + kvIdx)
+                        .text('Hạng mục khác: ' + avgKhac + '%').show();
+                } else {
+                    $('.summary-khac-' + kvIdx).hide();
+                }
+            }
+
             // ── Bind dữ liệu khi load modal ──────────────────────────────
             window.bindTienDoData = function (data) {
                 if (!data) {
@@ -2679,6 +2809,7 @@
                             themDongItem(kvIdx);
                         }
                         khuVucIndex++;
+                        capNhatSummaryKhuVuc(kvIdx); // *** THÊM MỚI ***
                     });
                 }
                 capNhatTongQuanTienDo();
@@ -2746,6 +2877,9 @@
                     $dd.show();
                     $btn.html('<small class="text-muted">✏️ Nhập thủ công</small>');
                 }
+
+                var kvIdx = $(this).closest('.card-khu-vuc').data('kv-idx');
+                capNhatSummaryKhuVuc(kvIdx); // *** THÊM MỚI ***
             });
 
 
