@@ -404,12 +404,40 @@
                                             <!-- Column 6: Actions -->
                                             <div class="col-12 col-sm-6 col-md-12 col-lg-3">
                                                 <div class="d-flex gap-2 justify-content-lg-end justify-content-start">
+
+                                                    <!-- Nút Xem (giữ nguyên) -->
                                                     <button type="button"
-                                                            class="btn btn-outline-primary btn-sm flex-fill flex-lg-grow-0 btn-view-modal"
+                                                            class="btn btn-outline-primary btn-sm
+                       flex-fill flex-lg-grow-0 btn-view-modal"
                                                             data-budget-id="@item.BudgetRegistrationId"
                                                             title="Xem chi tiết">
                                                         <i class="bi bi-eye"></i> Xem chi tiết
                                                     </button>
+
+                                                    <!-- *** THÊM MỚI: Nút Xóa ***
+                                                     Hiển thị nếu: Admin/Manager (mọi trạng thái)
+                                                     HOẶC user thường là chủ hồ sơ + chưa xác nhận luồng
+                                                    -->
+                                                    @{
+                                                        var currentUser = ViewBag.CurrentUser
+                                                            as QuanLyNganSach.Models.Auth.LoggedInUser;
+                                                        bool isManagerOrAdmin =
+                                                            ViewBag.IsManagerOrAdmin == true;
+                                                        bool canDelete = isManagerOrAdmin
+                                                            || (item.UserId == currentUser?.UserId
+                                                             && item.WorkflowType == null);
+                                                    }
+                                                    @if (canDelete)
+                                                    {
+                                                        <button type="button"
+                                                                class="btn btn-outline-danger btn-sm flex-fill flex-lg-grow-0 btn-delete"
+                                                                data-budget-id="@item.BudgetRegistrationId"
+                                                                data-ten-hang-muc="@item.TenHangMuc"
+                                                                title="Xóa hồ sơ">
+                                                            <i class="bi bi-trash"></i> Xóa
+                                                        </button>
+                                                    }
+
                                                 </div>
                                             </div>
                                         </div>
@@ -2882,6 +2910,40 @@
                 capNhatSummaryKhuVuc(kvIdx); // *** THÊM MỚI ***
             });
 
+            // ── Xóa hồ sơ ────────────────────────────────────────────────
+            $(document).on('click', '.btn-delete', function () {
+                var budgetId    = $(this).data('budget-id');
+                var tenHangMuc  = $(this).data('ten-hang-muc') || 'này';
+
+                if (!confirm('Bạn có chắc chắn muốn xóa hồ sơ "'
+                           + tenHangMuc + '" không?\n'
+                           + 'Thao tác này không thể hoàn tác!')) return;
+
+                var $btn = $(this);
+                $btn.prop('disabled', true)
+                    .html('<i class="bi bi-hourglass-split"></i>');
+
+                $.ajax({
+                    url:  '@Url.Action("Delete", "Budget")',
+                    type: 'POST',
+                    data: { id: budgetId },
+                    success: function (res) {
+                        if (res.success) {
+                            // Reload giữ nguyên filter/search/page
+                            location.reload();
+                        } else {
+                            alert(res.message);
+                            $btn.prop('disabled', false)
+                                .html('<i class="bi bi-trash"></i> Xóa');
+                        }
+                    },
+                    error: function () {
+                        alert('Đã xảy ra lỗi khi xóa hồ sơ.');
+                        $btn.prop('disabled', false)
+                            .html('<i class="bi bi-trash"></i> Xóa');
+                    }
+                });
+            });
 
         });
     </script>

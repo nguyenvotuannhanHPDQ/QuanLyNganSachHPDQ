@@ -21,8 +21,8 @@ namespace QuanLyNganSach.Controllers
              || (CurrentUser.RoleId != Constants.RoleConst.Admin
               && CurrentUser.RoleId != Constants.RoleConst.Manager))
             {
-                TempData["Error"] = "Bạn không có quyền truy cập trang này.";
-                return RedirectToAction("Index", "Home");
+                //TempData["Error"] = "Bạn không có quyền truy cập trang này.";
+                return RedirectToAction("Index", "Budget");
             }
 
             // Load dropdowns cho bộ lọc
@@ -92,7 +92,7 @@ namespace QuanLyNganSach.Controllers
                         success = false,
                         message = "Không có quyền truy cập."
                     },
-                        JsonRequestBehavior.AllowGet);
+                    JsonRequestBehavior.AllowGet);
                 }
 
                 // ── Query base ───────────────────────────────────

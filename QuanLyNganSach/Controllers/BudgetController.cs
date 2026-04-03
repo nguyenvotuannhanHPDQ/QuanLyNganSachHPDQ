@@ -143,6 +143,7 @@ namespace QuanLyNganSach.Controllers
                         .Where(a => a.IsSupplementary
                                  && a.TrangThaiPheDuyet == 2)
                         .Sum(a => (decimal?)a.NganSachBoSung) ?? 0),
+                    UserId = x.BudgetRegistration.UserId,
                 });
 
                 // *** THÊM MỚI: Filter theo tiến độ (DanhGiaChung) ***
@@ -497,6 +498,107 @@ namespace QuanLyNganSach.Controllers
 
             TempData["Success"] = "Đăng ký hồ sơ ngân sách thành công";
             return RedirectToAction("Create");
+        }
+
+        [HttpPost]
+        public ActionResult Delete(int id)
+        {
+            try
+            {
+                if (CurrentUser == null)
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Phiên đăng nhập đã hết hạn."
+                    });
+
+                var entity = db.BudgetRegistrations
+                    .FirstOrDefault(x => x.BudgetRegistrationId == id);
+
+                if (entity == null)
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Không tìm thấy hồ sơ."
+                    });
+
+                bool isManagerOrAdmin =
+                    CurrentUser.RoleId == Constants.RoleConst.Admin ||
+                    CurrentUser.RoleId == Constants.RoleConst.Manager;
+
+                // Kiểm tra quyền xóa
+                if (!isManagerOrAdmin)
+                {
+                    // User thường chỉ xóa được hồ sơ của mình
+                    // và chỉ khi chưa xác nhận luồng
+                    if (entity.UserId != CurrentUser.UserId)
+                        return Json(new
+                        {
+                            success = false,
+                            message = "Bạn không có quyền xóa hồ sơ này."
+                        });
+
+                    if (entity.WorkflowType != null)
+                        return Json(new
+                        {
+                            success = false,
+                            message = "Hồ sơ đã được xác nhận, "
+                                    + "không thể xóa."
+                        });
+                }
+
+                // ── Xóa bảng con theo thứ tự ────────────────────────────
+
+                // 1. ProgressAreaItems → ProgressAreas
+                var progressAreas = db.ProgressAreas
+                    .Include(a => a.ProgressAreaItems)
+                    .Where(a => a.BudgetRegistrationId == id)
+                    .ToList();
+                foreach (var area in progressAreas)
+                    db.ProgressAreaItems.RemoveRange(area.ProgressAreaItems);
+                db.ProgressAreas.RemoveRange(progressAreas);
+
+                // 2. ProgressConfigs
+                var progressConfigs = db.ProgressConfigs
+                    .Where(p => p.BudgetRegistrationId == id).ToList();
+                db.ProgressConfigs.RemoveRange(progressConfigs);
+
+                // 3. BudgetApprovals
+                var approvals = db.BudgetApprovals
+                    .Where(a => a.BudgetRegistrationId == id).ToList();
+                db.BudgetApprovals.RemoveRange(approvals);
+
+                // 4. BudgetAttachments
+                var attachments = db.BudgetAttachments
+                    .Where(a => a.BudgetRegistrationId == id).ToList();
+                db.BudgetAttachments.RemoveRange(attachments);
+
+                // 5. BudgetRegistrationPhanNhiem
+                var phanNhiems = db.BudgetRegistrationPhanNhiems
+                    .Where(p => p.BudgetRegistrationId == id).ToList();
+                db.BudgetRegistrationPhanNhiems.RemoveRange(phanNhiems);
+
+                // 6. Xóa bảng cha
+                db.BudgetRegistrations.Remove(entity);
+
+                db.SaveChanges();
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Xóa hồ sơ thành công."
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"Delete Error: {ex.Message}");
+                return Json(new
+                {
+                    success = false,
+                    message = "Đã xảy ra lỗi khi xóa hồ sơ."
+                });
+            }
         }
 
         private void SaveHoSoCanCuAndAttachment(HttpPostedFileBase file, int budgetRegistrationId)
