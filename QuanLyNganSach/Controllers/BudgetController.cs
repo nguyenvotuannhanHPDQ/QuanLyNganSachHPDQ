@@ -9,6 +9,7 @@ using System.Web;
 using System.Web.Mvc;
 using System.Data.Entity;
 using QuanLyNganSach.Models.Enums;
+using QuanLyNganSach.Models.Utilities;
 
 namespace QuanLyNganSach.Controllers
 {
@@ -62,10 +63,16 @@ namespace QuanLyNganSach.Controllers
                             };
 
                 // Apply role-based filtering
+                // Thay đoạn Apply role-based filtering cũ
                 if (!isManagerOrAdmin)
                 {
-                    // User thường chỉ xem được đăng ký của mình
-                    query = query.Where(x => x.BudgetRegistration.UserId == currentUser.UserId);
+                    // User thường xem được:
+                    // 1. Hồ sơ của mình
+                    // 2. Hồ sơ được phân nhiệm
+                    query = query.Where(x =>
+                        x.BudgetRegistration.UserId == currentUser.UserId
+                        || x.BudgetRegistration.BudgetRegistrationPhanNhiems
+                            .Any(p => p.UserId == currentUser.UserId));
                 }
 
                 // Apply department filter (chỉ Manager/Admin mới có filter này)
@@ -144,6 +151,11 @@ namespace QuanLyNganSach.Controllers
                                  && a.TrangThaiPheDuyet == 2)
                         .Sum(a => (decimal?)a.NganSachBoSung) ?? 0),
                     UserId = x.BudgetRegistration.UserId,
+                    // *** THÊM MỚI ***
+                    IsPhanNhiemUser = x.BudgetRegistration.UserId != currentUser.UserId
+                        && !isManagerOrAdmin
+                        && x.BudgetRegistration.BudgetRegistrationPhanNhiems
+                            .Any(p => p.UserId == currentUser.UserId),
                 });
 
                 // *** THÊM MỚI: Filter theo tiến độ (DanhGiaChung) ***
@@ -313,6 +325,8 @@ namespace QuanLyNganSach.Controllers
                         Text = p.AreaName
                     })
                     .ToList();
+
+                ViewBag.CurrentUserId = currentUser.UserId;
 
                 return View(budgetList);
             }
@@ -1050,8 +1064,14 @@ namespace QuanLyNganSach.Controllers
                 // Check permissions
                 bool isManagerOrAdmin = CurrentUser.RoleId == Constants.RoleConst.Admin ||
                                         CurrentUser.RoleId == Constants.RoleConst.Manager;
+                // *** THÊM MỚI: Tính IsPhanNhiemUser ***
+                bool isPhanNhiemUser =
+                    !isManagerOrAdmin
+                    && budgetRegistration.UserId != CurrentUser.UserId
+                    && budgetRegistration.BudgetRegistrationPhanNhiems
+                        .Any(p => p.UserId == CurrentUser.UserId);
 
-                if (!isManagerOrAdmin && budgetRegistration.UserId != CurrentUser.UserId)
+                if (!isManagerOrAdmin && budgetRegistration.UserId != CurrentUser.UserId && !isPhanNhiemUser)
                 {
                     return Json(new { success = false, message = "Bạn không có quyền xem đăng ký này." }, JsonRequestBehavior.AllowGet);
                 }
@@ -1200,6 +1220,7 @@ namespace QuanLyNganSach.Controllers
                             ProgressAreaId = a.ProgressAreaId,
                             TenKhuVuc = a.TenKhuVuc,
                             SortOrder = a.SortOrder,
+                            CreatedByUserId = a.CreatedByUserId, // *** THÊM MỚI ***
                             DanhSachDong = a.ProgressAreaItems
                                 .OrderBy(i => i.SortOrder)
                                 .Select(i => new ProgressAreaItemViewModel
@@ -1216,6 +1237,16 @@ namespace QuanLyNganSach.Controllers
                         }).ToList(),
                     TongTienDo = config?.TongTienDo
                 };
+
+                //// *** THÊM MỚI: Tính IsPhanNhiemUser ***
+                //bool isPhanNhiemUser =
+                //    !isManagerOrAdmin
+                //    && budgetRegistration.UserId != CurrentUser.UserId
+                //    && budgetRegistration.BudgetRegistrationPhanNhiems
+                //        .Any(p => p.UserId == CurrentUser.UserId);
+
+                // Thêm vào viewModel
+                viewModel.IsPhanNhiemUser = isPhanNhiemUser;
 
                 return Json(new { success = true, data = viewModel }, JsonRequestBehavior.AllowGet);
             }
@@ -1407,12 +1438,45 @@ namespace QuanLyNganSach.Controllers
                 bool isOwner = entity.UserId == CurrentUser.UserId;
 
                 // Chặn nếu không phải Admin/Manager và không phải chủ hồ sơ
-                if (!isManagerOrAdmin && !isOwner)
+                //if (!isManagerOrAdmin && !isOwner)
+                //    return Json(new
+                //    {
+                //        success = false,
+                //        message = "Bạn không có quyền thực hiện thao tác này."
+                //    });
+                // Thay đoạn kiểm tra quyền cũ
+                bool isPhanNhiemUser =
+                    !isManagerOrAdmin
+                    && entity.UserId != CurrentUser.UserId
+                    && db.BudgetRegistrationPhanNhiems
+                        .Any(p => p.BudgetRegistrationId == model.BudgetRegistrationId
+                               && p.UserId == CurrentUser.UserId);
+
+                // Chặn nếu không có quyền
+                if (!isManagerOrAdmin
+                 && entity.UserId != CurrentUser.UserId
+                 && !isPhanNhiemUser)
                     return Json(new
                     {
                         success = false,
-                        message = "Bạn không có quyền thực hiện thao tác này."
+                        message = "Bạn không có quyền thực hiện."
                     });
+
+                // User phân nhiệm không được lưu WorkflowType + Phê duyệt + Phân nhiệm
+                // Chỉ được lưu Nhật ký tiến độ
+                if (isPhanNhiemUser)
+                {
+                    // Chỉ lưu Nhật ký tiến độ
+                    SaveProgressData(model.BudgetRegistrationId,
+                                     model.ThongTinTienDo,
+                                     CurrentUser.UserId); // *** Truyền UserId ***
+                    db.SaveChanges();
+                    return Json(new
+                    {
+                        success = true,
+                        message = "Lưu thông tin thành công."
+                    });
+                }
 
                 // ================================================================
                 // VÙNG CHỈ ADMIN/MANAGER — WorkflowType + Phê duyệt
@@ -1548,7 +1612,7 @@ namespace QuanLyNganSach.Controllers
                     }
                 }
 
-                SaveProgressData(model.BudgetRegistrationId, model.ThongTinTienDo);
+                SaveProgressData(model.BudgetRegistrationId, model.ThongTinTienDo, CurrentUser.UserId);
 
                 db.SaveChanges();
 
@@ -1886,14 +1950,15 @@ namespace QuanLyNganSach.Controllers
             }
         }
         private void SaveProgressData(int budgetRegistrationId,
-                               ProgressConfigViewModel model)
+                               ProgressConfigViewModel model,
+                               int? createdByUserId = null)
         {
             if (model == null) return;
 
-            // Lưu ProgressConfig (upsert)
+            // Lưu ProgressConfig (upsert) — giữ nguyên
             var existingConfig = db.ProgressConfigs
-                .FirstOrDefault(x => x.BudgetRegistrationId == budgetRegistrationId);
-
+                .FirstOrDefault(x => x.BudgetRegistrationId
+                                   == budgetRegistrationId);
             if (existingConfig == null)
             {
                 existingConfig = new ProgressConfig
@@ -1902,7 +1967,6 @@ namespace QuanLyNganSach.Controllers
                 };
                 db.ProgressConfigs.Add(existingConfig);
             }
-
             existingConfig.TiTrongXayDung = model.TiTrongXayDung;
             existingConfig.TiTrongKetCauThep = model.TiTrongKetCauThep;
             existingConfig.TiTrongLapDatThietBi = model.TiTrongLapDatThietBi;
@@ -1910,51 +1974,164 @@ namespace QuanLyNganSach.Controllers
             existingConfig.DanhGiaChung = model.DanhGiaChung;
             existingConfig.TongTienDo = model.TongTienDo;
 
-            // Xóa toàn bộ ProgressAreas + ProgressAreaItems cũ
-            var oldAreas = db.ProgressAreas
-                .Include(a => a.ProgressAreaItems)
-                .Where(x => x.BudgetRegistrationId == budgetRegistrationId)
-                .ToList();
+            // *** THAY ĐỔI: Phân nhánh theo quyền ***
+            bool isAdminOrManager =
+                CurrentUser.RoleId == Constants.RoleConst.Admin ||
+                CurrentUser.RoleId == Constants.RoleConst.Manager;
 
-            foreach (var area in oldAreas)
+            if (isAdminOrManager)
             {
-                db.ProgressAreaItems.RemoveRange(area.ProgressAreaItems);
-            }
-            db.ProgressAreas.RemoveRange(oldAreas);
+                // Admin/Manager: xóa toàn bộ rồi insert lại
+                var oldAreasAll = db.ProgressAreas
+                    .Include(a => a.ProgressAreaItems)
+                    .Where(x => x.BudgetRegistrationId == budgetRegistrationId)
+                    .ToList();
+                foreach (var area in oldAreasAll)
+                    db.ProgressAreaItems.RemoveRange(area.ProgressAreaItems);
+                db.ProgressAreas.RemoveRange(oldAreasAll);
+                db.SaveChanges();
 
-            // Insert ProgressAreas + ProgressAreaItems mới
-            if (model.DanhSachKhuVuc != null && model.DanhSachKhuVuc.Any())
-            {
-                int areaOrder = 1;
-                foreach (var khuVuc in model.DanhSachKhuVuc)
+                // Insert tất cả khu vực từ payload
+                if (model.DanhSachKhuVuc != null && model.DanhSachKhuVuc.Any())
                 {
-                    if (string.IsNullOrWhiteSpace(khuVuc.TenKhuVuc)) continue;
-
-                    var newArea = new ProgressArea
+                    int areaOrder = 1;
+                    foreach (var khuVuc in model.DanhSachKhuVuc)
                     {
-                        BudgetRegistrationId = budgetRegistrationId,
-                        TenKhuVuc = khuVuc.TenKhuVuc.Trim(),
-                        SortOrder = areaOrder++
-                    };
-                    db.ProgressAreas.Add(newArea);
-                    db.SaveChanges(); // Lấy ProgressAreaId vừa insert
+                        if (string.IsNullOrWhiteSpace(khuVuc.TenKhuVuc))
+                            continue;
 
-                    if (khuVuc.DanhSachDong != null && khuVuc.DanhSachDong.Any())
-                    {
-                        int itemOrder = 1;
-                        foreach (var dong in khuVuc.DanhSachDong)
+                        var newArea = new ProgressArea
                         {
-                            db.ProgressAreaItems.Add(new ProgressAreaItem
+                            BudgetRegistrationId = budgetRegistrationId,
+                            TenKhuVuc = khuVuc.TenKhuVuc.Trim(),
+                            SortOrder = areaOrder++,
+                            // Giữ CreatedByUserId gốc nếu có,
+                            // ngược lại gán Admin hiện tại
+                            CreatedByUserId = khuVuc.CreatedByUserId
+                                                ?? createdByUserId
+                        };
+                        db.ProgressAreas.Add(newArea);
+                        db.SaveChanges();
+
+                        if (khuVuc.DanhSachDong != null
+                         && khuVuc.DanhSachDong.Any())
+                        {
+                            int itemOrder = 1;
+                            foreach (var dong in khuVuc.DanhSachDong)
                             {
-                                ProgressAreaId = newArea.ProgressAreaId,
-                                HangMucCongViec = dong.HangMucCongViec,
-                                HangMucNhapTay = dong.HangMucNhapTay?.Trim(),
-                                DVT = dong.DVT?.Trim(),
-                                KLHD = dong.KLHD,
-                                KLTT = dong.KLTT,
-                                GhiChu = dong.GhiChu?.Trim(),
-                                SortOrder = itemOrder++
-                            });
+                                db.ProgressAreaItems.Add(new ProgressAreaItem
+                                {
+                                    ProgressAreaId = newArea.ProgressAreaId,
+                                    HangMucCongViec = dong.HangMucCongViec,
+                                    HangMucNhapTay = dong.HangMucNhapTay?.Trim(),
+                                    DVT = dong.DVT?.Trim(),
+                                    KLHD = dong.KLHD,
+                                    KLTT = dong.KLTT,
+                                    GhiChu = dong.GhiChu?.Trim(),
+                                    SortOrder = itemOrder++
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // User thường/chủ hồ sơ/phân nhiệm:
+                // Chỉ xóa + insert khu vực của chính mình — giữ nguyên logic cũ
+                var oldAreas = db.ProgressAreas
+                    .Include(a => a.ProgressAreaItems)
+                    .Where(x => x.BudgetRegistrationId == budgetRegistrationId
+                             && x.CreatedByUserId == createdByUserId)
+                    .ToList();
+                foreach (var area in oldAreas)
+                    db.ProgressAreaItems.RemoveRange(area.ProgressAreaItems);
+                db.ProgressAreas.RemoveRange(oldAreas);
+
+                if (model.DanhSachKhuVuc != null && model.DanhSachKhuVuc.Any())
+                {
+                    int areaOrder = db.ProgressAreas
+                        .Where(x => x.BudgetRegistrationId == budgetRegistrationId)
+                        .Select(x => (int?)x.SortOrder)
+                        .Max() ?? 0;
+
+                    foreach (var khuVuc in model.DanhSachKhuVuc)
+                    {
+                        if (string.IsNullOrWhiteSpace(khuVuc.TenKhuVuc)) continue;
+
+                        if (khuVuc.CreatedByUserId == createdByUserId
+                         || khuVuc.CreatedByUserId == null)
+                        {
+                            // ── Khu vực của chính user: xóa + insert lại như cũ ──
+                            // (các khu vực này đã bị xóa ở bước trên)
+                            var newArea = new ProgressArea
+                            {
+                                BudgetRegistrationId = budgetRegistrationId,
+                                TenKhuVuc = khuVuc.TenKhuVuc.Trim(),
+                                SortOrder = ++areaOrder,
+                                CreatedByUserId = createdByUserId
+                            };
+                            db.ProgressAreas.Add(newArea);
+                            db.SaveChanges();
+
+                            if (khuVuc.DanhSachDong != null && khuVuc.DanhSachDong.Any())
+                            {
+                                int itemOrder = 1;
+                                foreach (var dong in khuVuc.DanhSachDong)
+                                {
+                                    db.ProgressAreaItems.Add(new ProgressAreaItem
+                                    {
+                                        ProgressAreaId = newArea.ProgressAreaId,
+                                        HangMucCongViec = dong.HangMucCongViec,
+                                        HangMucNhapTay = dong.HangMucNhapTay?.Trim(),
+                                        DVT = dong.DVT?.Trim(),
+                                        KLHD = dong.KLHD,
+                                        KLTT = dong.KLTT,
+                                        GhiChu = dong.GhiChu?.Trim(),
+                                        SortOrder = itemOrder++
+                                    });
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // ── Khu vực của người khác: chỉ thêm dòng MỚI ──────
+                            // Tìm ProgressAreaId thực tế trong DB theo tên khu vực
+                            var existingArea = db.ProgressAreas
+                                .FirstOrDefault(a =>
+                                    a.BudgetRegistrationId == budgetRegistrationId
+                                 && a.TenKhuVuc == khuVuc.TenKhuVuc.Trim()
+                                 && a.CreatedByUserId == khuVuc.CreatedByUserId);
+
+                            if (existingArea == null) continue;
+
+                            if (khuVuc.DanhSachDong != null && khuVuc.DanhSachDong.Any())
+                            {
+                                // Lấy SortOrder lớn nhất hiện có
+                                int maxItemOrder = db.ProgressAreaItems
+                                    .Where(i => i.ProgressAreaId == existingArea.ProgressAreaId)
+                                    .Select(i => (int?)i.SortOrder)
+                                    .Max() ?? 0;
+
+                                foreach (var dong in khuVuc.DanhSachDong)
+                                {
+                                    // *** Chỉ insert dòng MỚI —
+                                    // nhận biết qua ProgressAreaItemId = 0 hoặc null ***
+                                    if (dong.ProgressAreaItemId > 0) continue;
+
+                                    db.ProgressAreaItems.Add(new ProgressAreaItem
+                                    {
+                                        ProgressAreaId = existingArea.ProgressAreaId,
+                                        HangMucCongViec = dong.HangMucCongViec,
+                                        HangMucNhapTay = dong.HangMucNhapTay?.Trim(),
+                                        DVT = dong.DVT?.Trim(),
+                                        KLHD = dong.KLHD,
+                                        KLTT = dong.KLTT,
+                                        GhiChu = dong.GhiChu?.Trim(),
+                                        SortOrder = ++maxItemOrder
+                                    });
+                                }
+                            }
                         }
                     }
                 }

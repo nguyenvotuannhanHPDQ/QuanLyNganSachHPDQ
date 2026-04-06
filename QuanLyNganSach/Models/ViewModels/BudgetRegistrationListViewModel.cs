@@ -29,6 +29,7 @@ namespace QuanLyNganSach.Models.ViewModels
         public decimal TongTienDaDuyet { get; set; }
         public bool CoThongTinPheDuyet { get; set; }
         public int UserId { get; set; }
+        public bool IsPhanNhiemUser { get; set; }
 
         // Property tính trạng thái theo thứ tự ưu tiên
         public int TrangThaiHienThi

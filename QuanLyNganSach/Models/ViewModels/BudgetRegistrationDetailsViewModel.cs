@@ -31,6 +31,7 @@ namespace QuanLyNganSach.Models.ViewModels
 
         // Khu vực dự án ID
         public int ProjectAreaId { get; set; }
+        public bool IsPhanNhiemUser { get; set; }
 
         // Danh sách phân nhiệm
         public List<PhanNhiemViewModel> DanhSachPhanNhiem { get; set; }

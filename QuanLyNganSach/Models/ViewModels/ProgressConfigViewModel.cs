@@ -24,6 +24,8 @@ namespace QuanLyNganSach.Models.ViewModels
         public int ProgressAreaId { get; set; }
         public string TenKhuVuc { get; set; }
         public int SortOrder { get; set; }
+        public int? CreatedByUserId { get; set; }
+        // Dùng để kiểm tra quyền sửa/xóa trong JS
         public List<ProgressAreaItemViewModel> DanhSachDong { get; set; }
             = new List<ProgressAreaItemViewModel>();
     }
