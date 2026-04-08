@@ -40,5 +40,7 @@ namespace QuanLyNganSach.Models.ViewModels
         public decimal KLTT { get; set; }
         public string GhiChu { get; set; }
         public int SortOrder { get; set; }
+        // Thêm property mới
+        public int? CreatedByUserId { get; set; }
     }
 }

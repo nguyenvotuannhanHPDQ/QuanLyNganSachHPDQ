@@ -17,5 +17,6 @@ namespace QuanLyNganSach.Models.ViewModels
             = new List<BudgetApprovalViewModel>();
 
         public ProgressConfigViewModel ThongTinTienDo { get; set; }
+        public bool IsPhanNhiemSearchMode { get; set; }
     }
 }

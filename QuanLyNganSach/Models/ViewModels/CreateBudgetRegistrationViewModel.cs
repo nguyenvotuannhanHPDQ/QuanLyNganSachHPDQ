@@ -8,7 +8,7 @@ namespace QuanLyNganSach.Models.ViewModels
 {
     public class CreateBudgetRegistrationViewModel
     {
-        [Required]
+        //[Required]
         public string MaHangMuc { get; set; }
 
         [Required(ErrorMessage = "Vui lòng nhập tên hạng mục")]
