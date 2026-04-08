@@ -837,6 +837,53 @@
                                     <i class="bi bi-plus-circle me-1"></i>Thêm dòng
                                 </button>
                             </div>
+                            <!-- *** THÊM MỚI: Search + Filter Phân nhiệm *** -->
+                            <div class="row g-2 mb-3" id="phanNhiemFilterRow">
+
+                                <!-- Search tên nhân viên -->
+                                <div class="col-md-4">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-search"></i>
+                                        </span>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="pn_SearchTen"
+                                               placeholder="Tìm theo tên nhân viên..." />
+                                    </div>
+                                </div>
+
+                                <!-- Filter Bộ phận -->
+                                <div class="col-md-3">
+                                    <select class="form-select form-select-sm"
+                                            id="pn_FilterPhongBan">
+                                        <option value="">-- Tất cả bộ phận --</option>
+                                        @foreach (SelectListItem item in
+                                            (IEnumerable<SelectListItem>)ViewBag.DsKhuVucModal)
+                                        {
+                                            <!-- Dùng DsPhongBanModal thay vì DsKhuVucModal -->
+                                        }
+                                    </select>
+                                </div>
+
+                                <!-- Filter Chức năng/Nhiệm vụ -->
+                                <div class="col-md-3">
+                                    <select class="form-select form-select-sm"
+                                            id="pn_FilterChucNang">
+                                        <option value="">-- Tất cả chức năng --</option>
+                                    </select>
+                                </div>
+
+                                <!-- Nút reset -->
+                                <div class="col-md-2">
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm w-100"
+                                            id="btnResetPhanNhiemFilter">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Đặt lại
+                                    </button>
+                                </div>
+
+                            </div>
                             <div class="table-responsive">
                                 <table class="table table-bordered table-hover
                                               align-middle" id="tblModalPhanNhiem">
@@ -1233,6 +1280,8 @@
             // Khai báo ở đầu section Scripts
             var currentUserIdGlobal = @(ViewBag.CurrentUserId ?? 0);
 
+            var isPhanNhiemSearchMode = false;
+
             // Search on input with debounce
             var searchTimeout;
             $('#searchInput').on('keyup', function (e) {
@@ -1359,6 +1408,10 @@
 
                 $('#budgetDetailsModal').modal('show');
 
+                $('#pn_SearchTen').val('');
+                $('#pn_FilterPhongBan').val('');
+                $('#pn_FilterChucNang').val('');
+
                 $.ajax({
                     url: '@Url.Action("GetDetailsModal", "Budget")',
                     type: 'GET',
@@ -1433,6 +1486,9 @@
 
                 // Tab Phân nhiệm
                 renderModalPhanNhiem(data.DanhSachPhanNhiem || []);
+
+                // *** THÊM MỚI: Init dropdowns filter ***
+                initPhanNhiemFilters();
 
                 // *** THÊM MỚI — gọi bind tab Phê duyệt ***
                 bindPheDuyetData(data.NganSachGoc, data.IsManagerOrAdmin);
@@ -1519,6 +1575,7 @@
 
             // ── Render tab Phân nhiệm từ dữ liệu có sẵn ─────────────────
             function renderModalPhanNhiem(list) {
+                isPhanNhiemSearchMode = false; // *** THÊM ***
                 $('#modalPhanNhiemBody').empty();
                 modalRowIndex = 0;
                 $.each(list, function (i, pn) {
@@ -1685,6 +1742,9 @@
 
             // ── Validate tab Phân nhiệm trước khi lưu ────────────────────
             function validatePhanNhiem() {
+                // *** THÊM MỚI: Bỏ qua validate khi đang ở search mode ***
+                if (isPhanNhiemSearchMode) return true;
+
                 var $rows = $('#modalPhanNhiemBody tr');
 
                 // Chưa có dòng nào
@@ -1735,8 +1795,108 @@
                 return isValid;
             }
 
+            // ── Load dropdown filter khi modal mở ───────────────────────
+            function initPhanNhiemFilters() {
+                // Render dropdown Bộ phận từ dsPhongBan đã có
+                var optionsPB = '<option value="">-- Tất cả bộ phận --</option>';
+                $.each(dsPhongBan, function (i, pb) {
+                    optionsPB += '<option value="' + pb.value + '">'
+                               + pb.text + '</option>';
+                });
+                $('#pn_FilterPhongBan').html(optionsPB);
+
+                // Render dropdown Chức năng từ dsChucNang đã có
+                var optionsCN =
+                    '<option value="">-- Tất cả chức năng --</option>';
+                $.each(dsChucNang, function (i, cn) {
+                    optionsCN += '<option value="' + cn.value + '">'
+                               + cn.text + '</option>';
+                });
+                $('#pn_FilterChucNang').html(optionsCN);
+            }
+
+            // ── Gọi API SearchPhanNhiem ──────────────────────────────────
+            function searchPhanNhiem() {
+                if (!currentBudgetId) return;
+
+                $.ajax({
+                    url:  '@Url.Action("SearchPhanNhiem", "Budget")',
+                    type: 'GET',
+                    data: {
+                        budgetRegistrationId: currentBudgetId,
+                        search:      $('#pn_SearchTen').val().trim(),
+                        phongBanId:  $('#pn_FilterPhongBan').val()  || null,
+                        chucNangId:  $('#pn_FilterChucNang').val()  || null
+                    },
+                    success: function (res) {
+                        if (!res.success) return;
+                        isPhanNhiemSearchMode = true; // *** THÊM ***
+                        renderPhanNhiemReadonly(res.data);
+                    }
+                });
+            }
+
+            // ── Render bảng Phân nhiệm từ kết quả search ────────────────
+            function renderPhanNhiemReadonly(data) {
+                var $tbody = $('#modalPhanNhiemBody');
+                $tbody.empty();
+
+                if (!data || data.length === 0) {
+                    $tbody.append(
+                        '<tr><td colspan="7" class="text-center text-muted">'
+                        + 'Không tìm thấy dữ liệu.</td></tr>');
+                    // Cập nhật badge đếm
+                    $('#modalPhanNhiemCount').text(0)
+                        .removeClass('bg-primary').addClass('bg-secondary');
+                    return;
+                }
+
+                $.each(data, function (i, pn) {
+                    var chucNang = pn.TenChucNang || pn.TenChucNangNhapTay || '--';
+                    var $tr = $(
+                        '<tr>'
+                        + '<td class="text-center stt-modal">' + (i + 1) + '</td>'
+                        + '<td>' + (pn.TenPhongBan || '--') + '</td>'
+                        + '<td>' + (pn.TenUser     || '--') + '</td>'
+                        + '<td>' + chucNang + '</td>'
+                        + '<td>' + (pn.Email  || '--') + '</td>'
+                        + '<td>' + (pn.GhiChu || '--') + '</td>'
+                        + '<td></td>'
+                        + '</tr>');
+                    $tbody.append($tr);
+                });
+
+                // Cập nhật badge đếm
+                $('#modalPhanNhiemCount').text(data.length)
+                    .removeClass('bg-secondary').addClass('bg-primary');
+            }
+
+            // ── Lắng nghe thay đổi filter ────────────────────────────────
+            var searchTimer = null;
+            $(document).on('input', '#pn_SearchTen', function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(searchPhanNhiem, 400); // debounce
+            });
+
+            $(document).on('change',
+                '#pn_FilterPhongBan, #pn_FilterChucNang',
+                function () { searchPhanNhiem(); });
+
+            // ── Nút đặt lại ──────────────────────────────────────────────
+            $(document).on('click', '#btnResetPhanNhiemFilter', function () {
+                $('#pn_SearchTen').val('');
+                $('#pn_FilterPhongBan').val('');
+                $('#pn_FilterChucNang').val('');
+                searchPhanNhiem();
+            });
+
+            // ── Expose hàm init để gọi khi modal mở ─────────────────────
+            window.initPhanNhiemFilters = initPhanNhiemFilters;
+            window.searchPhanNhiem      = searchPhanNhiem;
+
             // ── Nút Lưu thông tin ────────────────────────────────────────
             $(document).on('click', '#btnSaveDetailsModal', function () {
+                console.log(isPhanNhiemSearchMode)
                 var $btn = $(this);
 
                 if (!validatePhanNhiem()) return;
@@ -1755,22 +1915,25 @@
 
                 // Thu thập dữ liệu Phân nhiệm từ các dòng trong bảng
                 var danhSachPhanNhiem = [];
-                $('#modalPhanNhiemBody tr').each(function () {
-                    var $row    = $(this);
-                    var idx     = $row.data('index');
-                    var phongBanId = $row.find('select[name*=PhongBanId]').val();
-                    if (!phongBanId) return; // bỏ dòng chưa chọn phòng ban
+                if (!isPhanNhiemSearchMode) {
+                    // *** Chỉ collect khi không ở search mode ***
+                    $('#modalPhanNhiemBody tr').each(function () {
+                        var $row = $(this);
+                        var idx = $row.data('index');
+                        var phongBanId = $row.find('select[name*=PhongBanId]').val();
+                        if (!phongBanId) return; // bỏ dòng chưa chọn phòng ban
 
-                    danhSachPhanNhiem.push({
-                        PhongBanId: phongBanId,
-                        UserId: $row.find('.dd-modal-user').val() || null,
-                        ChucNangNhiemVuId:  $row.find('.ddModalChucNang').val() || null,
-                        TenChucNangNhapTay: $row.find('.txtModalChucNangTay').val() || null,
-                        Email:              $row.find('input[name*=Email]').val() || null,
-                        GhiChu:             $row.find('input[name*=GhiChu]').val() || null
+                        danhSachPhanNhiem.push({
+                            PhongBanId: phongBanId,
+                            UserId: $row.find('.dd-modal-user').val() || null,
+                            ChucNangNhiemVuId: $row.find('.ddModalChucNang').val() || null,
+                            TenChucNangNhapTay: $row.find('.txtModalChucNangTay').val() || null,
+                            Email: $row.find('input[name*=Email]').val() || null,
+                            GhiChu: $row.find('input[name*=GhiChu]').val() || null
+                        });
                     });
-                });
-
+                }
+                
                 var payload = {
                     BudgetRegistrationId: currentBudgetId,
                     WorkflowType:         $('#modal_WorkflowType').val() || null,
@@ -1841,7 +2004,7 @@
                         }
                     },
                     error: function () {
-                        showModalAlert('danger', 'Đã xảy ra lỗi khi lưu thông tin.');
+                        showModalAlert('danger', 'Đã xảy ra lỗi khi lưu thông tin - client.');
                     },
                     complete: function () {
                         $btn.prop('disabled', false)
@@ -2415,7 +2578,7 @@
             ];
 
             // ── Template HTML cho 1 dòng trong bảng ─────────────────────
-            function taoHtmlDongItem(kvIdx, itemIdx) {
+            function taoHtmlDongItem(kvIdx, itemIdx, createdBy) {
                 var optionsHangMuc =
                     '<option value="">-- Chọn hoặc nhập tay --</option>';
                 $.each(dsHangMuc, function (i, hm) {
@@ -2423,9 +2586,11 @@
                         + hm.text + '</option>';
                 });
 
+                // Thêm data-created-by vào <tr>
                 return '<tr data-kv-idx="' + kvIdx + '" '
                     + 'data-item-idx="' + itemIdx + '" '
-                    + 'data-item-id="0">' // *** THÊM: 0 = dòng mới ***
+                    + 'data-item-id="0" '
+                    + 'data-created-by="' + (createdBy || '') + '">'
                     + '<td>'
                     + '<select class="form-select form-select-sm mb-1 dd-hang-muc" '
                     + 'data-kv-idx="' + kvIdx + '">'
@@ -2838,6 +3003,7 @@
                                 themDongItem(kvIdx);
                                 var $lastRow = $('.tbody-items-' + kvIdx + ' tr:last');
                                 $lastRow.attr('data-item-id', dong.ProgressAreaItemId || 0);
+                                $lastRow.attr('data-created-by', dong.CreatedByUserId || ''); // *** THÊM ***
                                 // Set giá trị từng dòng
                                 if (dong.HangMucCongViec) {
                                     $lastRow.find('.dd-hang-muc').val(dong.HangMucCongViec);
@@ -2880,28 +3046,32 @@
                 // *** THÊM MỚI: Sau khi render xong, xử lý quyền sửa/xóa ***
                 if (data && data.DanhSachKhuVuc && !isManagerOrAdminGlobal) {
                     $.each(data.DanhSachKhuVuc, function (i, kv) {
-                        var canEdit = kv.CreatedByUserId == currentUserIdGlobal
+                        var $card = $('#containerKhuVuc .card-khu-vuc').eq(i);
+                        var cardCanEdit = kv.CreatedByUserId == currentUserIdGlobal
                             || kv.CreatedByUserId == null;
-                        if (!canEdit) {
-                            var $card = $('#containerKhuVuc .card-khu-vuc').eq(i);
 
-                            // *** THAY ĐỔI: Ẩn nút xóa KHU VỰC (không được xóa KV của người khác)
+                        if (!cardCanEdit) {
+                            // Ẩn nút xóa khu vực + disable tên khu vực
                             $card.find('.btn-xoa-khu-vuc').hide();
-
-                            // *** THAY ĐỔI: Giữ nguyên nút thêm dòng ***
-                            // $card.find('.btn-them-dong-item').hide(); // BỎ DÒNG NÀY
-
-                            // *** Disable input của từng dòng đã có (của người khác) ***
-                            $card.find('tbody tr').each(function () {
-                                $(this).find('input, select, textarea')
-                                    .prop('disabled', true);
-                                // *** Ẩn nút xóa dòng của người khác ***
-                                $(this).find('.btn-xoa-dong-item').hide();
-                            });
-
-                            // *** Disable tên khu vực ***
                             $card.find('.inp-ten-khu-vuc').prop('disabled', true);
                         }
+
+                        // *** THAY ĐỔI: Xử lý quyền ở cấp DÒNG ***
+                        $card.find('tbody tr').each(function () {
+                            var itemId = parseInt($(this).data('item-id')) || 0;
+                            var createdBy = parseInt($(this).data('created-by')) || 0;
+
+                            // Dòng mới (itemId = 0) → luôn cho phép sửa/xóa
+                            if (itemId === 0) return;
+
+                            // Dòng cũ — kiểm tra CreatedByUserId
+                            var rowCanEdit = createdBy === currentUserIdGlobal;
+                            if (!rowCanEdit) {
+                                $(this).find('input, select, textarea')
+                                    .prop('disabled', true);
+                                $(this).find('.btn-xoa-dong-item').hide();
+                            }
+                        });
                     });
                 }
             };
@@ -2923,6 +3093,7 @@
                         var $row = $(this);
                         danhSachDong.push({
                             ProgressAreaItemId: parseInt($row.data('item-id')) || 0,
+                            CreatedByUserId: parseInt($row.data('created-by')) || null, // *** THÊM ***
                             HangMucCongViec: $row.find('.dd-hang-muc').val() || null,
                             HangMucNhapTay: $row.find('.txt-hang-muc-tay').val() || null,
                             DVT: $row.find('.inp-dvt').val() || null,
