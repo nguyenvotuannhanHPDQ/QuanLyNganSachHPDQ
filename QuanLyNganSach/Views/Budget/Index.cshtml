@@ -1420,7 +1420,9 @@
                 $('#budgetDetailsModal').modal('show');
 
                 $('#pn_SearchTen').val('');
-                $('#pn_FilterPhongBan').val('');
+
+                // *** THAY ĐỔI: Reset và cập nhật giao diện chosen ***
+                $('#pn_FilterPhongBan').val('').trigger("chosen:updated");
                 $('#pn_FilterChucNang').val('');
 
                 $.ajax({
@@ -1880,6 +1882,11 @@
                                + cn.text + '</option>';
                 });
                 $('#pn_FilterChucNang').html(optionsCN);
+
+                // *** THAY ĐỔI: Kích hoạt chosen cho 2 filter ***
+                $('#pn_FilterPhongBan').chosen({
+                    width: "100%"
+                });
             }
 
             // ── Gọi API SearchPhanNhiem ──────────────────────────────────
@@ -1953,7 +1960,8 @@
             // ── Nút đặt lại ──────────────────────────────────────────────
             $(document).on('click', '#btnResetPhanNhiemFilter', function () {
                 $('#pn_SearchTen').val('');
-                $('#pn_FilterPhongBan').val('');
+                // Cập nhật chosen
+                $('#pn_FilterPhongBan').val('').trigger("chosen:updated");
                 $('#pn_FilterChucNang').val('');
                 searchPhanNhiem();
             });
@@ -2120,7 +2128,9 @@
                 $('#btnHuySearchPhanNhiem').hide();
                 // Clear các ô input search
                 $('#pn_SearchTen').val('');
-                $('#pn_FilterPhongBan').val('');
+
+                // Cập nhật chosen
+                $('#pn_FilterPhongBan').val('').trigger("chosen:updated");
                 $('#pn_FilterChucNang').val('');
 
                 // Gọi lại hàm render gốc để trả bảng về trạng thái có thể edit
@@ -3266,6 +3276,10 @@
                             .html('<i class="bi bi-trash"></i> Xóa');
                     }
                 });
+            });
+
+            $("#phongBanId").chosen({
+                width: "100%"
             });
 
         });
