@@ -1621,6 +1621,10 @@
                     $row.find('input[name*=GhiChu]').val(pn.GhiChu || '');
 
                     $('#modalPhanNhiemBody').append($row);
+
+                    // Kích hoạt chosen cho select Phòng ban (vì nó đã có data sẵn)
+                    $row.find('select[name*=PhongBanId]').chosen({ width: "100%" });
+                    // select User sẽ được chosen kích hoạt bên trong hàm loadUsersByPhongBan
                 });
                 capNhatSTTModal();
             }
@@ -1682,7 +1686,7 @@
             }
 
             // ── Hàm load User theo PhongBanId (dùng chung cho cả 2 context) ──
-            function loadUsersByPhongBan(phongBanId, $ddUser,
+            @*function loadUsersByPhongBan(phongBanId, $ddUser,
                                           selectedUserId, selectedText) {
                 $ddUser.html('<option value="">Đang tải...</option>')
                        .prop('disabled', true);
@@ -1717,17 +1721,56 @@
                                .prop('disabled', false);
                     }
                 });
+            }*@
+
+            function loadUsersByPhongBan(phongBanId, $ddUser, selectedUserId, selectedText) {
+                $ddUser.html('<option value="">Đang tải...</option>')
+                       .prop('disabled', true)
+                       .trigger("chosen:updated"); // Cập nhật trạng thái đang tải
+
+                if (!phongBanId) {
+                    $ddUser.html('<option value="">-- Chọn nhân viên --</option>')
+                           .prop('disabled', false)
+                           .trigger("chosen:updated");
+                    return;
+                }
+
+                $.ajax({
+                    url:  '@Url.Action("GetUsersByPhongBan", "Budget")',
+                    type: 'GET',
+                    data: { phongBanId: phongBanId },
+                    success: function (res) {
+                        var options = '<option value="">-- Chọn nhân viên --</option>';
+                        if (res.success && res.data.length > 0) {
+                            $.each(res.data, function (i, u) {
+                                var selected = selectedUserId && u.value == selectedUserId ? 'selected' : '';
+                                options += '<option value="' + u.value + '" ' + selected + '>' + u.text + '</option>';
+                            });
+                        }
+                        // Sau khi đổ dữ liệu, kích hoạt hoặc cập nhật chosen
+                        $ddUser.html(options).prop('disabled', false);
+
+                        // Kích hoạt chosen nếu chưa có, hoặc cập nhật nếu đã có
+                        if ($ddUser.next('.chosen-container').length > 0) {
+                            $ddUser.trigger("chosen:updated");
+                        } else {
+                            $ddUser.chosen({ width: "100%" });
+                        }
+                    },
+                    error: function () {
+                        $ddUser.html('<option value="">-- Lỗi tải dữ liệu --</option>')
+                               .prop('disabled', false)
+                               .trigger("chosen:updated");
+                    }
+                });
             }
 
             // ── Modal: Load User khi đổi Phòng ban ───────────────────────
-            $(document).on('change',
-                '#modalPhanNhiemBody select[name*=PhongBanId]',
-                function () {
-                    var phongBanId = $(this).val();
-                    var $ddUser = $(this).closest('tr').find('.dd-modal-user');
-                    loadUsersByPhongBan(phongBanId, $ddUser, null, null);
-                }
-            );
+            $(document).on('change', '#modalPhanNhiemBody select[name*=PhongBanId]', function () {
+                var phongBanId = $(this).val();
+                var $ddUser = $(this).closest('tr').find('.dd-modal-user');
+                loadUsersByPhongBan(phongBanId, $ddUser, null, null);
+            });
 
             // ── Cập nhật STT + badge đếm dòng modal ─────────────────────
             function capNhatSTTModal() {
@@ -1747,7 +1790,14 @@
                     alert("Bạn đang ở chế độ tìm kiếm. Vui lòng nhấn 'Hủy tìm kiếm' để có thể thêm mới hoặc chỉnh sửa dữ liệu.");
                     return;
                 }
-                $('#modalPhanNhiemBody').append(taoHtmlDongModal(modalRowIndex++));
+                var row = taoHtmlDongModal(modalRowIndex++);
+                var $row = $(row);
+
+                $('#modalPhanNhiemBody').append($row);
+
+                // Kích hoạt chosen cho select Phòng ban của dòng vừa thêm
+                $row.find('select[name*=PhongBanId]').chosen({ width: "100%" });
+
                 capNhatSTTModal();
             });
 
@@ -1950,7 +2000,7 @@
                         });
                     });
                 }
-                
+
                 var payload = {
                     BudgetRegistrationId: currentBudgetId,
                     WorkflowType:         $('#modal_WorkflowType').val() || null,
