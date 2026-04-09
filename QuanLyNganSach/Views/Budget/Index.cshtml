@@ -1497,6 +1497,20 @@
                     applyWorkflowTabs(data.WorkflowType);
                 }
 
+                // Xử lý ẩn hiện dropdown phân nhiệm
+                $(document).on('shown.bs.tab', 'button[data-bs-toggle="tab"]', function (e) {
+                    var targetId = $(e.target).attr('data-bs-target');
+
+                    if (typeof data !== 'undefined' && data.IsManagerOrAdmin) {
+
+                        if (targetId === '#detail-phieu') {
+                            $('#workflowSection').show();
+                        } else {
+                            $('#workflowSection').hide();
+                        }
+                    }
+                });
+
                 // Tab Phân nhiệm
                 renderModalPhanNhiem(data.DanhSachPhanNhiem || []);
 
