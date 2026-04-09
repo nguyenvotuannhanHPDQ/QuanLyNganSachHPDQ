@@ -417,9 +417,9 @@
                                                     </button>
 
                                                     <!-- *** THÊM MỚI: Nút Xóa ***
-             Hiển thị nếu: Admin/Manager (mọi trạng thái)
-             HOẶC user thường là chủ hồ sơ + chưa xác nhận luồng
-            -->
+                                                     Hiển thị nếu: Admin/Manager (mọi trạng thái)
+                                                     HOẶC user thường là chủ hồ sơ + chưa xác nhận luồng
+                                                    -->
                                                     @{
                                                         var currentUser = ViewBag.CurrentUser
                                                             as QuanLyNganSach.Models.Auth.LoggedInUser;
@@ -499,7 +499,8 @@
                                                            phongBanId       = ViewBag.CurrentPhongBanId,
                                                            filterTienDo     = ViewBag.CurrentFilterTienDo,
                                                            filterTrangThai  = ViewBag.CurrentFilterTrangThai
-                                                        })">Đầu
+                                                        })">
+                                                            Đầu
                                                         </a>
                                                     }
                                                     else
@@ -520,7 +521,8 @@
                                                            phongBanId       = ViewBag.CurrentPhongBanId,
                                                            filterTienDo     = ViewBag.CurrentFilterTienDo,
                                                            filterTrangThai  = ViewBag.CurrentFilterTrangThai
-                                                        })">Trước
+                                                        })">
+                                                            Trước
                                                         </a>
                                                     }
                                                     else
@@ -559,9 +561,10 @@
                                                                    phongBanId       = ViewBag.CurrentPhongBanId,
                                                                    filterTienDo     = ViewBag.CurrentFilterTienDo,
                                                                    filterTrangThai  = ViewBag.CurrentFilterTrangThai
-                                                               })">@i
-                                                            </a>
-                                                        }
+                                                               })">
+                                                                @i
+                                                        </a>
+                                                    }
                                                     </li>
                                                 }
 
@@ -577,7 +580,8 @@
                                                            phongBanId       = ViewBag.CurrentPhongBanId,
                                                            filterTienDo     = ViewBag.CurrentFilterTienDo,
                                                            filterTrangThai  = ViewBag.CurrentFilterTrangThai
-                                                        })">Sau
+                                                        })">
+                                                            Sau
                                                         </a>
                                                     }
                                                     else
@@ -598,8 +602,9 @@
                                                            phongBanId       = ViewBag.CurrentPhongBanId,
                                                            filterTienDo     = ViewBag.CurrentFilterTienDo,
                                                            filterTrangThai  = ViewBag.CurrentFilterTrangThai
-                                                        })">Cuối
-                                                    </a>
+                                                        })">
+                                                            Cuối
+                                                        </a>
                                                     }
                                                     else
                                                     {
@@ -831,11 +836,20 @@
                                     <i class="bi bi-people-fill me-1"></i>
                                     Danh sách phân nhiệm
                                 </h6>
-                                <button type="button"
-                                        class="btn btn-success btn-sm"
-                                        id="btnModalThemDong">
-                                    <i class="bi bi-plus-circle me-1"></i>Thêm dòng
-                                </button>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button type="button"
+                                            class="btn btn-success btn-sm"
+                                            id="btnModalThemDong">
+                                        <i class="bi bi-plus-circle me-1"></i>Thêm dòng
+                                    </button>
+
+                                    <button type="button"
+                                            class="btn btn-secondary btn-sm"
+                                            id="btnHuySearchPhanNhiem"
+                                            style="display:none;">
+                                        <i class="bi bi-x-circle"></i> Hủy tìm kiếm
+                                    </button>
+                                </div>
                             </div>
                             <!-- *** THÊM MỚI: Search + Filter Phân nhiệm *** -->
                             <div class="row g-2 mb-3" id="phanNhiemFilterRow">
@@ -1277,6 +1291,10 @@
     <script>
         $(document).ready(function () {
 
+            $("#filterTienDo, #filterTrangThai, #phongBanId").chosen({
+                width: "100%"
+            });
+
             // Khai báo ở đầu section Scripts
             var currentUserIdGlobal = @(ViewBag.CurrentUserId ?? 0);
 
@@ -1365,6 +1383,8 @@
             var modalRowIndex = 0;
 
             var isPhanNhiemUserGlobal = false;
+
+            var originalPhanNhiemList;
 
             // ── Mở modal khi click nút Xem ──────────────────────────────
             $(document).on('click', '.btn-view-modal', function () {
@@ -1487,6 +1507,8 @@
                 // Tab Phân nhiệm
                 renderModalPhanNhiem(data.DanhSachPhanNhiem || []);
 
+                originalPhanNhiemList = data.DanhSachPhanNhiem;
+
                 // *** THÊM MỚI: Init dropdowns filter ***
                 initPhanNhiemFilters();
 
@@ -1608,6 +1630,7 @@
                     $row.find('input[name*=GhiChu]').val(pn.GhiChu || '');
 
                     $('#modalPhanNhiemBody').append($row);
+                    initChosenPhongBan();
                 });
                 capNhatSTTModal();
             }
@@ -1730,7 +1753,12 @@
 
             // ── Thêm dòng Phân nhiệm trong modal ────────────────────────
             $(document).on('click', '#btnModalThemDong', function () {
+                if (isPhanNhiemSearchMode) {
+                    alert("Bạn đang ở chế độ tìm kiếm. Vui lòng nhấn 'Hủy tìm kiếm' để có thể thêm mới hoặc chỉnh sửa dữ liệu.");
+                    return;
+                }
                 $('#modalPhanNhiemBody').append(taoHtmlDongModal(modalRowIndex++));
+                initChosenPhongBan();
                 capNhatSTTModal();
             });
 
@@ -1831,6 +1859,7 @@
                     success: function (res) {
                         if (!res.success) return;
                         isPhanNhiemSearchMode = true; // *** THÊM ***
+                        $('#btnHuySearchPhanNhiem').show();
                         renderPhanNhiemReadonly(res.data);
                     }
                 });
@@ -1896,7 +1925,6 @@
 
             // ── Nút Lưu thông tin ────────────────────────────────────────
             $(document).on('click', '#btnSaveDetailsModal', function () {
-                console.log(isPhanNhiemSearchMode)
                 var $btn = $(this);
 
                 if (!validatePhanNhiem()) return;
@@ -1933,11 +1961,12 @@
                         });
                     });
                 }
-                
+
                 var payload = {
                     BudgetRegistrationId: currentBudgetId,
                     WorkflowType:         $('#modal_WorkflowType').val() || null,
                     DanhSachPhanNhiem: danhSachPhanNhiem,
+                    IsPhanNhiemSearchMode: isPhanNhiemSearchMode,
 
                     // Ngân sách gốc
                     NganSachGoc: {
@@ -2047,6 +2076,18 @@
                 if (!value) return '0';
                 return Number(value).toLocaleString('en-US');
             }
+
+            $(document).on('click', '#btnHuySearchPhanNhiem', function () {
+                $('#btnHuySearchPhanNhiem').hide();
+                // Clear các ô input search
+                $('#pn_SearchTen').val('');
+                $('#pn_FilterPhongBan').val('');
+                $('#pn_FilterChucNang').val('');
+
+                // Gọi lại hàm render gốc để trả bảng về trạng thái có thể edit
+                // Biến originalPhanNhiemList là danh sách dữ liệu gốc bạn đã nạp lúc mở modal
+                renderModalPhanNhiem(originalPhanNhiemList);
+            });
 
             window.bindPheDuyetData = function (pd, isManagerOrAdmin) {
                 if (!pd) pd = { ProcessType: 1, TrangThaiPheDuyet: 0 };
@@ -2422,6 +2463,10 @@
 
             // ── Xóa card bổ sung + đánh lại số thứ tự ───────────────────
             $(document).on('click', '.btn-xoa-bo-sung', function () {
+                if (isPhanNhiemSearchMode) {
+                    alert("Không thể xóa dòng khi đang ở chế độ tìm kiếm.");
+                    return;
+                }
                 $(this).closest('.card-bo-sung').remove();
                 // Đánh lại số thứ tự hiển thị
                 $('#containerBoSung .card-bo-sung').each(function (i) {
@@ -3182,6 +3227,39 @@
                             .html('<i class="bi bi-trash"></i> Xóa');
                     }
                 });
+            });
+
+            $('select[name^="DanhSachPhanNhiem"][name$=".PhongBanId"]').each(function () {
+                if (!$(this).hasClass("chosen-done")) {
+                    $(this).chosen({
+                        width: "100%"
+                    });
+                    $(this).addClass("chosen-done");
+                }
+            });
+
+            function initChosenPhongBan() {
+                $('select[name^="DanhSachPhanNhiem"][name$=".PhongBanId"]').each(function () {
+                    if (!$(this).hasClass("chosen-done")) {
+                        $(this).chosen({ width: "100%" });
+                        $(this).addClass("chosen-done");
+                    }
+                });
+            }
+
+            function initChosenUser() {
+                $('select[name^="DanhSachPhanNhiem"][name$=".UserId"]').each(function () {
+                    if (!$(this).hasClass("chosen-user-done")) {
+                        $(this).chosen({
+                            width: "100%"
+                        });
+                        $(this).addClass("chosen-user-done");
+                    }
+                });
+            }
+
+            $("#filterTienDo, #filterTrangThai, #phongBanId").chosen({
+                width: "100%"
             });
 
         });
