@@ -1074,20 +1074,6 @@
                                             <span class="badge fs-6 p-2" id="badgeTrangThaiPheDuyet"></span>
                                         </div>
                                     </div>
-
-                                    <!-- SỐ THÔNG BÁO + SỐ FM/IO -->
-                                    @*<div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Số thông báo</label>
-                <input type="text" class="form-control form-control-sm"
-                       id="pd_SoThongBao" placeholder="Nhập số thông báo" />
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Số FM/IO</label>
-                <input type="text" class="form-control form-control-sm"
-                       id="pd_SoFMIO" placeholder="Nhập số FM/IO" />
-            </div>
-        </div>*@
                                     <!-- SỐ THÔNG BÁO + SỐ FM + SỐ IO -->
                                     <div class="row g-3">
                                         <div class="col-md-4">
@@ -2031,25 +2017,27 @@
 
                 if (!validatePhanNhiem()) return;
 
-                // *** THÊM MỚI: Validate 3 field bắt buộc khi có ngày BGĐ ***
-                var bgdVal = $('#pd_NgayDuyetBGD').val();
-                if (!!bgdVal) {
-                    var soThongBao = $('#pd_SoThongBao').val().trim();
-                    var soFM = $('#pd_SoFM').val().trim();
-                    var soIO = $('#pd_SoIO').val().trim();
-                    var loiThieu = [];
+                if (isManagerOrAdminGlobal) {
+                    // *** THÊM MỚI: Validate 3 field bắt buộc khi có ngày BGĐ ***
+                    var bgdVal = $('#pd_NgayDuyetBGD').val();
+                    if (!!bgdVal) {
+                        var soThongBao = $('#pd_SoThongBao').val().trim();
+                        var soFM = $('#pd_SoFM').val().trim();
+                        var soIO = $('#pd_SoIO').val().trim();
+                        var loiThieu = [];
 
-                    if (!soThongBao) loiThieu.push('Số thông báo');
-                    if (!soFM) loiThieu.push('Số FM');
-                    if (!soIO) loiThieu.push('Số IO');
+                        if (!soThongBao) loiThieu.push('Số thông báo');
+                        if (!soFM) loiThieu.push('Số FM');
+                        if (!soIO) loiThieu.push('Số IO');
 
-                    if (loiThieu.length > 0) {
-                        showModalAlert('danger',
-                            'Vui lòng nhập đầy đủ thông tin bắt buộc khi đã có ngày duyệt BGĐ: '
-                            + loiThieu.join(', ') + '.');
-                        // Chuyển sang tab Phê duyệt để user thấy lỗi
-                        $('#detail-pheduyet-btn').tab('show');
-                        return;
+                        if (loiThieu.length > 0) {
+                            showModalAlert('danger',
+                                'Vui lòng nhập đầy đủ thông tin bắt buộc khi đã có ngày duyệt BGĐ: '
+                                + loiThieu.join(', ') + '.');
+                            // Chuyển sang tab Phê duyệt để user thấy lỗi
+                            $('#detail-pheduyet-btn').tab('show');
+                            return;
+                        }
                     }
                 }
 
@@ -2909,6 +2897,9 @@
 
             // ── Template HTML cho 1 dòng trong bảng ─────────────────────
             function taoHtmlDongItem(kvIdx, itemIdx, createdBy) {
+                var disabledAttr = isManagerOrAdminGlobal ? "" : "disabled readonly";
+                var placeholderAttr = isManagerOrAdminGlobal ? 'placeholder="Ý kiến..."' : "";
+
                 var optionsHangMuc =
                     '<option value="">-- Chọn hoặc nhập tay --</option>';
                 $.each(dsHangMuc, function (i, hm) {
@@ -2936,6 +2927,12 @@
                     + '<small class="text-muted">✏️ Nhập tay</small>'
                     + '</button>'
                     + '</td>'
+                    // *** THÊM MỚI: Input Mô tả ***
+                    + '<td>'
+                    + '<textarea class="form-control form-control-sm inp-mo-ta" '
+                    + 'placeholder="Mô tả..." rows="1" '
+                    + 'style="min-width: 150px; resize: vertical;"></textarea>'
+                    + '</td>'
                     + '<td>'
                     + '<input type="text" '
                     + 'class="form-control form-control-sm inp-dvt" '
@@ -2958,6 +2955,13 @@
                     + '<input type="text" '
                     + 'class="form-control form-control-sm inp-ghi-chu" '
                     + 'placeholder="Ghi chú..." />'
+                    + '</td>'
+                    // *** THÊM MỚI: Input Ý kiến PDA ***
+                    + '<td>'
+                    + '<textarea class="form-control form-control-sm inp-y-kien-pda" '
+                    + placeholderAttr + ' rows="1" '
+                    + 'style="min-width: 150px; resize: vertical;" '
+                    + disabledAttr + '></textarea>'
                     + '</td>'
                     + '<td class="text-center">'
                     + '<button type="button" '
@@ -2996,16 +3000,18 @@
                     + '<thead class="table-light">'
                     + '<tr>'
                     + '<th style="min-width:200px">Hạng mục công việc</th>'
+                    + '<th>Mô tả</th>' // *** THÊM MỚI cột Mô tả ***
                     + '<th style="width:80px">ĐVT</th>'
-                    + '<th style="width:100px">KLHĐ</th>'
-                    + '<th style="width:100px">KLTT</th>'
+                    + '<th style="width:80px">KLHĐ</th>'
+                    + '<th style="width:80px">KLTT</th>'
                     + '<th style="width:90px">% Tiến độ</th>'
                     + '<th>Ghi chú</th>'
+                    + '<th style="width:150px">Ý kiến PDA</th>' // *** THÊM MỚI cột Ý kiến PDA ***
                     + '<th style="width:50px"></th>'
                     + '</tr>'
                     // *** THÊM MỚI: Hàng summary tiến độ ***
                     + '<tr class="table-info">'
-                    + '<td colspan="7" class="py-1 px-2">'
+                    + '<td colspan="9" class="py-1 px-2">'
                     + '<div class="d-flex flex-wrap gap-2 align-items-center">'
                     + '<small class="fw-semibold text-dark">'
                     + '<i class="bi bi-bar-chart-fill me-1"></i>Tiến độ:</small>'
@@ -3341,21 +3347,18 @@
                                 } else if (dong.HangMucNhapTay) {
                                     // *** THÊM MỚI: có nhập tay → ẩn dropdown, hiện textbox ***
                                     $lastRow.find('.dd-hang-muc').hide().val('');
-                                    $lastRow.find('.txt-hang-muc-tay').show()
-                                        .val(dong.HangMucNhapTay);
-                                    $lastRow.find('.btn-toggle-nhap-tay')
-                                        .html('<small class="text-muted">🔽 Chọn danh sách</small>');
+                                    $lastRow.find('.txt-hang-muc-tay').show().val(dong.HangMucNhapTay);
+                                    $lastRow.find('.btn-toggle-nhap-tay').html('<small class="text-muted">🔽 Chọn danh sách</small>');
                                 }
-                                $lastRow.find('.txt-hang-muc-tay')
-                                    .val(dong.HangMucNhapTay || '');
-                                $lastRow.find('.inp-dvt')
-                                    .val(dong.DVT || '');
-                                $lastRow.find('.inp-klhd')
-                                    .val(dong.KLHD || 0);
-                                $lastRow.find('.inp-kltt')
-                                    .val(dong.KLTT || 0);
-                                $lastRow.find('.inp-ghi-chu')
-                                    .val(dong.GhiChu || '');
+                                $lastRow.find('.txt-hang-muc-tay').val(dong.HangMucNhapTay || '');
+                                // --- THÊM MỚI: Bind dữ liệu cho 2 cột mới ---
+                                $lastRow.find('.inp-mo-ta').val(dong.MoTaHangMuc || '');
+                                $lastRow.find('.inp-y-kien-pda').val(dong.YKienPDA || '');
+                                // --------------------------------------------
+                                $lastRow.find('.inp-dvt').val(dong.DVT || '');
+                                $lastRow.find('.inp-klhd').val(dong.KLHD || 0);
+                                $lastRow.find('.inp-kltt').val(dong.KLTT || 0);
+                                $lastRow.find('.inp-ghi-chu').val(dong.GhiChu || '');
 
                                 // Tính % tiến độ
                                 var klhd = parseFloat(dong.KLHD) || 0;
@@ -3426,6 +3429,10 @@
                             CreatedByUserId: parseInt($row.data('created-by')) || null, // *** THÊM ***
                             HangMucCongViec: $row.find('.dd-hang-muc').val() || null,
                             HangMucNhapTay: $row.find('.txt-hang-muc-tay').val() || null,
+                            // --- THÊM MỚI 2 TRƯỜNG DƯỚI ĐÂY ---
+                            MoTaHangMuc: $row.find('.inp-mo-ta').val() || null,
+                            YKienPDA: $row.find('.inp-y-kien-pda').val() || null,
+                            // ---------------------------------
                             DVT: $row.find('.inp-dvt').val() || null,
                             KLHD: parseFloat($row.find('.inp-klhd').val()) || 0,
                             KLTT: parseFloat($row.find('.inp-kltt').val()) || 0,
