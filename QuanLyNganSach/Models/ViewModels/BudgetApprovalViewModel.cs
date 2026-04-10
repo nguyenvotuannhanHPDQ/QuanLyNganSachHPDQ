@@ -20,7 +20,8 @@ namespace QuanLyNganSach.Models.ViewModels
         public decimal? DuToanPheDuyet { get; set; }
         public decimal? DuToanGoc { get; set; } // Chỉ đọc từ BudgetRegistrations
         public string SoThongBao { get; set; }
-        public string SoFMIO { get; set; }
+        public string SoFM { get; set; }
+        public string SoIO { get; set; }
         public int TrangThaiPheDuyet { get; set; } = 0;
         // *** THÊM MỚI ***
         public bool IsSupplementary { get; set; } = false;

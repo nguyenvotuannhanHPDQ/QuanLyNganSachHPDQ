@@ -417,9 +417,9 @@
                                                     </button>
 
                                                     <!-- *** THÊM MỚI: Nút Xóa ***
-             Hiển thị nếu: Admin/Manager (mọi trạng thái)
-             HOẶC user thường là chủ hồ sơ + chưa xác nhận luồng
-            -->
+                                                     Hiển thị nếu: Admin/Manager (mọi trạng thái)
+                                                     HOẶC user thường là chủ hồ sơ + chưa xác nhận luồng
+                                                    -->
                                                     @{
                                                         var currentUser = ViewBag.CurrentUser
                                                             as QuanLyNganSach.Models.Auth.LoggedInUser;
@@ -499,7 +499,8 @@
                                                            phongBanId       = ViewBag.CurrentPhongBanId,
                                                            filterTienDo     = ViewBag.CurrentFilterTienDo,
                                                            filterTrangThai  = ViewBag.CurrentFilterTrangThai
-                                                        })">Đầu
+                                                        })">
+                                                            Đầu
                                                         </a>
                                                     }
                                                     else
@@ -520,7 +521,8 @@
                                                            phongBanId       = ViewBag.CurrentPhongBanId,
                                                            filterTienDo     = ViewBag.CurrentFilterTienDo,
                                                            filterTrangThai  = ViewBag.CurrentFilterTrangThai
-                                                        })">Trước
+                                                        })">
+                                                            Trước
                                                         </a>
                                                     }
                                                     else
@@ -559,7 +561,8 @@
                                                                    phongBanId       = ViewBag.CurrentPhongBanId,
                                                                    filterTienDo     = ViewBag.CurrentFilterTienDo,
                                                                    filterTrangThai  = ViewBag.CurrentFilterTrangThai
-                                                               })">@i
+                                                               })">
+                                                                @i
                                                             </a>
                                                         }
                                                     </li>
@@ -577,7 +580,8 @@
                                                            phongBanId       = ViewBag.CurrentPhongBanId,
                                                            filterTienDo     = ViewBag.CurrentFilterTienDo,
                                                            filterTrangThai  = ViewBag.CurrentFilterTrangThai
-                                                        })">Sau
+                                                        })">
+                                                            Sau
                                                         </a>
                                                     }
                                                     else
@@ -598,8 +602,9 @@
                                                            phongBanId       = ViewBag.CurrentPhongBanId,
                                                            filterTienDo     = ViewBag.CurrentFilterTienDo,
                                                            filterTrangThai  = ViewBag.CurrentFilterTrangThai
-                                                        })">Cuối
-                                                    </a>
+                                                        })">
+                                                            Cuối
+                                                        </a>
                                                     }
                                                     else
                                                     {
@@ -1071,16 +1076,52 @@
                                     </div>
 
                                     <!-- SỐ THÔNG BÁO + SỐ FM/IO -->
+                                    @*<div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Số thông báo</label>
+                <input type="text" class="form-control form-control-sm"
+                       id="pd_SoThongBao" placeholder="Nhập số thông báo" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Số FM/IO</label>
+                <input type="text" class="form-control form-control-sm"
+                       id="pd_SoFMIO" placeholder="Nhập số FM/IO" />
+            </div>
+        </div>*@
+                                    <!-- SỐ THÔNG BÁO + SỐ FM + SỐ IO -->
                                     <div class="row g-3">
                                         <div class="col-md-4">
-                                            <label class="form-label small fw-semibold">Số thông báo</label>
+                                            <label class="form-label small fw-semibold">
+                                                Số thông báo
+                                                <span class="text-danger" id="star_SoThongBao"
+                                                      style="display:none;">*</span>
+                                            </label>
                                             <input type="text" class="form-control form-control-sm"
-                                                   id="pd_SoThongBao" placeholder="Nhập số thông báo" />
+                                                   id="pd_SoThongBao"
+                                                   placeholder="Nhập số thông báo"
+                                                   readonly />
                                         </div>
                                         <div class="col-md-4">
-                                            <label class="form-label small fw-semibold">Số FM/IO</label>
+                                            <label class="form-label small fw-semibold">
+                                                Số FM
+                                                <span class="text-danger" id="star_SoFM"
+                                                      style="display:none;">*</span>
+                                            </label>
                                             <input type="text" class="form-control form-control-sm"
-                                                   id="pd_SoFMIO" placeholder="Nhập số FM/IO" />
+                                                   id="pd_SoFM"
+                                                   placeholder="Nhập số FM"
+                                                   readonly />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-semibold">
+                                                Số IO
+                                                <span class="text-danger" id="star_SoIO"
+                                                      style="display:none;">*</span>
+                                            </label>
+                                            <input type="text" class="form-control form-control-sm"
+                                                   id="pd_SoIO"
+                                                   placeholder="Nhập số IO"
+                                                   readonly />
                                         </div>
                                     </div>
 
@@ -1990,6 +2031,28 @@
 
                 if (!validatePhanNhiem()) return;
 
+                // *** THÊM MỚI: Validate 3 field bắt buộc khi có ngày BGĐ ***
+                var bgdVal = $('#pd_NgayDuyetBGD').val();
+                if (!!bgdVal) {
+                    var soThongBao = $('#pd_SoThongBao').val().trim();
+                    var soFM = $('#pd_SoFM').val().trim();
+                    var soIO = $('#pd_SoIO').val().trim();
+                    var loiThieu = [];
+
+                    if (!soThongBao) loiThieu.push('Số thông báo');
+                    if (!soFM) loiThieu.push('Số FM');
+                    if (!soIO) loiThieu.push('Số IO');
+
+                    if (loiThieu.length > 0) {
+                        showModalAlert('danger',
+                            'Vui lòng nhập đầy đủ thông tin bắt buộc khi đã có ngày duyệt BGĐ: '
+                            + loiThieu.join(', ') + '.');
+                        // Chuyển sang tab Phê duyệt để user thấy lỗi
+                        $('#detail-pheduyet-btn').tab('show');
+                        return;
+                    }
+                }
+
                 var tongTiTrong = (parseFloat($('#cfg_XayDung').val()) || 0)
                     + (parseFloat($('#cfg_KetCauThep').val()) || 0)
                     + (parseFloat($('#cfg_LapDatThietBi').val()) || 0)
@@ -2044,7 +2107,8 @@
                             return raw ? parseFloat(raw) : null;
                         })(),
                         SoThongBao: $('#pd_SoThongBao').val() || null,
-                        SoFMIO: $('#pd_SoFMIO').val() || null,
+                        SoFM: $('#pd_SoFM').val() || null,
+                        SoIO: $('#pd_SoIO').val() || null,
                         IsSupplementary: false,
                         SupplementaryOrder: 0
                     },
@@ -2174,11 +2238,18 @@
                 // Dự toán
                 $('#pd_DuToanGoc').val(pd.DuToanGoc
                     ? Number(pd.DuToanGoc).toLocaleString('en-US') : '');
-                $('#pd_DuToanPheDuyet').val(pd.DuToanPheDuyet || '');
+                //$('#pd_DuToanPheDuyet').val(pd.DuToanPheDuyet || '');
+                if (pd.DuToanPheDuyet) {
+                    $('#pd_DuToanPheDuyet').val(
+                        Number(pd.DuToanPheDuyet).toLocaleString('en-US'));
+                } else {
+                    $('#pd_DuToanPheDuyet').val('');
+                }
 
                 // Textbox
                 $('#pd_SoThongBao').val(pd.SoThongBao || '');
-                $('#pd_SoFMIO').val(pd.SoFMIO || '');
+                $('#pd_SoFM').val(pd.SoFM || '');
+                $('#pd_SoIO').val(pd.SoIO || '');
 
                 // Trạng thái
                 applyTrangThaiPheDuyet(pd.TrangThaiPheDuyet || 0, isManagerOrAdmin);
@@ -2241,8 +2312,42 @@
                 capNhatCardTongHop(); // *** THÊM MỚI ***
             }
 
+            //$(document).on('input', '#pd_DuToanPheDuyet', function () {
+            //    capNhatCardTongHop(); // *** THÊM MỚI ***
+            //});
+
             $(document).on('input', '#pd_DuToanPheDuyet', function () {
-                capNhatCardTongHop(); // *** THÊM MỚI ***
+                var raw = $(this).val().replace(/,/g, '');
+                var num = parseFloat(raw) || 0;
+
+                if (raw === '' || raw === '0') {
+                    $(this).val('');
+                } else {
+                    $(this).val(num.toLocaleString('en-US'));
+                }
+
+                // *** THÊM MỚI: Cập nhật badge nếu đang ở trạng thái Đang trình ***
+                var bgdVal = $('#pd_NgayDuyetBGD').val();
+                var pdaVal = $('#pd_NgayDuyetPDA').val();
+                if (!bgdVal && !!pdaVal) {
+                    // Đang ở trạng thái 1 — cập nhật badge động
+                    var badgeText = num > 0
+                        ? 'Đang trình: ' + formatCurrencyPD(num)
+                        : 'Đang trình';
+                    $('#badgeTrangThaiPheDuyet').text(badgeText);
+                }
+
+                capNhatCardTongHop();
+            });
+
+            $(document).on('keydown', '#pd_DuToanPheDuyet', function (e) {
+                var allowed = [
+                    'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+                    'ArrowLeft', 'ArrowRight', 'Home', 'End'
+                ];
+                if (e.ctrlKey || e.metaKey) return;
+                if (allowed.includes(e.key)) return;
+                if (!/^\d$/.test(e.key)) e.preventDefault();
             });
 
             function toggleMocNgay(selector, enabled) {
@@ -2260,56 +2365,179 @@
             });
 
             // ── Hiển thị badge trạng thái + disable button ───────────────
+            //function applyTrangThaiPheDuyet(trangThai, isManagerOrAdmin) {
+            //    var $badge = $('#badgeTrangThaiPheDuyet');
+            //    var $duToanInput = $('#pd_DuToanPheDuyet');
+
+            //    switch (trangThai) {
+            //        case 0: // Chờ trình
+            //            $badge.text('Chờ trình')
+            //                .removeClass('bg-success bg-warning text-dark')
+            //                .addClass('bg-secondary');
+            //            $duToanInput.val('')
+            //                .prop('readonly', true)
+            //                .attr('placeholder', 'Chưa có duyệt từ BGĐ');
+            //            break;
+
+            //        case 1: // Đang trình
+            //            var duToanGoc = $('#pd_DuToanGoc').val();
+
+            //            // Format số (nếu cần)
+            //            var formatted = duToanGoc
+            //                ? Number(duToanGoc.replace(/[^\d]/g, '')).toLocaleString('en-US') + ' VND'
+            //                : '';
+            //            $badge.text('Đang trình' + (formatted ? ' ' + formatted : ''))
+            //                .removeClass('bg-success bg-secondary')
+            //                .addClass('bg-warning text-dark');
+            //            $duToanInput.val('')
+            //                .prop('readonly', true)
+            //                .attr('placeholder', 'Chưa có duyệt từ BGĐ');
+            //            break;
+
+            //        case 2: // Đã phê duyệt
+            //            $badge.text('Đã phê duyệt')
+            //                .removeClass('bg-warning bg-secondary text-dark')
+            //                .addClass('bg-success');
+
+            //            // Đọc DuToanGoc (đang format vi-VN dấu chấm), strip về số thuần
+            //            var duToanGocRaw = $('#pd_DuToanGoc').val()
+            //                .replace(/\./g, '')   // bỏ dấu chấm vi-VN
+            //                .replace(/,/g, '');   // bỏ dấu phẩy (nếu có)
+            //            var duToanGocNum = parseFloat(duToanGocRaw) || 0;
+
+            //            // Hiển thị format dấu phẩy (en-US: 12,000,000,000)
+            //            $('#pd_DuToanPheDuyet')
+            //                .val(duToanGocNum.toLocaleString('en-US'))
+            //                .prop('readonly', !isManagerOrAdmin)
+            //                .attr('placeholder', 'Nhập dự toán phê duyệt');
+            //            break;
+            //    }
+            //}
+
             function applyTrangThaiPheDuyet(trangThai, isManagerOrAdmin) {
                 var $badge = $('#badgeTrangThaiPheDuyet');
                 var $duToanInput = $('#pd_DuToanPheDuyet');
 
                 switch (trangThai) {
-                    case 0: // Chờ trình
+                    case 0: // Chờ trình — chưa có ngày PDA
                         $badge.text('Chờ trình')
                             .removeClass('bg-success bg-warning text-dark')
                             .addClass('bg-secondary');
+
+                        // *** THAY ĐỔI: readonly, xóa giá trị ***
                         $duToanInput.val('')
                             .prop('readonly', true)
-                            .attr('placeholder', 'Chưa có duyệt từ BGĐ');
+                            .attr('placeholder', 'Chưa có ngày duyệt PDA');
+
+                        // *** THÊM MỚI: Readonly + ẩn dấu * ***
+                        $('#pd_SoThongBao, #pd_SoFM, #pd_SoIO')
+                            .val('').prop('readonly', true);
+                        $('#star_SoThongBao, #star_SoFM, #star_SoIO').hide();
                         break;
 
-                    case 1: // Đang trình
-                        var duToanGoc = $('#pd_DuToanGoc').val();
+                    case 1: // Đang trình — có ngày PDA, chưa có ngày BGĐ
+                        var rawTrinh = $duToanInput.val().replace(/,/g, '').replace(/\./g, '');
+                        var numTrinh = parseFloat(rawTrinh) || 0;
+                        if (numTrinh > 0) {
+                            $duToanInput.val(numTrinh.toLocaleString('en-US'));
+                        }
 
-                        // Format số (nếu cần)
-                        var formatted = duToanGoc
-                            ? Number(duToanGoc.replace(/[^\d]/g, '')).toLocaleString('en-US') + ' VND'
-                            : '';
-                        $badge.text('Đang trình' + (formatted ? ' ' + formatted : ''))
+                        // Bỏ readonly để cho phép chỉnh sửa
+                        $duToanInput.prop('readonly', false)
+                            .attr('placeholder', 'Nhập ngân sách phê duyệt');
+
+                        // *** THAY ĐỔI: Badge hiển thị động số tiền ***
+                        var badgeTrinh = numTrinh > 0
+                            ? 'Đang trình: ' + formatCurrencyPD(numTrinh)
+                            : 'Đang trình';
+                        $badge.text(badgeTrinh)
                             .removeClass('bg-success bg-secondary')
                             .addClass('bg-warning text-dark');
-                        $duToanInput.val('')
-                            .prop('readonly', true)
-                            .attr('placeholder', 'Chưa có duyệt từ BGĐ');
+
+                        // *** THÊM MỚI: Readonly + ẩn dấu * ***
+                        $('#pd_SoThongBao, #pd_SoFM, #pd_SoIO')
+                            .prop('readonly', true);
+                        $('#star_SoThongBao, #star_SoFM, #star_SoIO').hide();
                         break;
 
-                    case 2: // Đã phê duyệt
+                    case 2: // Đã phê duyệt — có ngày BGĐ
                         $badge.text('Đã phê duyệt')
                             .removeClass('bg-warning bg-secondary text-dark')
                             .addClass('bg-success');
 
-                        // Đọc DuToanGoc (đang format vi-VN dấu chấm), strip về số thuần
-                        var duToanGocRaw = $('#pd_DuToanGoc').val()
-                            .replace(/\./g, '')   // bỏ dấu chấm vi-VN
-                            .replace(/,/g, '');   // bỏ dấu phẩy (nếu có)
-                        var duToanGocNum = parseFloat(duToanGocRaw) || 0;
+                        // Giữ nguyên giá trị đang có, chỉ đảm bảo không readonly
+                        $duToanInput.prop('readonly', false)
+                            .attr('placeholder', 'Nhập ngân sách phê duyệt');
 
-                        // Hiển thị format dấu phẩy (en-US: 12,000,000,000)
-                        $('#pd_DuToanPheDuyet')
-                            .val(duToanGocNum.toLocaleString('en-US'))
-                            .prop('readonly', !isManagerOrAdmin)
-                            .attr('placeholder', 'Nhập dự toán phê duyệt');
+                        // *** THÊM MỚI: Bỏ readonly + hiện dấu * bắt buộc ***
+                        $('#pd_SoThongBao, #pd_SoFM, #pd_SoIO')
+                            .prop('readonly', !isManagerOrAdmin);
+                        if (isManagerOrAdmin) {
+                            $('#star_SoThongBao, #star_SoFM, #star_SoIO').show();
+                        }
                         break;
                 }
             }
 
             // ── Tính và cập nhật 2 card tổng hợp ────────────────────────
+            //function capNhatCardTongHop() {
+            //    var tongDangTrinh = 0;
+            //    var tongDaDuyet = 0;
+
+            //    // ── Xử lý Ngân sách gốc ──────────────────────────────────
+            //    var bgdGoc = $('#pd_NgayDuyetBGD').val();
+            //    var pdaGoc = $('#pd_NgayDuyetPDA').val();
+            //    var pktGoc = $('#pd_NgayDuyetPKT').val();
+            //    var erpdGoc = $('#pd_NgayDuyetERPD').val();
+            //    var btcGoc = $('#pd_NgayDuyetBTC').val();
+
+            //    var coItNhat1NgayGoc = !!pdaGoc || !!pktGoc
+            //        || !!erpdGoc || !!btcGoc || !!bgdGoc;
+
+            //    if (!!bgdGoc) {
+            //        // Đã duyệt đủ → lấy DuToanPheDuyet
+            //        var rawGoc = $('#pd_DuToanPheDuyet').val()
+            //            .replace(/,/g, '').replace(/\./g, '');
+            //        tongDaDuyet += parseFloat(rawGoc) || 0;
+            //    } else if (coItNhat1NgayGoc) {
+            //        // Đang trình → lấy DuToanGoc
+            //        var rawGocTrinh = $('#pd_DuToanGoc').val()
+            //            .replace(/\./g, '').replace(/,/g, '');
+            //        tongDangTrinh += parseFloat(rawGocTrinh) || 0;
+            //    }
+
+            //    // ── Xử lý các card Bổ sung ───────────────────────────────
+            //    $('#containerBoSung .card-bo-sung').each(function () {
+            //        var $card = $(this);
+            //        var idx = $card.data('index');
+
+            //        var bgdBS = $('#bs_BGD_' + idx).val();
+            //        var pdaBS = $('#bs_PDA_' + idx).val();
+            //        var pktBS = $('#bs_PKT_' + idx).val();
+            //        var erpdBS = $('#bs_ERPD_' + idx).val();
+            //        var btcBS = $('#bs_BTC_' + idx).val();
+
+            //        var coItNhat1NgayBS = !!pdaBS || !!pktBS
+            //            || !!erpdBS || !!btcBS || !!bgdBS;
+
+            //        var rawBS = $('#bs_NganSach_' + idx).val()
+            //            .replace(/,/g, '').replace(/\./g, '');
+            //        var soBS = parseFloat(rawBS) || 0;
+
+            //        if (!!bgdBS) {
+            //            // Đã duyệt đủ
+            //            tongDaDuyet += soBS;
+            //        } else if (coItNhat1NgayBS) {
+            //            // Đang trình
+            //            tongDangTrinh += soBS;
+            //        }
+            //    });
+
+            //    // ── Cập nhật UI ──────────────────────────────────────────
+            //    $('#card_TongDangTrinh').text(formatCurrencyPD(tongDangTrinh));
+            //    $('#card_TongDaDuyet').text(formatCurrencyPD(tongDaDuyet));
+            //}
+
             function capNhatCardTongHop() {
                 var tongDangTrinh = 0;
                 var tongDaDuyet = 0;
@@ -2317,26 +2545,22 @@
                 // ── Xử lý Ngân sách gốc ──────────────────────────────────
                 var bgdGoc = $('#pd_NgayDuyetBGD').val();
                 var pdaGoc = $('#pd_NgayDuyetPDA').val();
-                var pktGoc = $('#pd_NgayDuyetPKT').val();
-                var erpdGoc = $('#pd_NgayDuyetERPD').val();
-                var btcGoc = $('#pd_NgayDuyetBTC').val();
 
-                var coItNhat1NgayGoc = !!pdaGoc || !!pktGoc
-                    || !!erpdGoc || !!btcGoc || !!bgdGoc;
+                // *** THAY ĐỔI: Lấy giá trị từ input DuToanPheDuyet ***
+                var rawDuToanPheDuyet = $('#pd_DuToanPheDuyet').val()
+                    .replace(/,/g, '')
+                    .replace(/\./g, '');
+                var soPheDuyet = parseFloat(rawDuToanPheDuyet) || 0;
 
                 if (!!bgdGoc) {
-                    // Đã duyệt đủ → lấy DuToanPheDuyet
-                    var rawGoc = $('#pd_DuToanPheDuyet').val()
-                        .replace(/,/g, '').replace(/\./g, '');
-                    tongDaDuyet += parseFloat(rawGoc) || 0;
-                } else if (coItNhat1NgayGoc) {
-                    // Đang trình → lấy DuToanGoc
-                    var rawGocTrinh = $('#pd_DuToanGoc').val()
-                        .replace(/\./g, '').replace(/,/g, '');
-                    tongDangTrinh += parseFloat(rawGocTrinh) || 0;
+                    // Có ngày BGĐ → Đã duyệt
+                    tongDaDuyet += soPheDuyet;
+                } else if (!!pdaGoc) {
+                    // Có ngày PDA, chưa có BGĐ → Đang trình
+                    tongDangTrinh += soPheDuyet;
                 }
 
-                // ── Xử lý các card Bổ sung ───────────────────────────────
+                // ── Xử lý các card Bổ sung — giữ nguyên logic cũ ────────
                 $('#containerBoSung .card-bo-sung').each(function () {
                     var $card = $(this);
                     var idx = $card.data('index');
@@ -2355,10 +2579,8 @@
                     var soBS = parseFloat(rawBS) || 0;
 
                     if (!!bgdBS) {
-                        // Đã duyệt đủ
                         tongDaDuyet += soBS;
                     } else if (coItNhat1NgayBS) {
-                        // Đang trình
                         tongDangTrinh += soBS;
                     }
                 });
