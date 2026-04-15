@@ -46,6 +46,8 @@ namespace QuanLyNganSach.Models.ViewModels
             = new List<BudgetApprovalViewModel>();
 
         public ProgressConfigViewModel ThongTinTienDo { get; set; }
+        public int TrangThaiHienThi { get; set; }
+        public int UserId { get; set; } // Cần để JS kiểm tra quyền Owner
 
         // Constructor
         public BudgetRegistrationDetailsViewModel()

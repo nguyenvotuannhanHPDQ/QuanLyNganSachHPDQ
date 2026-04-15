@@ -18,7 +18,6 @@ namespace QuanLyNganSach.Models.ViewModels
         public string NguoiDangKy { get; set; }
         //public int TrangThai { get; set; }
         public DateTime NgayTao { get; set; }
-        // Thêm mới:
         public string SoToTrinhRaw { get; set; } // Giữ giá trị gốc để tính logic
         public int? WorkflowType { get; set; }
         public int TrangThaiPheDuyetGoc { get; set; } // TrangThaiPheDuyet của IsSupplementary=0

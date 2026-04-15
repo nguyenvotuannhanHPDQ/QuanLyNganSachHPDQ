@@ -35,6 +35,8 @@ namespace QuanLyNganSach.Models.ViewModels
         public int ProgressAreaItemId { get; set; }
         public string HangMucCongViec { get; set; } // Chọn từ dropdown
         public string HangMucNhapTay { get; set; } // Nhập tay
+        public string MoTaHangMuc { get; set; }
+        public string YKienPDA { get; set; }
         public string DVT { get; set; }
         public decimal KLHD { get; set; }
         public decimal KLTT { get; set; }
