@@ -688,7 +688,7 @@
                             <button class="nav-link" id="detail-nhatky-btn"
                                     data-bs-toggle="tab" data-bs-target="#detail-nhatky"
                                     type="button" role="tab">
-                                <i class="bi bi-journal-text me-1"></i>Nhật ký tiến độ
+                                <i class="bi bi-journal-text me-1"></i>Tiến độ thực hiện
                             </button>
                         </li>
                     </ul>
@@ -703,9 +703,8 @@
                                     <label class="form-label fw-semibold text-muted small">
                                         Khu vực dự án
                                     </label>
-                                    <select class="form-select" id="modal_AreaName" disabled>
-                                        <option value="">-- Chưa chọn --</option>
-                                        @foreach (SelectListItem item in (IEnumerable<SelectListItem>)ViewBag.DsKhuVucModal)
+                                    <select class="form-select" id="modal_AreaName">
+                                        @foreach (var item in (IEnumerable<SelectListItem>)ViewBag.DsKhuVucModal)
                                         {
                                             <option value="@item.Value">@item.Text</option>
                                         }
@@ -716,14 +715,14 @@
                                         Bộ phận
                                     </label>
                                     <input type="text" class="form-control"
-                                           id="modal_TenPhongBan" readonly />
+                                           id="modal_TenPhongBan" disabled />
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label fw-semibold text-muted small">
                                         Mã hạng mục
                                     </label>
                                     <input type="text" class="form-control"
-                                           id="modal_MaHangMuc" readonly />
+                                           id="modal_MaHangMuc" disabled />
                                 </div>
                             </div>
                             <div class="row">
@@ -732,21 +731,21 @@
                                         Tên hạng mục
                                     </label>
                                     <input type="text" class="form-control"
-                                           id="modal_TenHangMuc" readonly />
+                                           id="modal_TenHangMuc" />
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label fw-semibold text-muted small">
                                         Dự toán
                                     </label>
                                     <input type="text" class="form-control"
-                                           id="modal_DuToan" readonly />
+                                           id="modal_DuToan" />
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label fw-semibold text-muted small">
                                         Số tờ trình
                                     </label>
                                     <input type="text" class="form-control"
-                                           id="modal_SoToTrinh" readonly />
+                                           id="modal_SoToTrinh" />
                                 </div>
                             </div>
                             <div class="row">
@@ -754,22 +753,34 @@
                                     <label class="form-label fw-semibold text-muted small">
                                         Loại hạng mục
                                     </label>
-                                    <input type="text" class="form-control"
-                                           id="modal_CategoryTypeName" readonly />
+                                    @*<input type="text" class="form-control"
+                                        id="modal_CategoryTypeName" readonly />*@
+                                    <select class="form-select" id="modal_CategoryTypeId">
+                                        @foreach (var item in (IEnumerable<SelectListItem>)ViewBag.DsCategory)
+                                        {
+                                            <option value="@item.Value">@item.Text</option>
+                                        }
+                                    </select>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label fw-semibold text-muted small">
                                         Mức ưu tiên
                                     </label>
-                                    <input type="text" class="form-control"
-                                           id="modal_PriorityLevelName" readonly />
+                                    @*<input type="text" class="form-control"
+                                        id="modal_PriorityLevelName" readonly />*@
+                                    <select class="form-select" id="modal_PriorityLevelId">
+                                        @foreach (var item in (IEnumerable<SelectListItem>)ViewBag.DsPriority)
+                                        {
+                                            <option value="@item.Value">@item.Text</option>
+                                        }
+                                    </select>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label fw-semibold text-muted small">
                                         Số lượng
                                     </label>
-                                    <input type="text" class="form-control"
-                                           id="modal_SoLuong" readonly />
+                                    <input type="number" min="1" class="form-control"
+                                           id="modal_SoLuong" />
                                 </div>
                             </div>
                             <div class="row">
@@ -777,22 +788,24 @@
                                     <label class="form-label fw-semibold text-muted small">
                                         Ngày bắt đầu
                                     </label>
-                                    <input type="text" class="form-control"
-                                           id="modal_NgayBatDau" readonly />
+                                    @*<input type="text" class="form-control"
+                                        id="modal_NgayBatDau" />*@
+                                    <input type="date" class="form-control" id="modal_NgayBatDau" />
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label fw-semibold text-muted small">
                                         Ngày kết thúc
                                     </label>
-                                    <input type="text" class="form-control"
-                                           id="modal_NgayKetThuc" readonly />
+                                    @*<input type="text" class="form-control"
+                                        id="modal_NgayKetThuc" />*@
+                                    <input type="date" class="form-control" id="modal_NgayKetThuc" />
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label fw-semibold text-muted small">
                                         Người đăng ký
                                     </label>
                                     <input type="text" class="form-control"
-                                           id="modal_TenNguoiDangKy" />
+                                           id="modal_TenNguoiDangKy" disabled />
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -800,21 +813,21 @@
                                     Lý do đầu tư
                                 </label>
                                 <textarea class="form-control" id="modal_LyDoDauTu"
-                                          rows="3" readonly></textarea>
+                                          rows="3"></textarea>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold text-muted small">
                                     Mô tả kỹ thuật
                                 </label>
                                 <textarea class="form-control" id="modal_MoTaKyThuat"
-                                          rows="3" readonly></textarea>
+                                          rows="3"></textarea>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold text-muted small">
                                     Link tài liệu liên quan
                                 </label>
                                 <input type="text" class="form-control"
-                                       id="modal_LinkTaiLieu" readonly />
+                                       id="modal_LinkTaiLieu" />
                             </div>
 
                             <!-- Attachments -->
@@ -1011,6 +1024,7 @@
                                             <label class="form-label small fw-semibold">PDA</label>
                                             <input type="date" class="form-control form-control-sm moc-ngay"
                                                    id="pd_NgayDuyetPDA" data-moc="PDA" />
+                                            <small class="text-danger moc-error" id="error-pd_NgayDuyetPDA" style="display:none;"></small>
                                         </div>
 
                                         <!-- PKT -->
@@ -1019,6 +1033,7 @@
                                             <input type="date" class="form-control form-control-sm moc-ngay"
                                                    id="pd_NgayDuyetPKT" data-moc="PKT"
                                                    data-requires="pd_NgayDuyetPDA" disabled />
+                                            <small class="text-danger moc-error" id="error-pd_NgayDuyetPKT" style="display:none;"></small>
                                         </div>
 
                                         <!-- ERPD — chỉ hiện khi ProcessType = 1 -->
@@ -1027,6 +1042,7 @@
                                             <input type="date" class="form-control form-control-sm moc-ngay"
                                                    id="pd_NgayDuyetERPD" data-moc="ERPD"
                                                    data-requires="pd_NgayDuyetPKT" disabled />
+                                            <small class="text-danger moc-error" id="error-pd_NgayDuyetERPD" style="display:none;"></small>
                                         </div>
 
                                         <!-- BTC — chỉ hiện khi ProcessType = 1 -->
@@ -1035,6 +1051,7 @@
                                             <input type="date" class="form-control form-control-sm moc-ngay"
                                                    id="pd_NgayDuyetBTC" data-moc="BTC"
                                                    data-requires="pd_NgayDuyetERPD" disabled />
+                                            <small class="text-danger moc-error" id="error-pd_NgayDuyetBTC" style="display:none;"></small>
                                         </div>
 
                                         <!-- BGĐ -->
@@ -1044,6 +1061,7 @@
                                                    id="pd_NgayDuyetBGD" data-moc="BGD"
                                                    data-requires-congty="pd_NgayDuyetPKT"
                                                    data-requires-tapDoan="pd_NgayDuyetBTC" disabled />
+                                            <small class="text-danger moc-error" id="error-pd_NgayDuyetBGD" style="display:none;"></small>
                                         </div>
 
                                     </div>
@@ -1128,141 +1146,73 @@
 
                         <!-- ===== TAB 4: NHẬT KÝ TIẾN ĐỘ (PLACEHOLDER) ===== -->
                         <div class="tab-pane fade" id="detail-nhatky" role="tabpanel">
+                            <div class="tab-pane fade show active" id="detail-nhatky" role="tabpanel">
 
-                            <!-- VÙNG 1: THÔNG TIN TỔNG QUAN TIẾN ĐỘ -->
-                            <div class="row g-3 mb-4" id="tongQuanTienDo">
-                                <div class="col">
-                                    <div class="card text-center border-primary h-100">
-                                        <div class="card-header bg-primary text-white small fw-semibold py-1">
-                                            TỔNG TIẾN ĐỘ
-                                        </div>
-                                        <div class="card-body py-2">
-                                            <div class="fs-4 fw-bold text-primary" id="td_TongTienDo">0%</div>
-                                        </div>
+                                <!-- ── VÙNG 1: TỔNG QUAN TIẾN ĐỘ ── -->
+                                <div id="nk-vung1">
+                                    <div class="nk-section-title">
+                                        <i class="bi bi-speedometer2 me-1"></i>Tổng quan tiến độ
                                     </div>
-                                </div>
-                                <div class="col">
-                                    <div class="card text-center border-success h-100">
-                                        <div class="card-header bg-success text-white small fw-semibold py-1">
-                                            XÂY DỰNG <br />
-                                            <span class="badge bg-white text-success ms-1"
-                                                  id="badge_TiTrong_XayDung">0%</span>
-                                        </div>
-                                        <div class="card-body py-2">
-                                            <div class="fs-4 fw-bold text-success" id="td_XayDung">0%</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col">
-                                    <div class="card text-center border-warning h-100">
-                                        <div class="card-header bg-warning text-dark small fw-semibold py-1">
-                                            KẾT CẤU THÉP <br />
-                                            <span class="badge bg-white text-warning ms-1"
-                                                  id="badge_TiTrong_KetCauThep">0%</span>
-                                        </div>
-                                        <div class="card-body py-2">
-                                            <div class="fs-4 fw-bold text-warning" id="td_KetCauThep">0%</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col">
-                                    <div class="card text-center border-info h-100">
-                                        <div class="card-header bg-info text-dark small fw-semibold py-1">
-                                            LẮP ĐẶT THIẾT BỊ <br />
-                                            <span class="badge bg-white text-info ms-1"
-                                                  id="badge_TiTrong_LapDatThietBi">0%</span>
-                                        </div>
-                                        <div class="card-body py-2">
-                                            <div class="fs-4 fw-bold text-info" id="td_LapDatThietBi">0%</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col">
-                                    <div class="card text-center border-secondary h-100">
-                                        <div class="card-header bg-secondary text-white small fw-semibold py-1">
-                                            HẠNG MỤC KHÁC <br />
-                                            <span class="badge bg-white text-secondary ms-1"
-                                                  id="badge_TiTrong_HangMucKhac">0%</span>
-                                        </div>
-                                        <div class="card-body py-2">
-                                            <div class="fs-4 fw-bold text-secondary" id="td_HangMucKhac">0%</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                                    <div class="d-flex flex-wrap align-items-start gap-4">
 
-                            <!-- VÙNG 2: CẤU HÌNH TỈ TRỌNG -->
-                            <div class="card border-0 bg-light mb-4">
-                                <div class="card-body py-3">
-                                    <h6 class="fw-semibold mb-3">
-                                        <i class="bi bi-sliders me-1"></i>Cấu hình tỉ trọng (%)
-                                    </h6>
-                                    <div class="row g-3 align-items-end">
-                                        <div class="col-md-2">
-                                            <label class="form-label small fw-semibold text-success">Xây dựng</label>
-                                            <input type="number" class="form-control form-control-sm ti-trong"
-                                                   id="cfg_XayDung" min="0" max="100" step="0.01"
-                                                   placeholder="0" />
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label small fw-semibold text-warning">Kết cấu thép</label>
-                                            <input type="number" class="form-control form-control-sm ti-trong"
-                                                   id="cfg_KetCauThep" min="0" max="100" step="0.01"
-                                                   placeholder="0" />
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label small fw-semibold text-info">Lắp đặt thiết bị</label>
-                                            <input type="number" class="form-control form-control-sm ti-trong"
-                                                   id="cfg_LapDatThietBi" min="0" max="100" step="0.01"
-                                                   placeholder="0" />
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label small fw-semibold text-secondary">Hạng mục khác</label>
-                                            <input type="number" class="form-control form-control-sm ti-trong"
-                                                   id="cfg_HangMucKhac" min="0" max="100" step="0.01"
-                                                   placeholder="0" />
-                                        </div>
-                                        <div class="col-md-2 d-flex align-items-end">
-                                            <div>
-                                                <label class="form-label small fw-semibold text-primary">Tổng</label>
-                                                <div class="fw-bold fs-5" id="cfg_TongTiTrong">
-                                                    <span class="text-secondary">0%</span>
-                                                </div>
+                                        <div class="nk-stat-box">
+                                            <div class="stat-label">Tổng tiến độ</div>
+                                            <div class="stat-value" id="nk-total-pct">
+                                                0.0<span style="font-size:1rem">%</span>
                                             </div>
                                         </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label small fw-semibold">Đánh giá chung</label>
-                                            <select class="form-select form-select-sm" id="cfg_DanhGiaChung">
+
+                                        <div class="flex-fill" style="min-width:180px;max-width:240px;">
+                                            <label class="form-label fw-semibold" style="font-size:.8rem;">
+                                                <i class="bi bi-flag me-1 text-primary"></i>Đánh giá chung
+                                            </label>
+                                            <select class="form-select form-select-sm" id="nk-danhgia">
                                                 <option value="">-- Chọn đánh giá --</option>
-                                                <option value="0">Tạm dừng</option>
-                                                <option value="1">Đạt tiến độ</option>
-                                                <option value="2">Chậm tiến độ</option>
-                                                <option value="3">Vượt tiến độ</option>
+                                                <option value="tam_dung">Tạm dừng</option>
+                                                <option value="dat">Đạt</option>
+                                                <option value="cham">Chậm</option>
+                                                <option value="vuot">Vượt tiến độ</option>
                                             </select>
                                         </div>
-                                    </div>
-                                    <!-- Thêm ngay sau row tỉ trọng -->
-                                    <div class="mt-2" id="cfg_CanhBaoTiTrong" style="display:none;">
-                                        <span class="text-danger small">
-                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                                            Tổng tỉ trọng phải bằng 100% để có thể lưu. Hiện tại:
-                                            <strong id="cfg_TongTiTrongCanhBao"></strong>
-                                        </span>
+
+                                        <div class="flex-fill" style="min-width:260px;">
+                                            <label class="form-label fw-semibold" style="font-size:.8rem;">
+                                                <i class="bi bi-exclamation-circle me-1 text-warning"></i>Lưu ý
+                                            </label>
+                                            <textarea class="form-control form-control-sm" id="nk-luuy"
+                                                      rows="2" placeholder="Nhập lưu ý..."></textarea>
+                                        </div>
+
                                     </div>
                                 </div>
+
+                                <!-- ── VÙNG 2: KHU VỰC ── -->
+                                <div id="nk-vung2"></div>
+
+                                <button id="btn-add-kv" type="button">
+                                    <i class="bi bi-plus-circle me-2"></i>Thêm khu vực
+                                </button>
+
+                                <!-- ── NÚT LƯU TIẾN ĐỘ ── -->
+                                @*<div class="mt-3 text-end">
+                                    <button id="btn-save-progress" type="button" class="btn btn-success">
+                                        <i class="bi bi-save me-1"></i>Lưu tiến độ
+                                    </button>
+                                </div>*@
+
+                                <!-- ── TOAST THÔNG BÁO ── -->
+                                <div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+                                    <div id="nk-toast" class="toast align-items-center text-white border-0" role="alert">
+                                        <div class="d-flex">
+                                            <div class="toast-body" id="nk-toast-body"></div>
+                                            <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                                                    data-bs-dismiss="toast"></button>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
 
-                            <!-- VÙNG 3: CHI TIẾT THEO KHU VỰC -->
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-semibold mb-0">
-                                    <i class="bi bi-map me-1"></i>Chi tiết theo khu vực
-                                </h6>
-                                <button type="button" class="btn btn-outline-success btn-sm"
-                                        id="btnThemKhuVuc">
-                                    <i class="bi bi-plus-circle me-1"></i>Thêm khu vực
-                                </button>
-                            </div>
-                            <div id="containerKhuVuc"></div>
 
                         </div>
 
@@ -1301,7 +1251,7 @@
                     <i class="bi bi-x-circle me-1"></i>Đóng
                 </button>
                 <button type="button" class="btn btn-primary" id="btnSaveDetailsModal">
-                    <i class="bi bi-save me-1"></i>Lưu thông tin
+                    <i class="bi bi-save me-1"></i>Lưu tất cả thông tin
                 </button>
             </div>
 
@@ -1429,6 +1379,16 @@
                 loadDetailsModal(currentBudgetId);
             });
 
+            // ── [THÊM MỚI] Khi chuyển sang tab Nhật ký tiến độ ─────────
+            $(document).on('shown.bs.tab', '#detail-nhatky-btn', function () {
+                NhatKyTienDo.init(currentBudgetId);
+            });
+
+            // Reset NhatKyTienDo khi modal đóng
+            $('#budgetDetailsModal').on('hidden.bs.modal', function () {
+                NhatKyTienDo.reset();
+            });
+
             // ── Gọi API GetDetailsModal ──────────────────────────────────
             function loadDetailsModal(id) {
                 currentBudgetId = id;
@@ -1473,12 +1433,42 @@
                 });
             }
 
+            // Hàm parse tiền tệ
+            function parseCurrency(str) {
+                if (!str) return 0;
+                return parseFloat(str.toString().replace(/[^0-9.-]+/g, "")) || 0;
+            }
+
+            // Hàm format ngày cho input date (yyyy-MM-dd)
+            function formatDateForInput(jsonDate) {
+                if (!jsonDate) return '';
+
+                // Trích xuất miliseconds từ chuỗi JSON Date của C#
+                var ms = parseInt(jsonDate.replace(/\/Date\((\d+)\)\//, '$1'));
+                var d = new Date(ms);
+
+                // Tạo định dạng yyyy-MM-dd
+                var year = d.getFullYear();
+                var month = ('0' + (d.getMonth() + 1)).slice(-2);
+                var day = ('0' + d.getDate()).slice(-2);
+
+                var result = year + '-' + month + '-' + day;
+                return result;
+            }
+
             var isManagerOrAdminGlobal = false;
 
             // ── Bind dữ liệu vào các field ──────────────────────────────
             function bindModalData(data) {
-
                 isManagerOrAdminGlobal = data.IsManagerOrAdmin;
+
+                var status = data.TrangThaiHienThi; // Cần đảm bảo ViewModel trả về trường này
+                var isOwner = data.UserId === currentUserIdGlobal; // CurrentUserId lấy từ biến toàn cục hệ thống
+
+                var canEdit = isManagerOrAdminGlobal || (isOwner && [0, 1, 6].includes(status));
+
+                // Mở/Khóa các trường
+                $('#detail-phieu input, #detail-phieu textarea, #detail-phieu select').not('#modal_TenPhongBan, #modal_MaHangMuc, #modal_TenNguoiDangKy').prop('readonly', !canEdit).prop('disabled', !canEdit);
 
                 // Header
                 //$('#modalMaHangMuc').text(data.MaHangMuc);
@@ -1492,18 +1482,31 @@
                 }
 
                 // Tab Phiếu đăng ký
-                $('#modal_AreaName').val(data.ProjectAreaId);
+                //$('#modal_AreaName').val(data.ProjectAreaId);
                 $('#modal_TenPhongBan').val(data.TenPhongBan);
                 $('#modal_MaHangMuc').val(data.MaHangMuc);
-                $('#modal_TenHangMuc').val(data.TenHangMuc);
-                $('#modal_DuToan').val(formatCurrency(data.DuToan));
-                $('#modal_SoToTrinh').val(data.SoToTrinh);
-                $('#modal_CategoryTypeName').val(data.CategoryTypeName);
-                $('#modal_PriorityLevelName').val(data.PriorityLevelName);
-                $('#modal_SoLuong').val(data.SoLuong);
-                $('#modal_NgayBatDau').val(formatDate(data.NgayBatDau));
-                $('#modal_NgayKetThuc').val(formatDate(data.NgayKetThuc));
+                //$('#modal_TenHangMuc').val(data.TenHangMuc);
+                //$('#modal_DuToan').val(formatCurrency(data.DuToan));
+                //$('#modal_SoToTrinh').val(data.SoToTrinh);
+                //$('#modal_CategoryTypeName').val(data.CategoryTypeName);
+                //$('#modal_PriorityLevelName').val(data.PriorityLevelName);
+                //$('#modal_SoLuong').val(data.SoLuong);
+                //$('#modal_NgayBatDau').val(formatDate(data.NgayBatDau));
+                //$('#modal_NgayKetThuc').val(formatDate(data.NgayKetThuc));
                 $('#modal_TenNguoiDangKy').val(data.TenNguoiDangKy);
+                //$('#modal_LyDoDauTu').val(data.LyDoDauTu);
+                //$('#modal_MoTaKyThuat').val(data.MoTaKyThuat);
+                //$('#modal_LinkTaiLieu').val(data.LinkTaiLieuLienQuan);
+
+                $('#modal_AreaName').val(data.ProjectAreaId);
+                $('#modal_TenHangMuc').val(data.TenHangMuc);
+                $('#modal_DuToan').val(formatCurrency(data.DuToan)); // Vẫn hiển thị format đẹp
+                $('#modal_SoToTrinh').val(data.SoToTrinh);
+                $('#modal_CategoryTypeId').val(data.CategoryTypeId); // Bind theo ID
+                $('#modal_PriorityLevelId').val(data.PriorityLevelId); // Bind theo ID
+                $('#modal_SoLuong').val(data.SoLuong);
+                $('#modal_NgayBatDau').val(formatDateForInput(data.NgayBatDau));
+                $('#modal_NgayKetThuc').val(formatDateForInput(data.NgayKetThuc));
                 $('#modal_LyDoDauTu').val(data.LyDoDauTu);
                 $('#modal_MoTaKyThuat').val(data.MoTaKyThuat);
                 $('#modal_LinkTaiLieu').val(data.LinkTaiLieuLienQuan);
@@ -2080,6 +2083,20 @@
                     DanhSachPhanNhiem: danhSachPhanNhiem,
                     IsPhanNhiemSearchMode: isPhanNhiemSearchMode,
 
+                    // Lấy dữ liệu từ tab Phiếu đăng ký
+                    ProjectAreaId: $('#modal_AreaName').val(),
+                    TenHangMuc: $('#modal_TenHangMuc').val(),
+                    DuToan: parseCurrency($('#modal_DuToan').val()),
+                    SoToTrinh: $('#modal_SoToTrinh').val(),
+                    CategoryTypeId: $('#modal_CategoryTypeId').val(),
+                    PriorityLevelId: $('#modal_PriorityLevelId').val(),
+                    SoLuong: $('#modal_SoLuong').val(),
+                    NgayBatDau: $('#modal_NgayBatDau').val(),
+                    NgayKetThuc: $('#modal_NgayKetThuc').val(),
+                    LyDoDauTu: $('#modal_LyDoDauTu').val(),
+                    MoTaKyThuat: $('#modal_MoTaKyThuat').val(),
+                    LinkTaiLieuLienQuan: $('#modal_LinkTaiLieu').val(),
+
                     // Ngân sách gốc
                     NganSachGoc: {
                         BudgetRegistrationId: currentBudgetId,
@@ -2103,6 +2120,7 @@
 
                     // Thông tin tiến độ
                     ThongTinTienDo: collectTienDoData(),
+                    NhatKyTienDo: NhatKyTienDo.collectProgressLog(),
 
                     // Danh sách đợt bổ sung
                     DanhSachBoSung: (function () {
@@ -2141,6 +2159,7 @@
                         if (res.success) {
                             // Hiện thông báo thành công ngay trong modal
                             showModalAlert('success', res.message);
+                            window.location.reload();
                         } else {
                             showModalAlert('danger', res.message);
                         }
@@ -2179,9 +2198,11 @@
                 if (!jsonDate) return '';
                 var ms = parseInt(jsonDate.replace(/\/Date\((\d+)\)\//, '$1'));
                 var d  = new Date(ms);
-                return ('0' + d.getDate()).slice(-2) + '/'
+                var result = ('0' + d.getDate()).slice(-2) + '/'
                      + ('0' + (d.getMonth() + 1)).slice(-2) + '/'
-                     + d.getFullYear();
+                    + d.getFullYear();
+                console.log(result);
+                return result;
             }
 
             // ── Helper: format số tiền ───────────────────────────────────
@@ -2256,7 +2277,9 @@
                     $('.moc-tapDoan').hide();
                     $('#pd_NgayDuyetERPD').val('');
                     $('#pd_NgayDuyetBTC').val('');
+                    // Không xóa BGĐ, chỉ xóa ERPD/BTC
                 }
+                clearMocErrors();
                 updateMocNgayState();
             }
 
@@ -2347,8 +2370,99 @@
                 }
             }
 
+            // ── Validation & Cascade Delete Functions ──────────────────
+            // Cấu trúc thứ tự mốc ngày
+            var mocNgayOrder = ['pd_NgayDuyetPDA', 'pd_NgayDuyetPKT', 'pd_NgayDuyetERPD', 'pd_NgayDuyetBTC', 'pd_NgayDuyetBGD'];
+
+            function clearMocErrors() {
+                $('.moc-error').hide();
+            }
+
+            function showMocError(fieldId, message) {
+                var $error = $('#error-' + fieldId);
+                if ($error.length) {
+                    $error.text(message).show();
+                }
+            }
+
+            function validateMocNgaySequence(fieldId) {
+                clearMocErrors();
+                var processType = parseInt($('#pd_ProcessType').val()) || 1;
+                var visibleMocs = mocNgayOrder.filter(function (id) {
+                    if (id === 'pd_NgayDuyetERPD' || id === 'pd_NgayDuyetBTC') {
+                        return processType === 1; // Chỉ hiển thị khi ProcessType = 1
+                    }
+                    return true;
+                });
+
+                for (var i = 0; i < visibleMocs.length; i++) {
+                    var currentId = visibleMocs[i];
+                    var currentVal = $('#' + currentId).val();
+
+                    if (currentVal) {
+                        // Kiểm tra mốc trước có trống không
+                        if (i > 0) {
+                            var prevId = visibleMocs[i - 1];
+                            var prevVal = $('#' + prevId).val();
+                            if (!prevVal) {
+                                var currentMoc = $('#' + currentId).data('moc') || currentId;
+                                var prevMoc = $('#' + prevId).data('moc') || prevId;
+                                showMocError(currentId, 'Phải nhập ' + prevMoc + ' trước');
+                                return false;
+                            }
+                        }
+
+                        // Kiểm tra giá trị ngày có hợp lệ không (không vượt quá mốc kế tiếp)
+                        if (i < visibleMocs.length - 1) {
+                            var nextId = visibleMocs[i + 1];
+                            var nextVal = $('#' + nextId).val();
+                            if (nextVal && currentVal > nextVal) {
+                                var currentMoc = $('#' + currentId).data('moc') || currentId;
+                                var nextMoc = $('#' + nextId).data('moc') || nextId;
+                                showMocError(currentId, currentMoc + ' không được sau ' + nextMoc);
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+
+            function clearFollowingMocNgay(fieldId) {
+                var processType = parseInt($('#pd_ProcessType').val()) || 1;
+                var visibleMocs = mocNgayOrder.filter(function (id) {
+                    if (id === 'pd_NgayDuyetERPD' || id === 'pd_NgayDuyetBTC') {
+                        return processType === 1;
+                    }
+                    return true;
+                });
+
+                var currentIndex = visibleMocs.indexOf(fieldId);
+                if (currentIndex !== -1) {
+                    // Xóa tất cả mốc sau hiện tại
+                    for (var i = currentIndex + 1; i < visibleMocs.length; i++) {
+                        $('#' + visibleMocs[i]).val('');
+                    }
+                }
+            }
+
             // Lắng nghe thay đổi trên tất cả mốc ngày
             $(document).on('change', '.moc-ngay', function () {
+                var fieldId = $(this).attr('id');
+                var newVal = $(this).val();
+
+                if (newVal === '') {
+                    // User xóa giá trị → Xóa cascade các mốc sau
+                    clearFollowingMocNgay(fieldId);
+                    clearMocErrors();
+                } else {
+                    // User nhập giá trị → Validate thứ tự
+                    if (!validateMocNgaySequence(fieldId)) {
+                        // Nếu validation fail → revert lại giá trị cũ
+                        $(this).val('');
+                    }
+                }
+
                 updateMocNgayState();
             });
 
@@ -3527,6 +3641,460 @@
 
         });
     </script>
+    <script>
+        var NhatKyTienDo = (function ($) {
+            'use strict';
+
+            var workItemList = [];
+            var currentBudgetId = 0;
+            var _initializedId = null; // THÊM MỚI: lưu budgetId đã init
+
+            function init(budgetId) {
+                // THÊM MỚI: nếu đã init cho budgetId này rồi thì bỏ qua
+                if (_initializedId === budgetId) {
+                    return;
+                }
+
+                currentBudgetId = budgetId;
+                _initializedId = budgetId; // đánh dấu đã init
+                $('#nk-vung2').empty();
+
+                $.get('/Budget/GetWorkItems', function (items) {
+                    workItemList = items;
+
+                    $.get('/Budget/GetProgressLog', { budgetId: budgetId }, function (data) {
+                        if (data.exists) {
+                            _loadFromServer(data);
+                        } else {
+                            $('#nk-vung2').append(_createKhuVuc());
+                            _recalcTotal();
+                        }
+                    });
+                });
+
+                $('#btn-add-kv').off('click').on('click', function () {
+                    $('#nk-vung2').append(_createKhuVuc());
+                    _recalcTotal();
+                });
+
+                $('#btn-save-progress').off('click').on('click', _saveProgress);
+            }
+
+            function _loadFromServer(data) {
+                $('#nk-danhgia').val(data.DanhGiaChung || '');
+                $('#nk-luuy').val(data.LuuY || '');
+
+                $.each(data.Areas, function (_, area) {
+                    var $kv = _createKhuVuc();
+                    var $tbody = $kv.find('tbody');
+                    $kv.find('.kv-name-input').val(area.TenKhuVuc || '');
+                    $tbody.empty();
+
+                    $.each(area.Items, function (_, item) {
+                        var $row = _createRow(item.TenHangMuc);
+                        $row.find('.inp-dvt').val(item.DonViTinh || '');
+                        $row.find('.inp-klkh').val(item.KLKeHoach || 0);
+                        $row.find('.inp-kltt').val(item.KLThucTe || 0);
+                        $row.find('.inp-date-bd').val(item.NgayBatDauKH || '');
+                        $row.find('.inp-date-kt').val(item.NgayKetThucKH || '');
+                        $row.find('.inp-ghichu').val(item.GhiChu || '');
+                        _recalcRow($row);
+                        $tbody.append($row);
+                    });
+
+                    _recalcKhuVuc($kv);
+
+                    // THÊM MỚI: khởi tạo lock sau khi load
+                    _refreshRowLocks($kv);
+
+                    $('#nk-vung2').append($kv);
+                });
+
+                _recalcTotal();
+            }
+
+            function _createRow(tenHangMuc) {
+                var $tr = $([
+                    '<tr>',
+                    '  <td class="col-hangmuc"></td>',
+                    '  <td class="col-dvt"><input type="text" class="inp-dvt" placeholder="ĐVT"/></td>',
+                    '  <td class="col-kl"><input type="number" class="inp-klkh" min="0" value="0"/></td>',
+                    '  <td class="col-kl"><input type="number" class="inp-kltt" min="0" value="0"/></td>',
+                    '  <td class="col-pct pct-cell"><span class="row-pct">0.0%</span></td>',
+                    '  <td class="col-date"><input type="date" class="inp-date-bd"/></td>',
+                    '  <td class="col-date"><input type="date" class="inp-date-kt"/></td>',
+                    '  <td class="col-ghichu"><input type="text" class="inp-ghichu" placeholder="Ghi chú"/></td>',
+                    '  <td class="col-action">',
+                    '    <button class="btn-remove-row" type="button" title="Xóa dòng">',
+                    '      <i class="bi bi-trash3"></i>',
+                    '    </button>',
+                    '  </td>',
+                    '</tr>'
+                ].join(''));
+
+                var $inp = $('<input type="text" class="inp-hangmuc" placeholder="Tên hạng mục"/>')
+                    .val(tenHangMuc || '');
+                $tr.find('td.col-hangmuc').append($inp);
+
+                // Recalc % khi KL thay đổi
+                $tr.on('input', '.inp-klkh, .inp-kltt', function () {
+                    _recalcRow($tr);
+                    _recalcKhuVuc($tr.closest('.nk-kv-wrapper'));
+                });
+
+                // THÊM MỚI: xử lý min date cho Ngày KT
+                $tr.on('change', '.inp-date-bd', function () {
+                    var bdVal = $(this).val();
+                    var $kt = $tr.find('.inp-date-kt');
+                    if (bdVal) {
+                        // Set min = Ngày bắt đầu
+                        $kt.attr('min', bdVal);
+                        // Nếu Ngày KT hiện tại < Ngày bắt đầu → xóa để tránh giá trị sai
+                        if ($kt.val() && $kt.val() < bdVal) {
+                            $kt.val('');
+                        }
+                    } else {
+                        // Xóa Ngày bắt đầu → bỏ giới hạn, giữ nguyên giá trị Ngày KT
+                        $kt.removeAttr('min');
+                    }
+                });
+
+                // Xóa dòng
+                $tr.on('click', '.btn-remove-row', function () {
+                    var $kv = $tr.closest('.nk-kv-wrapper');
+                    $tr.remove();
+                    _recalcKhuVuc($kv);
+                    // THÊM MỚI: cập nhật lock sau khi xóa dòng
+                    _refreshRowLocks($kv);
+                });
+
+                return $tr;
+            }
+
+            function _createRowWithDropdown() {
+                var $tr = _createRow('');
+                var $cell = $tr.find('td.col-hangmuc').empty();
+                var $wrap = $('<div class="d-flex gap-1"></div>');
+
+                var $select = $('<select class="form-select form-select-sm inp-hangmuc-select"></select>');
+                $select.append('<option value="">-- Chọn hạng mục --</option>');
+
+                $.each(workItemList, function (_, w) {
+                    $select.append(
+                        // SỬA: w.workItemId → w.WorkItemId, w.name → w.Name
+                        $('<option></option>').val(w.WorkItemId).text(w.Name)
+                    );
+                });
+
+                $select.append('<option value="__manual__">✏️ Nhập tay...</option>');
+
+                var $manual = $('<input type="text" class="inp-hangmuc inp-hangmuc-manual"'
+                    + ' placeholder="Nhập tên hạng mục..." style="display:none"/>');
+
+                $select.on('change', function () {
+                    if ($(this).val() === '__manual__') {
+                        $manual.show().focus();
+                        $select.hide();
+                    }
+                });
+
+                $wrap.append($select).append($manual);
+                $cell.append($wrap);
+                return $tr;
+            }
+
+            function _createKhuVuc() {
+                var $wrapper = $('<div class="nk-kv-wrapper"></div>');
+
+                var $header = $([
+                    '<div class="nk-kv-header">',
+                    '  <i class="bi bi-geo-alt-fill" style="opacity:.7;flex-shrink:0"></i>',
+                    '  <input type="text" class="kv-name-input" placeholder="Nhập tên khu vực..."/>',
+                    '  <span class="kv-pct-badge">0.0%</span>',
+                    '  <button class="btn-remove-kv" type="button" title="Xóa khu vực">',
+                    '    <i class="bi bi-x-lg"></i>',
+                    '  </button>',
+                    '</div>'
+                ].join(''));
+
+                $header.on('click', '.btn-remove-kv', function () {
+                    $wrapper.remove();
+                    _recalcTotal();
+                });
+
+                var $table = $([
+                    '<table class="nk-table">',
+                    '  <thead><tr>',
+                    '    <th class="col-hangmuc">Hạng mục công việc</th>',
+                    '    <th class="col-dvt">ĐVT</th>',
+                    '    <th class="col-kl">KL Kế hoạch</th>',
+                    '    <th class="col-kl">KL Thực tế</th>',
+                    '    <th class="col-pct">%</th>',
+                    '    <th class="col-date">Ngày BD (KH)</th>',
+                    '    <th class="col-date">Ngày KT (KH)</th>',
+                    '    <th class="col-ghichu">Ghi chú</th>',
+                    '    <th class="col-action"></th>',
+                    '  </tr></thead>',
+                    '  <tbody></tbody>',
+                    '</table>'
+                ].join(''));
+
+                var $tbody = $table.find('tbody');
+                $.each(workItemList, function (_, w) {
+                    $tbody.append(_createRow(w.Name));
+                });
+
+                // THÊM MỚI: khởi tạo lock ngay sau khi render
+                _refreshRowLocks($wrapper);
+
+                var $btnAddRow = $(
+                    '<button class="btn-add-row" type="button">'
+                    + '<i class="bi bi-plus me-1"></i>Thêm đầu việc</button>'
+                );
+                $btnAddRow.on('click', function () {
+                    $tbody.append(_createRowWithDropdown());
+                    _recalcKhuVuc($wrapper);
+                });
+
+                var $footer = $('<div class="nk-table-footer"></div>').append($btnAddRow);
+
+                $wrapper
+                    .append($header)
+                    .append($('<div class="nk-kv-table-wrap"></div>').append($table))
+                    .append($footer);
+
+                return $wrapper;
+            }
+
+            function _recalcRow($tr) {
+                var kh = parseFloat($tr.find('.inp-klkh').val()) || 0;
+                var tt = parseFloat($tr.find('.inp-kltt').val()) || 0;
+                var pct = kh === 0 ? 0 : Math.min((tt / kh) * 100, 100);
+                $tr.find('.row-pct').text(pct.toFixed(1) + '%');
+
+                // THÊM MỚI: cập nhật lock sau khi % thay đổi
+                _refreshRowLocks($tr.closest('.nk-kv-wrapper'));
+            }
+
+            function _recalcKhuVuc($kv) {
+                var $spans = $kv.find('.row-pct');
+                var sum = 0;
+                $spans.each(function () { sum += parseFloat($(this).text()) || 0; });
+                var avg = $spans.length === 0 ? 0 : sum / $spans.length;
+                $kv.find('.kv-pct-badge').text(avg.toFixed(1) + '%');
+                _recalcTotal();
+            }
+
+            function _recalcTotal() {
+                var $badges = $('#nk-vung2 .kv-pct-badge');
+                var sum = 0;
+                $badges.each(function () { sum += parseFloat($(this).text()) || 0; });
+                var avg = $badges.length === 0 ? 0 : sum / $badges.length;
+                $('#nk-total-pct').html(avg.toFixed(1) + '<span style="font-size:1rem">%</span>');
+            }
+
+            //function _saveProgress() {
+            //    var areas = [];
+
+            //    $('#nk-vung2 .nk-kv-wrapper').each(function () {
+            //        var $kv = $(this);
+            //        var items = [];
+
+            //        $kv.find('tbody tr').each(function (idx) {
+            //            var $tr = $(this);
+            //            var $select = $tr.find('.inp-hangmuc-select');
+            //            var $manual = $tr.find('.inp-hangmuc-manual');
+            //            var $inpTxt = $tr.find('.inp-hangmuc:not(.inp-hangmuc-manual)');
+            //            var tenHangMuc = '';
+            //            var workItemId = null;
+
+            //            if ($select.length && $select.is(':visible')) {
+            //                workItemId = parseInt($select.val()) || null;
+            //                tenHangMuc = $select.find('option:selected').text();
+            //            } else if ($manual.length && $manual.is(':visible')) {
+            //                tenHangMuc = $manual.val();
+            //            } else {
+            //                tenHangMuc = $inpTxt.val();
+            //            }
+
+            //            items.push({
+            //                WorkItemId: workItemId,
+            //                TenHangMuc: tenHangMuc,
+            //                DonViTinh: $tr.find('.inp-dvt').val(),
+            //                KLKeHoach: parseFloat($tr.find('.inp-klkh').val()) || 0,
+            //                KLThucTe: parseFloat($tr.find('.inp-kltt').val()) || 0,
+            //                PhanTram: parseFloat($tr.find('.row-pct').text()) || 0,
+            //                NgayBatDauKH: $tr.find('.inp-date-bd').val() || null,
+            //                NgayKetThucKH: $tr.find('.inp-date-kt').val() || null,
+            //                GhiChu: $tr.find('.inp-ghichu').val(),
+            //                SortOrder: idx
+            //            });
+            //        });
+
+            //        areas.push({
+            //            TenKhuVuc: $kv.find('.kv-name-input').val(),
+            //            TienDo: parseFloat($kv.find('.kv-pct-badge').text()) || 0,
+            //            Items: items
+            //        });
+            //    });
+
+            //    var payload = {
+            //        BudgetRegistrationId: currentBudgetId,
+            //        DanhGiaChung: $('#nk-danhgia').val(),
+            //        LuuY: $('#nk-luuy').val(),
+            //        TongTienDo: parseFloat($('#nk-total-pct').text()) || 0,
+            //        Areas: areas
+            //    };
+
+            //    $('#btn-save-progress').prop('disabled', true)
+            //        .html('<i class="bi bi-hourglass-split me-1"></i>Đang lưu...');
+
+            //    $.ajax({
+            //        url: '/Budget/SaveProgressLog',
+            //        type: 'POST',
+            //        contentType: 'application/json',
+            //        data: JSON.stringify(payload),
+            //        success: function (res) { _showToast(res.success, res.message); },
+            //        error: function () { _showToast(false, 'Lỗi kết nối, vui lòng thử lại.'); },
+            //        complete: function () {
+            //            $('#btn-save-progress').prop('disabled', false)
+            //                .html('<i class="bi bi-save me-1"></i>Lưu tiến độ');
+            //        }
+            //    });
+            //}
+
+            function _showToast(success, message) {
+                var $toast = $('#nk-toast');
+                $toast.removeClass('bg-success bg-danger')
+                    .addClass(success ? 'bg-success' : 'bg-danger');
+                $('#nk-toast-body').text(message);
+                new bootstrap.Toast($toast[0], { delay: 3000 }).show();
+            }
+
+            // Thêm hàm reset
+            function reset() {
+                _initializedId = null;
+            }
+
+            // Thêm vào trước phần return { init, reset } ở cuối file
+
+            function collectProgressLog() {
+                var areas = [];
+
+                $('#nk-vung2 .nk-kv-wrapper').each(function () {
+                    var $kv = $(this);
+                    var items = [];
+
+                    $kv.find('tbody tr').each(function (idx) {
+                        var $tr = $(this);
+                        var $select = $tr.find('.inp-hangmuc-select');
+                        var $manual = $tr.find('.inp-hangmuc-manual');
+                        var $inpTxt = $tr.find('.inp-hangmuc:not(.inp-hangmuc-manual)');
+                        var tenHangMuc = '';
+                        var workItemId = null;
+
+                        if ($select.length && $select.is(':visible')) {
+                            // THÊM MỚI: bỏ qua nếu dropdown chưa chọn
+                            if (!$select.val() || $select.val() === '') return;
+                            workItemId = parseInt($select.val()) || null;
+                            tenHangMuc = $select.find('option:selected').text();
+                        } else if ($manual.length && $manual.is(':visible')) {
+                            tenHangMuc = $manual.val();
+                        } else {
+                            tenHangMuc = $inpTxt.val();
+                        }
+
+                        items.push({
+                            WorkItemId: workItemId,
+                            TenHangMuc: tenHangMuc,
+                            DonViTinh: $tr.find('.inp-dvt').val(),
+                            KLKeHoach: parseFloat($tr.find('.inp-klkh').val()) || 0,
+                            KLThucTe: parseFloat($tr.find('.inp-kltt').val()) || 0,
+                            PhanTram: parseFloat($tr.find('.row-pct').text()) || 0,
+                            NgayBatDauKH: $tr.find('.inp-date-bd').val() || null,
+                            NgayKetThucKH: $tr.find('.inp-date-kt').val() || null,
+                            GhiChu: $tr.find('.inp-ghichu').val(),
+                            SortOrder: idx
+                        });
+                    });
+
+                    areas.push({
+                        TenKhuVuc: $kv.find('.kv-name-input').val(),
+                        TienDo: parseFloat($kv.find('.kv-pct-badge').text()) || 0,
+                        Items: items
+                    });
+                });
+
+                return {
+                    BudgetRegistrationId: currentBudgetId,
+                    DanhGiaChung: $('#nk-danhgia').val(),
+                    LuuY: $('#nk-luuy').val(),
+                    TongTienDo: parseFloat($('#nk-total-pct').text()) || 0,
+                    Areas: areas
+                };
+            }
+
+            // Cập nhật _saveProgress() để dùng lại collectProgressLog()
+            function _saveProgress() {
+                var payload = collectProgressLog();
+
+                $('#btn-save-progress').prop('disabled', true)
+                    .html('<i class="bi bi-hourglass-split me-1"></i>Đang lưu...');
+
+                $.ajax({
+                    url: '/Budget/SaveProgressLog',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function (res) { _showToast(res.success, res.message); },
+                    error: function () { _showToast(false, 'Lỗi kết nối, vui lòng thử lại.'); },
+                    complete: function () {
+                        $('#btn-save-progress').prop('disabled', false)
+                            .html('<i class="bi bi-save me-1"></i>Lưu tiến độ');
+                    }
+                });
+            }
+
+            function _applyRowLock($tr, locked) {
+                $tr.find(
+                    '.inp-dvt, .inp-klkh, .inp-kltt, .inp-date-bd, .inp-date-kt, .inp-ghichu, ' +
+                    '.inp-hangmuc, .inp-hangmuc-select, .inp-hangmuc-manual, .btn-remove-row'
+                ).prop('disabled', locked);
+                $tr.toggleClass('nk-row-locked', locked);
+            }
+
+            function _refreshRowLocks($kv) {
+                var $rows = $kv.find('tbody tr');
+                var prevComplete = true; // dòng đầu tiên luôn được nhập
+
+                $rows.each(function (idx) {
+                    var $tr = $(this);
+
+                    if (idx === 0) {
+                        // Dòng đầu luôn unlock
+                        _applyRowLock($tr, false);
+                        // Kiểm tra dòng đầu có đạt 100% chưa để quyết định dòng tiếp theo
+                        var pct = parseFloat($tr.find('.row-pct').text()) || 0;
+                        prevComplete = (pct >= 100);
+                    } else {
+                        _applyRowLock($tr, !prevComplete);
+                        if (prevComplete) {
+                            var pct = parseFloat($tr.find('.row-pct').text()) || 0;
+                            prevComplete = (pct >= 100);
+                        }
+                        // Nếu dòng trước chưa 100% thì tất cả dòng sau đều locked
+                    }
+                });
+            }
+
+            // Cập nhật public API
+            return {
+                init: init,
+                reset: reset,
+                collectProgressLog: collectProgressLog  // THÊM MỚI: expose ra ngoài
+            };
+        })(jQuery);
+    </script>
     <style>
         .card {
             border-radius: 0.5rem;
@@ -3992,6 +4560,297 @@
         {
             padding: 10px 0;
         }
+        }
+    </style>
+
+
+
+
+
+    <style>
+        /* ── Palette ── */
+        :root {
+            --nk-bg: #f4f6fa;
+            --nk-card: #ffffff;
+            --nk-border: #dde3ee;
+            --nk-header-bg: #1e3a5f;
+            --nk-header-fg: #ffffff;
+            --nk-accent: #2d6be4;
+            --nk-accent-lt: #e8effd;
+            --nk-muted: #6b7a99;
+            --nk-danger: #dc3545;
+            --nk-row-alt: #f8faff;
+        }
+
+        /* ── Vùng 1 – Tổng tiến độ ── */
+        #nk-vung1 {
+            background: var(--nk-card);
+            border: 1px solid var(--nk-border);
+            border-radius: 10px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+        }
+
+            #nk-vung1 .nk-section-title {
+                font-size: .72rem;
+                font-weight: 700;
+                letter-spacing: .08em;
+                text-transform: uppercase;
+                color: var(--nk-muted);
+                margin-bottom: 14px;
+            }
+
+        .nk-stat-box {
+            background: var(--nk-accent-lt);
+            border-radius: 8px;
+            padding: 14px 20px;
+            text-align: center;
+            min-width: 120px;
+        }
+
+            .nk-stat-box .stat-label {
+                font-size: .7rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: .06em;
+                color: var(--nk-accent);
+                margin-bottom: 4px;
+            }
+
+            .nk-stat-box .stat-value {
+                font-size: 1.9rem;
+                font-weight: 800;
+                color: var(--nk-header-bg);
+                line-height: 1;
+            }
+
+        /* ── Vùng 2 – Khu vực ── */
+        .nk-kv-wrapper {
+            background: var(--nk-card);
+            border: 1px solid var(--nk-border);
+            border-radius: 10px;
+            margin-bottom: 18px;
+            overflow: hidden;
+        }
+
+        /* Header khu vực */
+        .nk-kv-header {
+            background: var(--nk-header-bg);
+            color: var(--nk-header-fg);
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+            .nk-kv-header .kv-name-input {
+                background: transparent;
+                border: none;
+                border-bottom: 1px solid rgba(255,255,255,.35);
+                color: #fff;
+                font-size: .95rem;
+                font-weight: 600;
+                flex: 1;
+                outline: none;
+                padding: 2px 4px;
+            }
+
+                .nk-kv-header .kv-name-input::placeholder {
+                    color: rgba(255,255,255,.5);
+                }
+
+            .nk-kv-header .kv-pct-badge {
+                background: rgba(255,255,255,.15);
+                border: 1px solid rgba(255,255,255,.3);
+                border-radius: 20px;
+                font-size: .8rem;
+                font-weight: 700;
+                padding: 2px 12px;
+                white-space: nowrap;
+                min-width: 64px;
+                text-align: center;
+            }
+
+            .nk-kv-header .btn-remove-kv {
+                background: transparent;
+                border: none;
+                color: rgba(255,255,255,.6);
+                padding: 2px 6px;
+                line-height: 1;
+                cursor: pointer;
+                transition: color .15s;
+            }
+
+                .nk-kv-header .btn-remove-kv:hover {
+                    color: #ff8080;
+                }
+
+        /* Bảng */
+        .nk-kv-table-wrap {
+            overflow-x: auto;
+        }
+
+        .nk-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .82rem;
+        }
+
+            .nk-table thead tr th {
+                background: #e9eef8;
+                color: var(--nk-header-bg);
+                font-weight: 700;
+                font-size: .72rem;
+                text-transform: uppercase;
+                letter-spacing: .05em;
+                padding: 8px 10px;
+                border-bottom: 2px solid var(--nk-border);
+                white-space: nowrap;
+            }
+
+            .nk-table tbody tr {
+                border-bottom: 1px solid #edf0f8;
+            }
+
+                .nk-table tbody tr:nth-child(even) {
+                    background: var(--nk-row-alt);
+                }
+
+                .nk-table tbody tr:hover {
+                    background: #eef3fc;
+                }
+
+            .nk-table td {
+                padding: 5px 8px;
+                vertical-align: middle;
+            }
+
+                /* Cell inputs */
+                .nk-table td input[type="text"],
+                .nk-table td input[type="number"],
+                .nk-table td input[type="date"] {
+                    width: 100%;
+                    border: 1px solid transparent;
+                    border-radius: 4px;
+                    padding: 3px 6px;
+                    font-size: .82rem;
+                    background: transparent;
+                    transition: border-color .15s, background .15s;
+                    outline: none;
+                }
+
+                .nk-table td input:hover,
+                .nk-table td input:focus {
+                    border-color: var(--nk-accent);
+                    background: #fff;
+                }
+
+                .nk-table td input[type="number"] {
+                    text-align: right;
+                }
+
+        /* Cột cố định độ rộng */
+        .col-hangmuc {
+            min-width: 220px;
+        }
+
+        .col-dvt {
+            width: 70px;
+        }
+
+        .col-kl {
+            width: 90px;
+        }
+
+        .col-pct {
+            width: 60px;
+            text-align: center;
+            font-weight: 700;
+            color: var(--nk-accent);
+        }
+
+        .col-date {
+            width: 118px;
+        }
+
+        .col-ghichu {
+            min-width: 140px;
+        }
+
+        .col-action {
+            width: 36px;
+            text-align: center;
+        }
+
+        /* Nút xóa dòng */
+        .btn-remove-row {
+            background: transparent;
+            border: none;
+            color: #bcc4d6;
+            padding: 2px 4px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: color .15s, background .15s;
+        }
+
+            .btn-remove-row:hover {
+                color: var(--nk-danger);
+                background: #fdecea;
+            }
+
+        /* Footer bảng – Thêm đầu việc */
+        .nk-table-footer {
+            padding: 8px 12px;
+            border-top: 1px dashed var(--nk-border);
+        }
+
+        .btn-add-row {
+            font-size: .78rem;
+            color: var(--nk-accent);
+            background: transparent;
+            border: 1px dashed var(--nk-accent);
+            border-radius: 5px;
+            padding: 4px 14px;
+            cursor: pointer;
+            transition: background .15s, color .15s;
+        }
+
+            .btn-add-row:hover {
+                background: var(--nk-accent);
+                color: #fff;
+            }
+
+        /* Nút thêm khu vực */
+        #btn-add-kv {
+            font-size: .85rem;
+            border: 2px dashed var(--nk-accent);
+            background: var(--nk-accent-lt);
+            color: var(--nk-accent);
+            border-radius: 8px;
+            padding: 10px 0;
+            width: 100%;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .15s, color .15s;
+            margin-top: 4px;
+        }
+
+            #btn-add-kv:hover {
+                background: var(--nk-accent);
+                color: #fff;
+            }
+
+        /* Thanh % trong cell */
+        .pct-cell {
+            color: var(--nk-accent);
+            font-weight: 700;
+        }
+
+        /* Dòng bị khóa chờ hạng mục trước hoàn thành */
+        .nk-row-locked td {
+            opacity: 0.45;
+            pointer-events: none;
+            background: #f0f0f0 !important;
         }
     </style>
 }

@@ -125,7 +125,7 @@
 
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label fw-semibold">
-                                            Dự toán
+                                            Dự toán <span class="text-danger">*</span>
                                         </label>
 
                                         @*@Html.TextBoxFor(m => m.DuToan, new
@@ -147,8 +147,6 @@
 
                                         @Html.ValidationMessageFor(m => m.DuToan, "",
                                             new { @class = "text-danger small mt-1" })
-
-                                        @Html.ValidationMessageFor(m => m.DuToan, "", new { @class = "text-danger small mt-1" })
                                     </div>
                                 </div>
 
@@ -450,7 +448,7 @@
                 }
 
                 // ── Hàm load User theo PhongBanId (dùng chung cho cả 2 context) ──
-                function loadUsersByPhongBan(phongBanId, $ddUser,
+                @*function loadUsersByPhongBan(phongBanId, $ddUser,
                                               selectedUserId, selectedText) {
                     $ddUser.html('<option value="">Đang tải...</option>')
                            .prop('disabled', true);
@@ -485,6 +483,57 @@
                                    .prop('disabled', false);
                         }
                     });
+                }*@
+
+                function loadUsersByPhongBan(phongBanId, $ddUser, selectedUserId, selectedText) {
+                    // 1. Hiển thị trạng thái đang tải và cập nhật giao diện Chosen
+                    $ddUser.html('<option value="">Đang tải...</option>')
+                           .prop('disabled', true)
+                           .trigger("chosen:updated");
+
+                    // 2. Kiểm tra nếu không có Phòng ban nào được chọn
+                    if (!phongBanId) {
+                        $ddUser.html('<option value="">-- Chọn nhân viên --</option>')
+                               .prop('disabled', false)
+                               .trigger("chosen:updated");
+                        return;
+                    }
+
+                    // 3. Gọi Ajax lấy danh sách nhân viên
+                    $.ajax({
+                        url: '@Url.Action("GetUsersByPhongBan", "Budget")',
+                        type: 'GET',
+                        data: { phongBanId: phongBanId },
+                        success: function (res) {
+                            var options = '<option value="">-- Chọn nhân viên --</option>';
+
+                            if (res.success && res.data.length > 0) {
+                                $.each(res.data, function (i, u) {
+                                    var selected = selectedUserId && u.value == selectedUserId ? 'selected' : '';
+                                    options += '<option value="' + u.value + '" ' + selected + '>' + u.text + '</option>';
+                                });
+                            }
+
+                            // Đổ dữ liệu mới vào và mở khóa select
+                            $ddUser.html(options).prop('disabled', false);
+
+                            // 4. Kích hoạt Chosen nếu chưa có, hoặc cập nhật nếu đã tồn tại
+                            if ($ddUser.next('.chosen-container').length > 0) {
+                                $ddUser.trigger("chosen:updated");
+                            } else {
+                                $ddUser.chosen({
+                                    width: "100%",
+                                    no_results_text: "Không tìm thấy nhân viên:"
+                                });
+                            }
+                        },
+                        error: function () {
+                            // Xử lý khi có lỗi xảy ra
+                            $ddUser.html('<option value="">-- Lỗi tải dữ liệu --</option>')
+                                   .prop('disabled', false)
+                                   .trigger("chosen:updated");
+                        }
+                    });
                 }
 
                 // ── Trang Create: Load User khi đổi Phòng ban ────────────────
@@ -511,7 +560,12 @@
 
                 // ── Thêm dòng ──────────────────────────────────────────────────
                 $('#btnThemDong').on('click', function () {
-                    $('#phanNhiemBody').append(taoHtmlDong(rowIndex++));
+                    var row = taoHtmlDong(rowIndex++);
+                    var $row = $(row);
+
+                    $('#phanNhiemBody').append($row);
+                    // Kích hoạt chosen cho select Phòng ban của dòng vừa thêm
+                    $row.find('select[name*=PhongBanId]').chosen({ width: "100%" });
                     capNhatSTT();
                 });
 
