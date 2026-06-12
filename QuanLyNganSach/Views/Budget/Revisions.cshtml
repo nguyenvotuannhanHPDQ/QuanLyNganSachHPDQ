@@ -1,0 +1,323 @@
+﻿@model IEnumerable<QuanLyNganSach.Models.ViewModels.RevisionListItemViewModel>
+@{
+    ViewBag.Title = "Hồ sơ chờ duyệt thay đổi";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Home", new { area = "" })">
+                            <i class="bi bi-house-door"></i> Trang chủ
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        Hồ sơ chờ duyệt thay đổi
+                    </li>
+                </ol>
+            </nav>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header text-bg-primary py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-text me-2"></i>
+                        Danh sách hồ sơ chờ duyệt thay đổi
+                    </h5>
+                </div>
+
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mã hạng mục</th>
+                                <th>Tên hạng mục</th>
+                                <th>Loại</th>
+                                <th>Bộ phận</th>
+                                <th>Ngày gửi</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.Any())
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="bi bi-inbox me-1"></i> Không có hồ sơ nào chờ duyệt.
+                                    </td>
+                                </tr>
+                            }
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@item.MaHangMuc</td>
+                                    <td>@item.TenHangMuc</td>
+                                    <td>
+                                        @if (item.RevisionType == 1)
+                                        {
+                                            <span class="badge bg-warning text-dark">Trả hồ sơ</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-info text-dark">Chỉnh sửa</span>
+                                        }
+                                    </td>
+                                    <td>@item.CreatedByName</td>
+                                    <td>@item.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-primary btn-view-revision"
+                                                data-revision-id="@item.RevisionId"
+                                                data-budget-id="@item.BudgetRegistrationId">
+                                            <i class="bi bi-eye me-1"></i>Xem & Duyệt
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer bg-light text-muted small py-2">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <span>
+                        </span>
+                        <span class="text-end text-secondary">
+                            <i class="bi bi-clock-history me-1"></i>
+                            @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal xem chi tiết Revision -->
+<div class="modal fade" id="revisionDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header text-bg-primary">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-file-earmark-diff me-2"></i>
+                    Chi tiết thay đổi hồ sơ
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+
+                <div id="revisionLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Đang tải...</p>
+                </div>
+
+                <div id="revisionContent" style="display:none;">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold text-muted small">Khu vực dự án</label>
+                            <input type="text" class="form-control" id="rv_KhuVuc" disabled />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold text-muted small">Tên hạng mục</label>
+                            <input type="text" class="form-control" id="rv_TenHangMuc" disabled />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold text-muted small">Dự toán</label>
+                            <input type="text" class="form-control" id="rv_DuToan" disabled />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold text-muted small">Số tờ trình</label>
+                            <input type="text" class="form-control" id="rv_SoToTrinh" disabled />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold text-muted small">Loại hạng mục</label>
+                            <input type="text" class="form-control" id="rv_CategoryType" disabled />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold text-muted small">Mức ưu tiên</label>
+                            <input type="text" class="form-control" id="rv_PriorityLevel" disabled />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold text-muted small">Số lượng</label>
+                            <input type="text" class="form-control" id="rv_SoLuong" disabled />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold text-muted small">Ngày bắt đầu</label>
+                            <input type="text" class="form-control" id="rv_NgayBatDau" disabled />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold text-muted small">Ngày kết thúc</label>
+                            <input type="text" class="form-control" id="rv_NgayKetThuc" disabled />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted small">Lý do đầu tư</label>
+                        <textarea class="form-control" id="rv_LyDoDauTu" rows="3" disabled></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted small">Mô tả kỹ thuật</label>
+                        <textarea class="form-control" id="rv_MoTaKyThuat" rows="3" disabled></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted small">Link tài liệu liên quan</label>
+                        <input type="text" class="form-control" id="rv_LinkTaiLieu" disabled />
+                    </div>
+                    <div class="mb-3" id="rv_LyDoChinhSuaSection" style="display:none;">
+                        <label class="form-label fw-semibold text-muted small">
+                            <i class="bi bi-pencil me-1"></i>Lý do chỉnh sửa
+                        </label>
+                        <textarea class="form-control" id="rv_LyDoChinhSua"
+                                  rows="2" disabled></textarea>
+                    </div>
+                    <!-- File đính kèm -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted small">
+                            <i class="bi bi-paperclip me-1"></i>Hồ sơ căn cứ đính kèm
+                        </label>
+                        <div id="rv_Attachments"
+                             class="border rounded p-2 bg-light"></div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Đóng
+                </button>
+                <button type="button" class="btn btn-success"
+                        id="btnApproveRevision">
+                    <i class="bi bi-check2-circle me-1"></i>Duyệt thay đổi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var currentRevisionId = 0;
+
+        $(document).on('click', '.btn-view-revision', function () {
+            currentRevisionId = $(this).data('revision-id');
+            $('#revisionLoading').show();
+            $('#revisionContent').hide();
+
+            var modal = new bootstrap.Modal(
+                document.getElementById('revisionDetailModal'));
+            modal.show();
+
+            $.get('@Url.Action("GetRevisionDetail", "Budget")', { revisionId: currentRevisionId }, function (data) {
+
+                if (!data.success) return;
+
+                // SỬA: dùng tên thay vì ID cho 3 field này
+                $('#rv_KhuVuc').val(data.TenKhuVuc         || '');
+                $('#rv_CategoryType').val(data.TenCategoryType  || '');
+                $('#rv_PriorityLevel').val(data.TenPriorityLevel || '');
+                // Các field còn lại giữ nguyên
+                $('#rv_TenHangMuc').val(data.TenHangMuc      || '');
+                $('#rv_DuToan').val(formatCurrency(data.DuToan));
+                $('#rv_SoToTrinh').val(data.SoToTrinh        || '');
+                $('#rv_SoLuong').val(data.SoLuong            || '');
+                $('#rv_NgayBatDau').val(data.NgayBatDau      || '');
+                $('#rv_NgayKetThuc').val(data.NgayKetThuc    || '');
+                $('#rv_LyDoDauTu').val(data.LyDoDauTu        || '');
+                $('#rv_MoTaKyThuat').val(data.MoTaKyThuat    || '');
+                $('#rv_LinkTaiLieu').val(data.LinkTaiLieuLienQuan || '');
+                // Hiển thị lý do chỉnh sửa nếu RevisionType = 2
+                if (data.RevisionType === 2) {
+                    $('#rv_LyDoChinhSuaSection').show();
+                    $('#rv_LyDoChinhSua').val(data.LyDoChinhSua || '');
+                    // Đổi tiêu đề nút duyệt
+                    $('#btnApproveRevision')
+                        .html('<i class="bi bi-check2-circle me-1"></i>Xác nhận thay đổi');
+                } else {
+                    $('#rv_LyDoChinhSuaSection').hide();
+                    $('#btnApproveRevision')
+                        .html('<i class="bi bi-check2-circle me-1"></i>Duyệt thay đổi');
+                }
+
+                // File đính kèm
+                var $att = $('#rv_Attachments').empty();
+                if (data.attachments && data.attachments.length > 0) {
+                    $.each(data.attachments, function (_, a) {
+                        $att.append(
+                            '<div class="d-flex align-items-center gap-2 mb-1">' +
+                            '  <i class="bi bi-file-earmark me-1"></i>' +
+                            '  <a href="' + a.filePath + '" target="_blank">'
+                                + a.fileName + '</a>' +
+                            '</div>'
+                        );
+                    });
+                } else {
+                    $att.html(
+                        '<span class="text-muted small">Không có file đính kèm.</span>'
+                    );
+                }
+
+                $('#revisionLoading').hide();
+                $('#revisionContent').show();
+            });
+        });
+
+        // Duyệt thay đổi
+        $('#btnApproveRevision').on('click', function () {
+            var $btn = $(this);
+            $btn.prop('disabled', true)
+                .html('<i class="bi bi-hourglass-split me-1"></i>Đang duyệt...');
+
+            $.ajax({
+                url  : '@Url.Action("ApproveRevision", "Budget")',
+                type : 'POST',
+                data : { revisionId: currentRevisionId },
+                success: function (res) {
+                    if (res.success) {
+                        // Đóng modal và xóa dòng khỏi danh sách
+                        bootstrap.Modal.getInstance(
+                            document.getElementById('revisionDetailModal')).hide();
+                        // Reload trang để cập nhật danh sách
+                        window.location.reload();
+                    } else {
+                        alert(res.message);
+                    }
+                },
+                error: function () {
+                    alert('Lỗi kết nối, vui lòng thử lại.');
+                },
+                complete: function () {
+                    $btn.prop('disabled', false)
+                        .html('<i class="bi bi-check2-circle me-1"></i>Duyệt thay đổi');
+                }
+            });
+        });
+
+        // Auto-open modal nếu URL có ?openRevision=xxx
+        (function () {
+            var params = new URLSearchParams(window.location.search);
+            var revisionId = params.get('openRevision');
+            if (revisionId) {
+                var $btn = $('[data-revision-id="' + revisionId + '"].btn-view-revision');
+                if ($btn.length) {
+                    $btn.trigger('click');
+                }
+                window.history.replaceState({}, '', '/Budget/Revisions');
+            }
+        })();
+
+        // Hàm format tiền tệ
+        function formatCurrency(value) {
+            if (!value) return '0';
+            return Number(value).toLocaleString('en-US');
+        }
+    </script>
+}

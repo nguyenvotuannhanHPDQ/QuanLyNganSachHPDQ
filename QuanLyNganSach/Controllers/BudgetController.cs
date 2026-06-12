@@ -13,6 +13,7 @@ using QuanLyNganSach.Models.DTO;
 using QuanLyNganSach.Hubs;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
+using static QuanLyNganSach.Models.ViewModels.BudgetRegistrationListViewModel;
 
 namespace QuanLyNganSach.Controllers
 {
@@ -22,7 +23,7 @@ namespace QuanLyNganSach.Controllers
         private const int PageSize = 10;
 
         // GET: Budget/Index - Danh sách đăng ký ngân sách
-        public ActionResult Index(int? page, string search, string sortOrder, int? phongBanId,int? filterTienDo, int? filterTrangThai)
+        public ActionResult Index_OLD(int? page, string search, string sortOrder, int? phongBanId,int? filterTienDo, int? filterTrangThai)
         {
             try
             {
@@ -357,6 +358,274 @@ namespace QuanLyNganSach.Controllers
 
                 return View(new PagedList<BudgetRegistrationListViewModel>(
                     Enumerable.Empty<BudgetRegistrationListViewModel>().AsQueryable(), 1, PageSize));
+            }
+        }
+
+        public ActionResult Index(int? page, string search, string sortOrder, int? phongBanId, int? filterTienDo, int? filterTrangThai)
+        {
+            try
+            {
+                int pageNumber = page ?? 1;
+
+                // Validate sortOrder parameter
+                var validSortOrders = new[] { "newest", "oldest", "budget-high", "budget-low" };
+                if (string.IsNullOrWhiteSpace(sortOrder) || !validSortOrders.Contains(sortOrder))
+                {
+                    sortOrder = "newest"; // Default value
+                }
+
+                // Lấy thông tin user hiện tại
+                var username = User.Identity.Name;
+                if (string.IsNullOrWhiteSpace(username))
+                {
+                    TempData["Error"] = "Phiên đăng nhập đã hết hạn.";
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var currentUser = db.Users.FirstOrDefault(u => u.MaNhanVien == username);
+                if (currentUser == null)
+                {
+                    TempData["Error"] = "Không tìm thấy thông tin người dùng.";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                // Kiểm tra quyền truy cập
+                bool isManagerOrAdmin = currentUser.RoleId == Constants.RoleConst.Admin ||
+                                        currentUser.RoleId == Constants.RoleConst.Manager;
+
+                // Query danh sách đăng ký ban đầu
+                var query = from br in db.BudgetRegistrations
+                            join pb in db.PhongBans on br.PhongBanId equals pb.PhongBanId
+                            join u in db.Users on br.UserId equals u.UserId
+                            select new
+                            {
+                                BudgetRegistration = br,
+                                PhongBan = pb,
+                                User = u
+                            };
+
+                // Apply role-based filtering
+                if (!isManagerOrAdmin)
+                {
+                    // User thường xem được: Hồ sơ của mình HOẶC Hồ sơ được phân nhiệm
+                    query = query.Where(x =>
+                        x.BudgetRegistration.UserId == currentUser.UserId
+                        || x.BudgetRegistration.BudgetRegistrationPhanNhiems
+                            .Any(p => p.UserId == currentUser.UserId));
+                }
+
+                // Apply department filter (chỉ Manager/Admin mới có filter này)
+                if (isManagerOrAdmin && phongBanId.HasValue && phongBanId.Value > 0)
+                {
+                    query = query.Where(x => x.BudgetRegistration.PhongBanId == phongBanId.Value);
+                }
+
+                // Project to ViewModel
+                var viewModelQuery = query.Select(x => new BudgetRegistrationListViewModel
+                {
+                    BudgetRegistrationId = x.BudgetRegistration.BudgetRegistrationId,
+                    MaHangMuc = x.BudgetRegistration.MaHangMuc,
+                    TenHangMuc = x.BudgetRegistration.TenHangMuc,
+                    DuToan = x.BudgetRegistration.DuToan ?? 0,
+                    SoToTrinh = x.BudgetRegistration.SoToTrinh ?? string.Empty,
+                    LyDoDauTu = x.BudgetRegistration.LyDoDauTu ?? string.Empty,
+                    MoTaKyThuat = x.BudgetRegistration.MoTaKyThuat ?? string.Empty,
+                    NgayBatDau = x.BudgetRegistration.NgayBatDau,
+                    NgayKetThuc = x.BudgetRegistration.NgayKetThuc,
+                    TenPhongBan = x.PhongBan.TenPhongBan,
+                    PhongBanId = x.PhongBan.PhongBanId,
+                    NguoiDangKy = x.User.HoTen,
+                    NgayTao = x.BudgetRegistration.CreatedDate,
+
+                    // DỮ LIỆU THÔ PHỤC VỤ THUỘC TÍNH GET TỰ ĐỘNG TÍNH TOÁN TRẠNG THÁI
+                    SoToTrinhRaw = x.BudgetRegistration.SoToTrinh,
+                    WorkflowType = x.BudgetRegistration.WorkflowType,
+
+                    BudgetApprovals = x.BudgetRegistration.BudgetApprovals.Select(a => new BudgetApprovalRawField
+                    {
+                        IsSupplementary = a.IsSupplementary,
+                        NgayDuyetPDA = a.NgayDuyetPDA,
+                        NgayDuyetBGD = a.NgayDuyetBGD
+                    }).ToList(),
+
+                    // TIẾN ĐỘ HẠNG MỤC
+                    TongTienDo = x.BudgetRegistration.ProgressConfigs
+                        .Select(p => (decimal?)p.TongTienDo)
+                        .FirstOrDefault(),
+                    DanhGiaChung = x.BudgetRegistration.ProgressConfigs
+                        .Select(p => p.DanhGiaChung)
+                        .FirstOrDefault(),
+
+                    // THÔNG TIN TỔNG HỢP KINH PHÍ ĐÃ DUYỆT KHÁC
+                    CoThongTinPheDuyet = x.BudgetRegistration.BudgetApprovals.Any(a => a.TrangThaiPheDuyet == 2),
+                    TongTienDaDuyet = (x.BudgetRegistration.BudgetApprovals
+                                        .Where(a => !a.IsSupplementary && a.TrangThaiPheDuyet == 2)
+                                        .Select(a => (decimal?)a.DuToanPheDuyet)
+                                        .FirstOrDefault() ?? 0)
+                                    + (x.BudgetRegistration.BudgetApprovals
+                                        .Where(a => a.IsSupplementary && a.TrangThaiPheDuyet == 2)
+                                        .Sum(a => (decimal?)a.NganSachBoSung) ?? 0),
+                    UserId = x.BudgetRegistration.UserId,
+                    IsPhanNhiemUser = x.BudgetRegistration.UserId != currentUser.UserId
+                        && !isManagerOrAdmin
+                        && x.BudgetRegistration.BudgetRegistrationPhanNhiems.Any(p => p.UserId == currentUser.UserId),
+                });
+
+                // Apply filter theo tiến độ (DanhGiaChung)
+                if (filterTienDo.HasValue)
+                {
+                    if (filterTienDo.Value == -1)
+                    {
+                        viewModelQuery = viewModelQuery.Where(b => b.DanhGiaChung == null);
+                    }
+                    else
+                    {
+                        viewModelQuery = viewModelQuery.Where(b => b.DanhGiaChung == filterTienDo.Value);
+                    }
+                }
+
+                // TÁI CẤU TRÚC: Filter theo bộ mã trạng thái hồ sơ mới trực tiếp trên SQL
+                if (filterTrangThai.HasValue)
+                {
+                    switch (filterTrangThai.Value)
+                    {
+                        case 0: // Đăng ký mới (Dựa theo cấu trúc Excel Nhóm 1: WorkflowType == null)
+                            viewModelQuery = viewModelQuery.Where(b => b.WorkflowType == null);
+                            break;
+
+                        case 1: // Chưa đủ hồ sơ (Gồm Case 2.1: WorkflowType == 4 HOẶC Case 4.1: WorkflowType == 1, không bổ sung, gốc chưa duyệt PDA & BGD)
+                            viewModelQuery = viewModelQuery.Where(b =>
+                                b.WorkflowType == 4 ||
+                                (b.WorkflowType == 1 &&
+                                 !b.BudgetApprovals.Any(a => a.IsSupplementary) &&
+                                 b.BudgetApprovals.Any(a => !a.IsSupplementary && a.NgayDuyetPDA == null && a.NgayDuyetBGD == null))
+                            );
+                            break;
+
+                        case 2: // Theo luồng chi phí sản xuất (Nhóm 3: WorkflowType == 2)
+                            viewModelQuery = viewModelQuery.Where(b => b.WorkflowType == 2);
+                            break;
+
+                        case 3: // Đang thực hiện xin ngân sách (Case 4.2: WorkflowType == 1, không bổ sung, gốc có duyệt PDA nhưng chưa duyệt BGD)
+                            viewModelQuery = viewModelQuery.Where(b =>
+                                b.WorkflowType == 1 &&
+                                !b.BudgetApprovals.Any(a => a.IsSupplementary) &&
+                                b.BudgetApprovals.Any(a => !a.IsSupplementary && a.NgayDuyetPDA != null && a.NgayDuyetBGD == null)
+                            );
+                            break;
+
+                        case 4: // Đăng bổ sung ngân sách (Case 4.5: WorkflowType == 1, có bổ sung thỏa mãn duyệt PDA nhưng chưa duyệt BGD)
+                            viewModelQuery = viewModelQuery.Where(b =>
+                                b.WorkflowType == 1 &&
+                                b.BudgetApprovals.Any(a => a.IsSupplementary && a.NgayDuyetPDA != null && a.NgayDuyetBGD == null)
+                            );
+                            break;
+
+                        case 5: // Đã phê duyệt ngân sách (Gồm Case 4.3 gốc đã duyệt xong, Case 4.4 bổ sung chưa duyệt gì, Case 4.6 bổ sung duyệt xong hết)
+                            viewModelQuery = viewModelQuery.Where(b =>
+                                b.WorkflowType == 1 &&
+                                (
+                                    // Case 4.3: Không có bổ sung và gốc đã duyệt cả 2
+                                    (!b.BudgetApprovals.Any(a => a.IsSupplementary) && b.BudgetApprovals.Any(a => !a.IsSupplementary && a.NgayDuyetPDA != null && a.NgayDuyetBGD != null)) ||
+                                    // Case 4.4: Có đợt bổ sung nhưng đợt bổ sung đó chưa tác động duyệt gì cả
+                                    b.BudgetApprovals.Any(a => a.IsSupplementary && a.NgayDuyetPDA == null && a.NgayDuyetBGD == null) ||
+                                    // Case 4.6: Có đợt bổ sung đã hoàn tất duyệt cả 2
+                                    b.BudgetApprovals.Any(a => a.IsSupplementary && a.NgayDuyetPDA != null && a.NgayDuyetBGD != null)
+                                )
+                            );
+                            break;
+                    }
+                }
+
+                // Apply search filter
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    search = search.Trim().ToLower();
+                    viewModelQuery = viewModelQuery.Where(b =>
+                        (b.MaHangMuc != null && b.MaHangMuc.ToLower().Contains(search)) ||
+                        (b.TenHangMuc != null && b.TenHangMuc.ToLower().Contains(search)) ||
+                        (b.SoToTrinh != null && b.SoToTrinh.ToLower().Contains(search)) ||
+                        (b.TenPhongBan != null && b.TenPhongBan.ToLower().Contains(search)) ||
+                        (b.NguoiDangKy != null && b.NguoiDangKy.ToLower().Contains(search)) ||
+                        (b.LyDoDauTu != null && b.LyDoDauTu.ToLower().Contains(search)));
+                }
+
+                // Apply sorting
+                IOrderedQueryable<BudgetRegistrationListViewModel> orderedQuery;
+                switch (sortOrder)
+                {
+                    case "oldest":
+                        orderedQuery = viewModelQuery.OrderBy(b => b.NgayTao);
+                        break;
+                    case "budget-high":
+                        orderedQuery = viewModelQuery.OrderByDescending(b => b.DuToan).ThenByDescending(b => b.NgayTao);
+                        break;
+                    case "budget-low":
+                        orderedQuery = viewModelQuery.OrderBy(b => b.DuToan).ThenByDescending(b => b.NgayTao);
+                        break;
+                    case "newest":
+                    default:
+                        orderedQuery = viewModelQuery.OrderByDescending(b => b.NgayTao);
+                        break;
+                }
+
+                // Apply pagination
+                var budgetList = orderedQuery.ToPagedList(pageNumber, PageSize);
+
+                // Prepare department list for Manager/Admin
+                if (isManagerOrAdmin)
+                {
+                    var departments = db.PhongBans
+                        .Where(pb => pb.IsActive == true)
+                        .OrderBy(pb => pb.TenPhongBan)
+                        .Select(pb => new SelectListItem
+                        {
+                            Value = pb.PhongBanId.ToString(),
+                            Text = pb.TenPhongBan,
+                            Selected = phongBanId.HasValue && pb.PhongBanId == phongBanId.Value
+                        })
+                        .ToList();
+
+                    departments.Insert(0, new SelectListItem
+                    {
+                        Value = "",
+                        Text = "-- Tất cả đơn vị --",
+                        Selected = !phongBanId.HasValue
+                    });
+
+                    ViewBag.PhongBanList = departments;
+                }
+
+                // Pass parameters to view
+                ViewBag.CurrentSearch = search ?? string.Empty;
+                ViewBag.CurrentSort = sortOrder;
+                ViewBag.CurrentPhongBanId = phongBanId;
+                ViewBag.IsManagerOrAdmin = isManagerOrAdmin;
+                ViewBag.CurrentFilterTienDo = filterTienDo;
+                ViewBag.CurrentFilterTrangThai = filterTrangThai;
+
+                // Binds Dropdowns cho Modal
+                ViewBag.DsPhongBanModal = db.PhongBans.OrderBy(p => p.TenPhongBan).Select(p => new { value = p.PhongBanId.ToString(), text = p.TenPhongBan }).ToList();
+                ViewBag.DsChucNangModal = db.ChucNang_NhiemVu.OrderBy(c => c.TenChucNang).Select(c => new { value = c.ChucNangNhiemVuId.ToString(), text = c.TenChucNang }).ToList();
+                ViewBag.DsKhuVucModal = db.ProjectAreas.OrderBy(p => p.AreaName).Select(p => new SelectListItem { Value = p.ProjectAreaId.ToString(), Text = p.AreaName }).ToList();
+
+                ViewBag.CurrentUserId = currentUser.UserId;
+                ViewBag.DsCategory = GetCategoryTypes();
+                ViewBag.DsPriority = GetPriorityLevels();
+
+                return View(budgetList);
+            }
+            catch (DbEntityValidationException ex)
+            {
+                var errorMessages = ex.EntityValidationErrors.SelectMany(x => x.ValidationErrors).Select(x => x.ErrorMessage);
+                TempData["Error"] = "Lỗi xác thực dữ liệu. Vui lòng liên hệ quản trị viên.";
+                return View(new PagedList<BudgetRegistrationListViewModel>(Enumerable.Empty<BudgetRegistrationListViewModel>().AsQueryable(), 1, PageSize));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in Budget/Index: {ex.Message}");
+                TempData["Error"] = "Đã xảy ra lỗi khi tải danh sách đăng ký. Vui lòng thử lại.";
+                return View(new PagedList<BudgetRegistrationListViewModel>(Enumerable.Empty<BudgetRegistrationListViewModel>().AsQueryable(), 1, PageSize));
             }
         }
 
@@ -903,10 +1172,8 @@ namespace QuanLyNganSach.Controllers
             }
         }
 
-        // ================================================================
-        // POST: /Budget/TraHoSo
-        // Admin trả hồ sơ — set WorkflowType = 4
-        // ================================================================
+
+
         //[HttpPost]
         //public JsonResult TraHoSo(int budgetId)
         //{
@@ -917,41 +1184,78 @@ namespace QuanLyNganSach.Controllers
         //    if (budget == null)
         //        return Json(new { success = false, message = "Không tìm thấy hồ sơ." });
 
-        //    budget.WorkflowType = 4; // Trả hồ sơ
+        //    if (budget.WorkflowType != null)
+        //        return Json(new { success = false, message = "Chỉ có thể trả hồ sơ khi chưa xác nhận luồng." });
+
+        //    budget.WorkflowType = 4;
         //    budget.UpdatedDate = DateTime.Now;
         //    db.SaveChanges();
+
+        //    // THÊM MỚI: gửi thông báo đến chủ hồ sơ
+        //    NotificationHelper.Send(
+        //        db,
+        //        toUserId: budget.UserId,
+        //        title: "Hồ sơ bị trả lại",
+        //        message: $"Hồ sơ \"{budget.TenHangMuc}\" đã bị trả lại. Vui lòng chỉnh sửa và gửi lại.",
+        //        url: $"/Budget/Index?openBudget={budget.BudgetRegistrationId}",
+        //        relatedBudgetId: budget.BudgetRegistrationId
+        //    );
 
         //    return Json(new { success = true, message = "Đã trả hồ sơ thành công." });
         //}
 
         [HttpPost]
-        public JsonResult TraHoSo(int budgetId)
+        public JsonResult TraHoSo(int budgetId, string lyDoTra)
         {
             if (CurrentUser.RoleId != 1)
-                return Json(new { success = false, message = "Không có quyền thực hiện." });
+                return Json(new
+                {
+                    success = false,
+                    message = "Không có quyền thực hiện."
+                });
+
+            if (string.IsNullOrWhiteSpace(lyDoTra))
+                return Json(new
+                {
+                    success = false,
+                    message = "Vui lòng nhập lý do trả hồ sơ."
+                });
 
             var budget = db.BudgetRegistrations.Find(budgetId);
             if (budget == null)
-                return Json(new { success = false, message = "Không tìm thấy hồ sơ." });
+                return Json(new
+                {
+                    success = false,
+                    message = "Không tìm thấy hồ sơ."
+                });
 
             if (budget.WorkflowType != null)
-                return Json(new { success = false, message = "Chỉ có thể trả hồ sơ khi chưa xác nhận luồng." });
+                return Json(new
+                {
+                    success = false,
+                    message = "Chỉ có thể trả hồ sơ khi chưa xác nhận luồng."
+                });
 
             budget.WorkflowType = 4;
+            budget.LyDoTra = lyDoTra.Trim(); // THÊM MỚI
             budget.UpdatedDate = DateTime.Now;
             db.SaveChanges();
 
-            // THÊM MỚI: gửi thông báo đến chủ hồ sơ
+            // Gửi thông báo kèm lý do đến chủ hồ sơ
             NotificationHelper.Send(
                 db,
                 toUserId: budget.UserId,
                 title: "Hồ sơ bị trả lại",
-                message: $"Hồ sơ \"{budget.TenHangMuc}\" đã bị trả lại. Vui lòng chỉnh sửa và gửi lại.",
+                message: $"Hồ sơ \"{budget.TenHangMuc}\" đã bị trả lại. Lý do: {lyDoTra.Trim()}",
                 url: $"/Budget/Index?openBudget={budget.BudgetRegistrationId}",
                 relatedBudgetId: budget.BudgetRegistrationId
             );
 
-            return Json(new { success = true, message = "Đã trả hồ sơ thành công." });
+            return Json(new
+            {
+                success = true,
+                message = "Đã trả hồ sơ thành công."
+            });
         }
 
         // ================================================================
@@ -1034,7 +1338,7 @@ namespace QuanLyNganSach.Controllers
             if (file != null && file.ContentLength > 0)
                 _SaveRevisionAttachment(file, revision.RevisionId);
 
-            return Json(new { success = true, message = "Gửi lại hồ sơ thành công. Vui lòng chờ Admin duyệt." });
+            return Json(new { success = true, message = "Gửi lại hồ sơ thành công. Vui lòng chờ duyệt." });
         }
 
         // ================================================================
@@ -1091,8 +1395,8 @@ namespace QuanLyNganSach.Controllers
                                     ? "Hồ sơ đã được duyệt"
                                     : "Thông tin chỉnh sửa đã được xác nhận",
                 message: revision.RevisionType == 1
-                                    ? $"Hồ sơ \"{budget.TenHangMuc}\" đã được Admin duyệt thay đổi thành công."
-                                    : $"Thông tin chỉnh sửa hồ sơ \"{budget.TenHangMuc}\" đã được Admin xác nhận.",
+                                    ? $"Hồ sơ \"{budget.TenHangMuc}\" đã được duyệt thay đổi thành công."
+                                    : $"Thông tin chỉnh sửa hồ sơ \"{budget.TenHangMuc}\" đã được xác nhận.",
                 url: $"/Budget/Index?openBudget={budget.BudgetRegistrationId}",
                 relatedBudgetId: budget.BudgetRegistrationId
             );
@@ -1698,7 +2002,7 @@ namespace QuanLyNganSach.Controllers
         /// GET: Budget/GetDetailsModal/5 - Lấy thông tin chi tiết để hiển thị trong modal
         /// </summary>
         [HttpGet]
-        public ActionResult GetDetailsModal(int? id)
+        public ActionResult GetDetailsModal_OLD(int? id)
         {
             try
             {
@@ -1937,6 +2241,253 @@ namespace QuanLyNganSach.Controllers
 
                 return Json(new { success = true, data = viewModel, chuaCoNgayDuyetBGD = chuaCoNgayDuyetBGD, isOwner = isOwner },
                     JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetDetailsModal Error - ID: {id}, Message: {ex.Message}");
+                return Json(new { success = false, message = "Đã xảy ra lỗi khi tải thông tin chi tiết." }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        [HttpGet]
+        public ActionResult GetDetailsModal(int? id)
+        {
+            try
+            {
+                // Validate id parameter
+                if (!id.HasValue || id.Value <= 0)
+                {
+                    return Json(new { success = false, message = "Mã đăng ký không hợp lệ." }, JsonRequestBehavior.AllowGet);
+                }
+
+                // Validate current user
+                if (CurrentUser == null)
+                {
+                    return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn." }, JsonRequestBehavior.AllowGet);
+                }
+
+                // Query budget registration with all related data
+                var budgetRegistration = db.BudgetRegistrations
+                .Include(x => x.PhongBan)
+                .Include(x => x.User)
+                .Include(x => x.BudgetCategoryType)
+                .Include(x => x.BudgetPriorityLevel)
+                .Include(x => x.BudgetAttachments.Select(a => a.User))
+                .Include(x => x.ProjectArea)
+                .Include(x => x.BudgetRegistrationPhanNhiems.Select(p => p.PhongBan))
+                .Include(x => x.BudgetRegistrationPhanNhiems.Select(p => p.ChucNang_NhiemVu))
+                .Include(x => x.BudgetApprovals)
+                .Include(x => x.ProgressConfigs)
+                .Include(x => x.BudgetRegistrationPhanNhiems.Select(p => p.User))
+                .FirstOrDefault(x => x.BudgetRegistrationId == id.Value);
+
+                // Check if record exists
+                if (budgetRegistration == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin đăng ký." }, JsonRequestBehavior.AllowGet);
+                }
+
+                // 1. TÁI CẤU TRÚC: LOGIC XÁC ĐỊNH CHUỖI TEXT TRẠNG THÁI HIỂN THỊ MỚI
+                var approvals = budgetRegistration.BudgetApprovals.ToList();
+                var approvalGoc = approvals.FirstOrDefault(x => !x.IsSupplementary);
+                var danhSachBoSung = approvals.Where(x => x.IsSupplementary).ToList();
+
+                int? workflowType = budgetRegistration.WorkflowType;
+                string trangThaiHienThiText = "Chưa xác định";
+
+                // --- NHÓM 1: CHƯA XÁC NHẬN LUỒNG ---
+                if (workflowType == null)
+                {
+                    trangThaiHienThiText = "Đăng ký mới"; // Case 1.1
+                }
+                // --- NHÓM 2: HỒ SƠ BỊ TRẢ LẠI ---
+                else if (workflowType == 4)
+                {
+                    trangThaiHienThiText = "Chưa đủ hồ sơ"; // Case 2.1
+                }
+                // --- NHÓM 3: LUỒNG CHI PHÍ SẢN XUẤT ---
+                else if (workflowType == 2)
+                {
+                    trangThaiHienThiText = "Theo luồng chi phí sản xuất"; // Case 3.1 -> 3.6
+                }
+                // --- NHÓM 4: LUỒNG NGÂN SÁCH ĐẦU TƯ (WorkflowType = 1) ---
+                else if (workflowType == 1)
+                {
+                    if (!danhSachBoSung.Any())
+                    {
+                        if (approvalGoc?.NgayDuyetPDA == null && approvalGoc?.NgayDuyetBGD == null)
+                            trangThaiHienThiText = "Chưa đủ hồ sơ"; // Case 4.1
+                        else if (approvalGoc?.NgayDuyetPDA != null && approvalGoc?.NgayDuyetBGD == null)
+                            trangThaiHienThiText = "Đang thực hiện xin ngân sách"; // Case 4.2
+                        else if (approvalGoc?.NgayDuyetPDA != null && approvalGoc?.NgayDuyetBGD != null)
+                            trangThaiHienThiText = "Đã phê duyệt ngân sách"; // Case 4.3
+                    }
+                    else
+                    {
+                        bool boSungChuaDuyetGi = danhSachBoSung.Any(a => a.NgayDuyetPDA == null && a.NgayDuyetBGD == null);
+                        bool boSungDaDuyetPDA_ChuaBGD = danhSachBoSung.Any(a => a.NgayDuyetPDA != null && a.NgayDuyetBGD == null);
+                        bool boSungDaDuyetCaHai = danhSachBoSung.Any(a => a.NgayDuyetPDA != null && a.NgayDuyetBGD != null);
+
+                        if (boSungChuaDuyetGi)
+                            trangThaiHienThiText = "Đã phê duyệt ngân sách"; // Case 4.4
+                        else if (boSungDaDuyetPDA_ChuaBGD)
+                            trangThaiHienThiText = "Đang bổ sung ngân sách"; // Case 4.5
+                        else if (boSungDaDuyetCaHai)
+                            trangThaiHienThiText = "Đã phê duyệt ngân sách"; // Case 4.6
+                    }
+                }
+
+                // Check permissions
+                bool isManagerOrAdmin = CurrentUser.RoleId == Constants.RoleConst.Admin ||
+                                        CurrentUser.RoleId == Constants.RoleConst.Manager;
+
+                bool isPhanNhiemUser =
+                    !isManagerOrAdmin
+                    && budgetRegistration.UserId != CurrentUser.UserId
+                    && budgetRegistration.BudgetRegistrationPhanNhiems
+                        .Any(p => p.UserId == CurrentUser.UserId);
+
+                if (!isManagerOrAdmin && budgetRegistration.UserId != CurrentUser.UserId && !isPhanNhiemUser)
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền xem đăng ký này." }, JsonRequestBehavior.AllowGet);
+                }
+
+                // Map to view model
+                var viewModel = new BudgetRegistrationDetailsViewModel
+                {
+                    BudgetRegistrationId = budgetRegistration.BudgetRegistrationId,
+                    MaHangMuc = budgetRegistration.MaHangMuc ?? string.Empty,
+                    TenHangMuc = budgetRegistration.TenHangMuc ?? string.Empty,
+                    DuToan = budgetRegistration.DuToan ?? 0,
+                    SoToTrinh = budgetRegistration.SoToTrinh ?? string.Empty,
+                    SoLuong = budgetRegistration.SoLuong,
+                    LyDoDauTu = budgetRegistration.LyDoDauTu ?? string.Empty,
+                    MoTaKyThuat = budgetRegistration.MoTaKyThuat,
+                    LinkTaiLieuLienQuan = budgetRegistration.LinkTaiLieuLienQuan,
+
+                    CategoryTypeName = budgetRegistration.BudgetCategoryType?.CategoryTypeName ?? "N/A",
+                    PriorityLevelName = budgetRegistration.BudgetPriorityLevel?.PriorityLevelName ?? "N/A",
+
+                    NgayBatDau = budgetRegistration.NgayBatDau,
+                    NgayKetThuc = budgetRegistration.NgayKetThuc,
+                    NgayTao = budgetRegistration.CreatedDate,
+
+                    TenPhongBan = budgetRegistration.PhongBan.TenPhongBan,
+
+                    UserId = budgetRegistration.UserId,
+
+                    // GÁN THUỘC TÍNH MỚI CHO VIEW MODEL ĐỂ TRẢ VỀ AJAX
+                    TrangThaiHienThiText = trangThaiHienThiText,
+
+                    TenNguoiDangKy = budgetRegistration.User.HoTen,
+                    WorkflowType = budgetRegistration.WorkflowType,
+                    IsManagerOrAdmin = isManagerOrAdmin,
+                    ProjectAreaId = budgetRegistration.ProjectAreaId,
+
+                    // Phân nhiệm
+                    DanhSachPhanNhiem = budgetRegistration.BudgetRegistrationPhanNhiems
+                    .Select(p => new PhanNhiemViewModel
+                    {
+                        PhongBanId = p.PhongBanId,
+                        TenPhongBan = p.PhongBan?.TenPhongBan,
+                        ChucNangNhiemVuId = p.ChucNangNhiemVuId,
+                        TenChucNang = p.ChucNang_NhiemVu?.TenChucNang,
+                        TenChucNangNhapTay = p.TenChucNangNhapTay,
+                        Email = p.Email,
+                        GhiChu = p.GhiChu,
+                        UserId = p.UserId,
+                        TenUser = p.UserId.HasValue ? p.User.MaNhanVien + " — " + p.User.HoTen : null
+                    })
+                    .ToList(),
+
+                    Attachments = budgetRegistration.BudgetAttachments
+                        .OrderByDescending(a => a.UploadedDate)
+                        .Select(a => new BudgetAttachmentViewModel
+                        {
+                            AttachmentId = a.AttachmentId,
+                            FileName = a.FileName ?? string.Empty,
+                            FilePath = a.FilePath ?? string.Empty,
+                            FileExtension = a.FileExtension ?? string.Empty,
+                            FileSize = a.FileSize,
+                            FileSizeFormatted = FormatFileSize(a.FileSize),
+                            UploadedBy = a.User?.HoTen ?? "N/A",
+                            UploadedDate = a.UploadedDate
+                        })
+                        .ToList(),
+                };
+
+                viewModel.CategoryTypeId = budgetRegistration.CategoryTypeId;
+                viewModel.PriorityLevelId = budgetRegistration.PriorityLevelId;
+
+                var approvalsBoSung = approvals
+                    .Where(x => x.IsSupplementary)
+                    .OrderBy(x => x.SupplementaryOrder)
+                    .ToList();
+
+                // Map Ngân sách gốc
+                viewModel.NganSachGoc = new BudgetApprovalViewModel
+                {
+                    BudgetApprovalId = approvalGoc?.BudgetApprovalId ?? 0,
+                    BudgetRegistrationId = budgetRegistration.BudgetRegistrationId,
+                    ProcessType = approvalGoc?.ProcessType ?? 1,
+                    NgayDuyetPDA = approvalGoc?.NgayDuyetPDA,
+                    NgayDuyetPKT = approvalGoc?.NgayDuyetPKT,
+                    NgayDuyetERPD = approvalGoc?.NgayDuyetERPD,
+                    NgayDuyetBTC = approvalGoc?.NgayDuyetBTC,
+                    NgayDuyetBGD = approvalGoc?.NgayDuyetBGD,
+                    DuToanGoc = budgetRegistration.DuToan,
+                    DuToanPheDuyet = approvalGoc?.DuToanPheDuyet,
+                    SoThongBao = approvalGoc?.SoThongBao,
+                    SoFM = approvalGoc?.SoFM,
+                    SoIO = approvalGoc?.SoIO,
+                    TrangThaiPheDuyet = approvalGoc?.TrangThaiPheDuyet ?? 0,
+                    IsSupplementary = false,
+                    SupplementaryOrder = 0
+                };
+
+                // Map danh sách Đợt bổ sung
+                viewModel.DanhSachBoSung = approvalsBoSung.Select(a =>
+                    new BudgetApprovalViewModel
+                    {
+                        BudgetApprovalId = a.BudgetApprovalId,
+                        BudgetRegistrationId = budgetRegistration.BudgetRegistrationId,
+                        ProcessType = a.ProcessType,
+                        NgayDuyetPDA = a.NgayDuyetPDA,
+                        NgayDuyetPKT = a.NgayDuyetPKT,
+                        NgayDuyetERPD = a.NgayDuyetERPD,
+                        NgayDuyetBTC = a.NgayDuyetBTC,
+                        NgayDuyetBGD = a.NgayDuyetBGD,
+                        DuToanPheDuyet = a.DuToanPheDuyet,
+                        SoThongBao = a.SoThongBao,
+                        TrangThaiPheDuyet = a.TrangThaiPheDuyet,
+                        IsSupplementary = true,
+                        SupplementaryOrder = a.SupplementaryOrder,
+                        LyDoBoSung = a.LyDoBoSung,
+                        NganSachBoSung = a.NganSachBoSung ?? 0
+                    }).ToList();
+
+                var config = budgetRegistration.ProgressConfigs.FirstOrDefault();
+                viewModel.ThongTinTienDo = new ProgressConfigViewModel
+                {
+                    ProgressConfigId = config?.ProgressConfigId ?? 0,
+                    BudgetRegistrationId = budgetRegistration.BudgetRegistrationId,
+                    TiTrongXayDung = config?.TiTrongXayDung ?? 0,
+                    TiTrongKetCauThep = config?.TiTrongKetCauThep ?? 0,
+                    TiTrongLapDatThietBi = config?.TiTrongLapDatThietBi ?? 0,
+                    TiTrongHangMucKhac = config?.TiTrongHangMucKhac ?? 0,
+                    DanhGiaChung = config?.DanhGiaChung,
+                    TongTienDo = config?.TongTienDo
+                };
+
+                viewModel.IsPhanNhiemUser = isPhanNhiemUser;
+
+                // Kiểm tra chưa có NgayDuyetBGD (ngân sách gốc)
+                bool chuaCoNgayDuyetBGD = approvalGoc == null || !approvalGoc.NgayDuyetBGD.HasValue;
+
+                // Chủ hồ sơ
+                bool isOwner = budgetRegistration.UserId == CurrentUser.UserId;
+
+                return Json(new { success = true, data = viewModel, chuaCoNgayDuyetBGD = chuaCoNgayDuyetBGD, isOwner = isOwner }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
@@ -2313,7 +2864,7 @@ namespace QuanLyNganSach.Controllers
             return Json(new
             {
                 success = true,
-                message = "Gửi thông tin chỉnh sửa thành công. Vui lòng chờ Admin xác nhận."
+                message = "Gửi thông tin chỉnh sửa thành công. Vui lòng chờ xác nhận."
             });
         }
 
@@ -2478,66 +3029,57 @@ namespace QuanLyNganSach.Controllers
         /// <summary>
         /// GET: Budget/DownloadFile/5 - Tải xuống file
         /// </summary>
-        public ActionResult DownloadFile(int? id)
+        // ================================================================
+        // GET: /Budget/DownloadFile?attachmentId=xxx
+        // ================================================================
+        [HttpGet]
+        public ActionResult DownloadFile(int attachmentId)
         {
-            try
+            var attachment = db.BudgetAttachments.Find(attachmentId);
+            if (attachment == null)
+                return HttpNotFound();
+
+            // Kiểm tra quyền: chỉ người liên quan mới download được
+            var budget = db.BudgetRegistrations
+                           .Find(attachment.BudgetRegistrationId);
+            if (budget == null)
+                return HttpNotFound();
+
+            bool isManagerOrAdmin = CurrentUser.RoleId == Constants.RoleConst.Admin
+                                 || CurrentUser.RoleId == Constants.RoleConst.Manager;
+            bool isOwner = budget.UserId == CurrentUser.UserId;
+            bool isPhanNhiem = db.BudgetRegistrationPhanNhiems
+                                 .Any(p => p.BudgetRegistrationId == budget.BudgetRegistrationId
+                                        && p.UserId == CurrentUser.UserId);
+
+            if (!isManagerOrAdmin && !isOwner && !isPhanNhiem)
+                return new HttpStatusCodeResult(403);
+
+            // Xây dựng đường dẫn vật lý
+            var physicalPath = Server.MapPath("~" + attachment.FilePath);
+            if (!System.IO.File.Exists(physicalPath))
+                return HttpNotFound("File không tồn tại trên server.");
+
+            // Xác định content type
+            var contentType = _GetContentType(attachment.FileExtension);
+
+            return File(physicalPath, contentType,
+                        attachment.FileName); // FileName là tên gốc khi download
+        }
+
+        private string _GetContentType(string extension)
+        {
+            switch (extension?.ToLower())
             {
-                if (!id.HasValue || id.Value <= 0)
-                {
-                    TempData["Error"] = "Mã file không hợp lệ.";
-                    return RedirectToAction("Index");
-                }
-
-                if (CurrentUser == null)
-                {
-                    TempData["Error"] = "Phiên đăng nhập đã hết hạn.";
-                    return RedirectToAction("Login", "Account");
-                }
-
-                var attachment = db.BudgetAttachments
-                    .Include(x => x.BudgetRegistration)
-                    .FirstOrDefault(x => x.AttachmentId == id.Value);
-
-                if (attachment == null)
-                {
-                    TempData["Error"] = "Không tìm thấy file đính kèm.";
-                    return RedirectToAction("Index");
-                }
-
-                // Check permissions
-                bool isManagerOrAdmin = CurrentUser.RoleId == Constants.RoleConst.Admin ||
-                                        CurrentUser.RoleId == Constants.RoleConst.Manager;
-
-                if (!isManagerOrAdmin && attachment.BudgetRegistration.UserId != CurrentUser.UserId)
-                {
-                    TempData["Error"] = "Bạn không có quyền tải file này.";
-                    return RedirectToAction("Index");
-                }
-
-                // Build full file path
-                string uploadsFolder = Server.MapPath("~/Uploads/HoSoCanCu");
-                string fileName = Path.GetFileName(attachment.FilePath);
-                string fullPath = Path.Combine(uploadsFolder, fileName);
-
-                //// Check if file exists
-                if (!System.IO.File.Exists(fullPath))
-                {
-                    TempData["Error"] = "File không tồn tại trên hệ thống.";
-                    return RedirectToAction("Details", new { id = attachment.BudgetRegistrationId });
-                }
-
-                string extension = attachment.FileExtension?.TrimStart('.').ToLower() ?? string.Empty;
-                string contentType = GetContentType(extension);
-
-                byte[] fileBytes = System.IO.File.ReadAllBytes(fullPath);
-
-                return File(fileBytes, contentType, attachment.FileName);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"DownloadFile Error - ID: {id}, Message: {ex.Message}");
-                TempData["Error"] = "Đã xảy ra lỗi khi tải file. Vui lòng thử lại.";
-                return RedirectToAction("Index");
+                case ".pdf": return "application/pdf";
+                case ".doc": return "application/msword";
+                case ".docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+                case ".xls": return "application/vnd.ms-excel";
+                case ".xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                case ".jpg":
+                case ".jpeg": return "image/jpeg";
+                case ".png": return "image/png";
+                default: return "application/octet-stream";
             }
         }
 
