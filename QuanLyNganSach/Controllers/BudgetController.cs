@@ -612,6 +612,7 @@ namespace QuanLyNganSach.Controllers
                 ViewBag.CurrentUserId = currentUser.UserId;
                 ViewBag.DsCategory = GetCategoryTypes();
                 ViewBag.DsPriority = GetPriorityLevels();
+                ViewBag.DsInvestmentReasons = GetInvestmentReasonSelectList();
 
                 return View(budgetList);
             }
@@ -654,6 +655,7 @@ namespace QuanLyNganSach.Controllers
                     // Load dropdown lists
                     CategoryTypes = GetCategoryTypes(),
                     PriorityLevels = GetPriorityLevels(),
+                    InvestmentReasons = GetInvestmentReasonSelectList(),
 
                     // Set default dates
                     NgayBatDau = DateTime.Today,
@@ -785,6 +787,33 @@ namespace QuanLyNganSach.Controllers
             // Xác định trạng thái hồ sơ (Đủ thông tin hay Thiếu thông tin)
             int trangThaiHoSo = DetermineHoSoStatus(model);
 
+            bool isManualReason = false;
+            if (model.InvestmentReasonId.HasValue)
+            {
+                // Tìm bản ghi danh mục trong DB theo ID được chọn
+                var reasonCategory = db.BudgetInvestmentReasons.Find(model.InvestmentReasonId.Value);
+                if (reasonCategory != null && reasonCategory.IsManual)
+                {
+                    isManualReason = true;
+                }
+            }
+
+            // 2. Chuẩn hóa dữ liệu trước khi lưu dựa trên loại lý do đầu tư
+            int? finalInvestmentReasonId = model.InvestmentReasonId;
+            string finalLyDoDauTuText = null;
+
+            if (isManualReason)
+            {
+                // Nếu là "Điền thủ công": Khóa ngoại bằng NULL, lưu chuỗi nhập tay từ textarea
+                finalInvestmentReasonId = null;
+                finalLyDoDauTuText = model.LyDoDauTu?.Trim();
+            }
+            else
+            {
+                // Nếu chọn các option danh mục khác: Lưu khóa ngoại, text nhập tay sẽ để trống (hoặc lưu tên danh mục tùy bạn)
+                finalLyDoDauTuText = null;
+            }
+
             // Create entity from view model
             var entity = new BudgetRegistration
             {
@@ -796,7 +825,8 @@ namespace QuanLyNganSach.Controllers
                 SoLuong = model.SoLuong,
                 CategoryTypeId = model.CategoryTypeId,
                 PriorityLevelId = model.PriorityLevelId,
-                LyDoDauTu = model.LyDoDauTu?.Trim(),
+                InvestmentReasonId = finalInvestmentReasonId,
+                LyDoDauTu = finalLyDoDauTuText,
                 MoTaKyThuat = model.MoTaKyThuat?.Trim(),
                 LinkTaiLieuLienQuan = model.LinkTaiLieuLienQuan?.Trim(),
                 NgayBatDau = model.NgayBatDau,
@@ -876,9 +906,12 @@ namespace QuanLyNganSach.Controllers
                 db.SaveChanges(); // SaveChanges lần 2 cho Phân nhiệm
             }
 
-            if (model.HoSoCanCu?.ContentLength > 0)
+            var files = Request.Files.GetMultiple("HoSoCanCu")
+                         .Where(f => f != null && f.ContentLength > 0)
+                         .ToList();
+            if (files.Any())
             {
-                SaveHoSoCanCuAndAttachment(model.HoSoCanCu, entity.BudgetRegistrationId);
+                SaveHoSoCanCuAndAttachment(files, entity.BudgetRegistrationId);
             }
 
             // THÊM MỚI: gửi thông báo đến tất cả Admin
@@ -1102,45 +1135,56 @@ namespace QuanLyNganSach.Controllers
             }
         }
 
-        private void SaveHoSoCanCuAndAttachment(HttpPostedFileBase file, int budgetRegistrationId)
+        // SỬA: đổi tham số từ single file sang IEnumerable
+        private void SaveHoSoCanCuAndAttachment(
+            IEnumerable<HttpPostedFileBase> files,
+            int budgetRegistrationId)
         {
-            if (file == null || file.ContentLength <= 0)
-                return;
+            if (files == null) return;
 
             var uploadFolder = Server.MapPath("~/Uploads/HoSoCanCu");
-
             if (!Directory.Exists(uploadFolder))
-            {
                 Directory.CreateDirectory(uploadFolder);
-            }
 
-            var fileExtension = Path.GetExtension(file.FileName);
-            var originalFileName = Path.GetFileName(file.FileName);
-            var safeFileName = $"{Guid.NewGuid():N}{fileExtension}";
-            var fullPath = Path.Combine(uploadFolder, safeFileName);
-
-            try
+            foreach (var file in files)
             {
-                file.SaveAs(fullPath);
+                if (file == null || file.ContentLength <= 0) continue;
 
-                var attachment = new BudgetAttachment
+                // Validate dung lượng 20MB
+                if (file.ContentLength > 20 * 1024 * 1024)
                 {
-                    BudgetRegistrationId = budgetRegistrationId,
-                    FileName = originalFileName,
-                    FilePath = "/Uploads/HoSoCanCu/" + safeFileName,
-                    FileExtension = fileExtension,
-                    FileSize = file.ContentLength,
-                    UploadedBy = CurrentUser.UserId,
-                    UploadedDate = DateTime.Now
-                };
+                    System.Diagnostics.Debug.WriteLine(
+                        $"File {file.FileName} vượt quá 20MB, bỏ qua.");
+                    continue;
+                }
 
-                db.BudgetAttachments.Add(attachment);
-                db.SaveChanges();
+                var fileExtension = Path.GetExtension(file.FileName);
+                var originalFileName = Path.GetFileName(file.FileName);
+                var safeFileName = $"{Guid.NewGuid():N}{fileExtension}";
+                var fullPath = Path.Combine(uploadFolder, safeFileName);
+
+                try
+                {
+                    file.SaveAs(fullPath);
+                    db.BudgetAttachments.Add(new BudgetAttachment
+                    {
+                        BudgetRegistrationId = budgetRegistrationId,
+                        FileName = originalFileName,
+                        FilePath = "/Uploads/HoSoCanCu/" + safeFileName,
+                        FileExtension = fileExtension,
+                        FileSize = file.ContentLength,
+                        UploadedBy = CurrentUser.UserId,
+                        UploadedDate = DateTime.Now
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(
+                        $"SaveHoSoCanCuAndAttachment Error [{file.FileName}]: {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"SaveHoSoCanCuAndAttachment Error: {ex.Message}");
-            }
+
+            db.SaveChanges();
         }
 
         // ── GET: Budget/GetUsersByPhongBan ───────────────────────────
@@ -1293,6 +1337,31 @@ namespace QuanLyNganSach.Controllers
                 db.BudgetRevisions.Add(revision);
             }
 
+            // ── LOGIC XỬ LÝ CHUẨN HÓA LÝ DO ĐẦU TƯ KHI USER GỬI LẠI HỒ SƠ ──
+            bool isManualReason = false;
+            if (dto.InvestmentReasonId.HasValue)
+            {
+                var reasonCategory = db.BudgetInvestmentReasons.Find(dto.InvestmentReasonId.Value);
+                if (reasonCategory != null && reasonCategory.IsManual)
+                {
+                    isManualReason = true;
+                }
+            }
+
+            if (isManualReason)
+            {
+                // Nếu chọn Điền thủ công: Lưu chuỗi nhập tay, set ID danh mục bằng NULL
+                revision.InvestmentReasonId = null;
+                revision.LyDoDauTu = dto.LyDoDauTu?.Trim();
+            }
+            else
+            {
+                // Nếu chọn danh mục mẫu: Lưu khóa ngoại, clear trắng trường text nhập tay
+                revision.InvestmentReasonId = dto.InvestmentReasonId;
+                revision.LyDoDauTu = null;
+            }
+
+
             revision.ProjectAreaId = dto.ProjectAreaId;
             revision.TenHangMuc = dto.TenHangMuc;
             revision.DuToan = dto.DuToan;
@@ -1300,7 +1369,6 @@ namespace QuanLyNganSach.Controllers
             revision.CategoryTypeId = dto.CategoryTypeId;
             revision.PriorityLevelId = dto.PriorityLevelId;
             revision.SoLuong = dto.SoLuong;
-            revision.LyDoDauTu = dto.LyDoDauTu;
             revision.MoTaKyThuat = dto.MoTaKyThuat;
             revision.NgayBatDau = string.IsNullOrEmpty(dto.NgayBatDau)
                                              ? (DateTime?)null
@@ -1314,9 +1382,40 @@ namespace QuanLyNganSach.Controllers
 
             db.SaveChanges();
 
-            // Sau db.SaveChanges() và _SaveRevisionAttachment(...)
+            var revFiles = Request.Files.GetMultiple("HoSoCanCu")
+                            .Where(f => f != null && f.ContentLength > 0)
+                            .ToList();
 
-            // THÊM MỚI: gửi thông báo đến tất cả Admin
+            if (revFiles.Any())
+            {
+                // Xóa file revision cũ (nếu đang đè lên revision cũ)
+                var oldRevAttachments = db.BudgetRevisionAttachments
+                                          .Where(a => a.RevisionId == revision.RevisionId)
+                                          .ToList();
+                foreach (var old in oldRevAttachments)
+                {
+                    try
+                    {
+                        var physicalPath = Server.MapPath("~" + old.FilePath);
+                        if (System.IO.File.Exists(physicalPath))
+                            System.IO.File.Delete(physicalPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine(
+                            $"SubmitRevision - Xóa RevisionAttachment lỗi [{old.FilePath}]: {ex.Message}");
+                    }
+                }
+                db.BudgetRevisionAttachments.RemoveRange(oldRevAttachments);
+                db.SaveChanges();
+
+                // Lưu file mới vào BudgetRevisionAttachments
+                // KHÔNG xóa BudgetAttachments — chờ Admin duyệt mới xóa
+                foreach (var revFile in revFiles)
+                    _SaveRevisionAttachment(revFile, revision.RevisionId);
+            }
+
+            // Gửi thông báo đến tất cả Admin
             var adminUsers = db.Users
                                .Where(u => u.RoleId == 1)
                                .ToList();
@@ -1332,11 +1431,6 @@ namespace QuanLyNganSach.Controllers
                     relatedRevisionId: revision.RevisionId
                 );
             }
-
-            // Xử lý file đính kèm nếu có
-            var file = Request.Files["HoSoCanCu"];
-            if (file != null && file.ContentLength > 0)
-                _SaveRevisionAttachment(file, revision.RevisionId);
 
             return Json(new { success = true, message = "Gửi lại hồ sơ thành công. Vui lòng chờ duyệt." });
         }
@@ -1367,6 +1461,7 @@ namespace QuanLyNganSach.Controllers
             budget.CategoryTypeId = revision.CategoryTypeId ?? budget.CategoryTypeId;
             budget.PriorityLevelId = revision.PriorityLevelId ?? budget.PriorityLevelId;
             budget.SoLuong = revision.SoLuong ?? budget.SoLuong;
+            budget.InvestmentReasonId = revision.InvestmentReasonId;
             budget.LyDoDauTu = revision.LyDoDauTu ?? budget.LyDoDauTu;
             budget.MoTaKyThuat = revision.MoTaKyThuat ?? budget.MoTaKyThuat;
             budget.NgayBatDau = revision.NgayBatDau ?? budget.NgayBatDau;
@@ -1385,6 +1480,56 @@ namespace QuanLyNganSach.Controllers
             revision.ReviewedBy = CurrentUser.UserId;
 
             db.SaveChanges();
+
+            var revisionAttachments = db.BudgetRevisionAttachments
+                                .Where(a => a.RevisionId == revisionId)
+                                .ToList();
+
+            // Chỉ xóa file cũ và thay thế khi revision có file mới
+            if (revisionAttachments.Any())
+            {
+                // Bước 1: Lấy toàn bộ file cũ của hồ sơ
+                var oldAttachments = db.BudgetAttachments
+                                       .Where(a => a.BudgetRegistrationId
+                                                == revision.BudgetRegistrationId)
+                                       .ToList();
+
+                // Bước 2: Xóa file vật lý trên server
+                foreach (var old in oldAttachments)
+                {
+                    try
+                    {
+                        var physicalPath = Server.MapPath("~" + old.FilePath);
+                        if (System.IO.File.Exists(physicalPath))
+                            System.IO.File.Delete(physicalPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine(
+                            $"ApproveRevision - Xóa file lỗi [{old.FilePath}]: {ex.Message}");
+                    }
+                }
+
+                // Bước 3: Xóa bản ghi file cũ trong DB
+                db.BudgetAttachments.RemoveRange(oldAttachments);
+
+                // Bước 4: Copy file mới từ BudgetRevisionAttachments → BudgetAttachments
+                foreach (var ra in revisionAttachments)
+                {
+                    db.BudgetAttachments.Add(new BudgetAttachment
+                    {
+                        BudgetRegistrationId = revision.BudgetRegistrationId,
+                        FileName = ra.FileName,
+                        FilePath = ra.FilePath,
+                        FileExtension = ra.FileExtension,
+                        FileSize = (long) ra.FileSize,
+                        UploadedBy = ra.UploadedBy,
+                        UploadedDate = ra.UploadedDate
+                    });
+                }
+
+                db.SaveChanges();
+            }
 
             // THÊM MỚI: gửi thông báo đến chủ hồ sơ
             // Gửi thông báo đến chủ hồ sơ
@@ -1453,6 +1598,22 @@ namespace QuanLyNganSach.Controllers
             if (r == null)
                 return Json(new { success = false }, JsonRequestBehavior.AllowGet);
 
+            // ── XỬ LÝ LẤY CHUỖI TEXT LÝ DO ĐẦU TƯ ĐỂ HIỂN THỊ DẠNG TEXT THUẦN ──
+            string hienThiLyDoDauTu = string.Empty;
+            if (r.InvestmentReasonId.HasValue)
+            {
+                // Nếu chọn lý do mẫu: Lấy ReasonName từ DB danh mục
+                hienThiLyDoDauTu = db.BudgetInvestmentReasons
+                                     .Where(x => x.InvestmentReasonId == r.InvestmentReasonId.Value)
+                                     .Select(x => x.ReasonName)
+                                     .FirstOrDefault() ?? string.Empty;
+            }
+            else
+            {
+                // Nếu là điền thủ công hoặc dữ liệu cũ: Lấy chuỗi nhập tay từ trường LyDoDauTu
+                hienThiLyDoDauTu = r.LyDoDauTu ?? string.Empty;
+            }
+
             // Lấy tên Khu vực, Loại hạng mục, Mức ưu tiên
             var tenKhuVuc = r.ProjectAreaId.HasValue
                 ? db.ProjectAreas
@@ -1475,7 +1636,7 @@ namespace QuanLyNganSach.Controllers
                     .FirstOrDefault()
                 : null;
 
-            var attachments = db.BudgetRevisionAttachments
+            var revisionAttachments = db.BudgetRevisionAttachments
                                 .Where(a => a.RevisionId == revisionId)
                                 .Select(a => new
                                 {
@@ -1483,8 +1644,21 @@ namespace QuanLyNganSach.Controllers
                                     a.FileName,
                                     a.FilePath,
                                     a.FileExtension,
-                                    a.FileSize
+                                    FileSize = (long?)a.FileSize
                                 }).ToList();
+
+            var attachments = revisionAttachments.Any()
+                ? revisionAttachments
+                : db.BudgetAttachments
+                    .Where(a => a.BudgetRegistrationId == r.BudgetRegistrationId)
+                    .Select(a => new
+                    {
+                        a.AttachmentId,
+                        a.FileName,
+                        a.FilePath,
+                        a.FileExtension,
+                        FileSize = (long?)a.FileSize
+                    }).ToList();
 
             return Json(new
             {
@@ -1501,7 +1675,7 @@ namespace QuanLyNganSach.Controllers
                 r.PriorityLevelId,
                 TenPriorityLevel = tenPriorityLevel, // THÊM MỚI
                 r.SoLuong,
-                r.LyDoDauTu,
+                LyDoDauTu = hienThiLyDoDauTu,
                 r.MoTaKyThuat,
                 NgayBatDau = r.NgayBatDau.HasValue
                                 ? r.NgayBatDau.Value.ToString("yyyy-MM-dd") : null,
@@ -1697,6 +1871,18 @@ namespace QuanLyNganSach.Controllers
                 {
                     Value = x.PriorityLevelId.ToString(),
                     Text = x.PriorityLevelName
+                })
+                .ToList();
+        }
+
+        private IEnumerable<SelectListItem> GetInvestmentReasonSelectList()
+        {
+            return db.BudgetInvestmentReasons
+                .OrderBy(x => x.InvestmentReasonId)
+                .Select(x => new SelectListItem
+                {
+                    Value = x.InvestmentReasonId.ToString(),
+                    Text = x.ReasonName
                 })
                 .ToList();
         }
@@ -2279,6 +2465,7 @@ namespace QuanLyNganSach.Controllers
                 .Include(x => x.BudgetApprovals)
                 .Include(x => x.ProgressConfigs)
                 .Include(x => x.BudgetRegistrationPhanNhiems.Select(p => p.User))
+                .Include(x => x.BudgetInvestmentReason)
                 .FirstOrDefault(x => x.BudgetRegistrationId == id.Value);
 
                 // Check if record exists
@@ -2362,6 +2549,8 @@ namespace QuanLyNganSach.Controllers
                     SoToTrinh = budgetRegistration.SoToTrinh ?? string.Empty,
                     SoLuong = budgetRegistration.SoLuong,
                     LyDoDauTu = budgetRegistration.LyDoDauTu ?? string.Empty,
+                    InvestmentReasonId = budgetRegistration.InvestmentReasonId,
+                    IsManualReason = budgetRegistration.BudgetInvestmentReason?.IsManual ?? (budgetRegistration.InvestmentReasonId == null),
                     MoTaKyThuat = budgetRegistration.MoTaKyThuat,
                     LinkTaiLieuLienQuan = budgetRegistration.LinkTaiLieuLienQuan,
 
@@ -2772,7 +2961,7 @@ namespace QuanLyNganSach.Controllers
         // User gửi thông tin chỉnh sửa chủ động (RevisionType = 2)
         // ================================================================
         [HttpPost]
-        public JsonResult SubmitEditRequest(SubmitRevisionDto dto)
+        public JsonResult SubmitEditRequest_OLD(SubmitRevisionDto dto)
         {
             if (dto == null || dto.BudgetRegistrationId <= 0)
                 return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
@@ -2840,10 +3029,190 @@ namespace QuanLyNganSach.Controllers
 
             db.SaveChanges();
 
-            // File đính kèm nếu có
-            var file = Request.Files["HoSoCanCu"];
-            if (file != null && file.ContentLength > 0)
-                _SaveRevisionAttachment(file, revision.RevisionId);
+            var revFiles = Request.Files.GetMultiple("HoSoCanCu")
+                            .Where(f => f != null && f.ContentLength > 0)
+                            .ToList();
+
+            if (revFiles.Any())
+            {
+                // Xóa file revision cũ (nếu đang đè lên revision cũ)
+                var oldRevAttachments = db.BudgetRevisionAttachments
+                                          .Where(a => a.RevisionId == revision.RevisionId)
+                                          .ToList();
+                foreach (var old in oldRevAttachments)
+                {
+                    try
+                    {
+                        var physicalPath = Server.MapPath("~" + old.FilePath);
+                        if (System.IO.File.Exists(physicalPath))
+                            System.IO.File.Delete(physicalPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine(
+                            $"SubmitEditRequest - Xóa RevisionAttachment lỗi [{old.FilePath}]: {ex.Message}");
+                    }
+                }
+                db.BudgetRevisionAttachments.RemoveRange(oldRevAttachments);
+                db.SaveChanges();
+
+                // Lưu file mới vào BudgetRevisionAttachments
+                // KHÔNG xóa BudgetAttachments — chờ Admin duyệt mới xóa
+                foreach (var revFile in revFiles)
+                    _SaveRevisionAttachment(revFile, revision.RevisionId);
+            }
+
+            // Gửi thông báo đến tất cả Admin
+            var adminUsers = db.Users
+                               .Where(u => u.RoleId == 1)
+                               .ToList();
+            foreach (var admin in adminUsers)
+            {
+                NotificationHelper.Send(
+                    db,
+                    toUserId: admin.UserId,
+                    title: "User đã chỉnh sửa hồ sơ",
+                    message: $"Hồ sơ \"{budget.TenHangMuc}\" vừa được chỉnh sửa. Vui lòng xem xét và xác nhận.",
+                    url: $"/Budget/Revisions?openRevision={revision.RevisionId}",
+                    relatedRevisionId: revision.RevisionId
+                );
+            }
+
+            return Json(new
+            {
+                success = true,
+                message = "Gửi thông tin chỉnh sửa thành công. Vui lòng chờ xác nhận."
+            });
+        }
+
+        [HttpPost]
+        public JsonResult SubmitEditRequest(SubmitRevisionDto dto)
+        {
+            if (dto == null || dto.BudgetRegistrationId <= 0)
+                return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+
+            var budget = db.BudgetRegistrations.Find(dto.BudgetRegistrationId);
+            if (budget == null)
+                return Json(new { success = false, message = "Không tìm thấy hồ sơ." });
+
+            // Chỉ chủ hồ sơ mới được gửi
+            if (budget.UserId != CurrentUser.UserId)
+                return Json(new { success = false, message = "Không có quyền thực hiện." });
+
+            // Kiểm tra chưa có NgayDuyetBGD
+            var approvalGoc = db.BudgetApprovals
+                                .FirstOrDefault(a => a.BudgetRegistrationId == dto.BudgetRegistrationId
+                                                  && !a.IsSupplementary);
+            if (approvalGoc != null && approvalGoc.NgayDuyetBGD.HasValue)
+                return Json(new
+                {
+                    success = false,
+                    message = "Hồ sơ đã được duyệt BGĐ, không thể chỉnh sửa."
+                });
+
+            if (string.IsNullOrWhiteSpace(dto.LyDoChinhSua))
+                return Json(new { success = false, message = "Vui lòng nhập lý do chỉnh sửa." });
+
+            var now = DateTime.Now;
+
+            // Tìm hoặc khởi tạo bản ghi BudgetRevisions
+            var revision = db.BudgetRevisions
+                             .FirstOrDefault(r => r.BudgetRegistrationId == dto.BudgetRegistrationId
+                                               && r.RevisionType == 2
+                                               && r.RevisionStatus == 1);
+            if (revision == null)
+            {
+                revision = new BudgetRevision
+                {
+                    BudgetRegistrationId = dto.BudgetRegistrationId,
+                    RevisionType = 2,
+                    CreatedBy = CurrentUser.UserId,
+                    CreatedDate = now
+                };
+                db.BudgetRevisions.Add(revision);
+            }
+
+            // ── LOGIC XỬ LÝ CHUẨN HÓA LÝ DO ĐẦU TƯ MỚI TRƯỚC KHI LƯU ──
+            bool isManualReason = false;
+            if (dto.InvestmentReasonId.HasValue)
+            {
+                var reasonCategory = db.BudgetInvestmentReasons.Find(dto.InvestmentReasonId.Value);
+                if (reasonCategory != null && reasonCategory.IsManual)
+                {
+                    isManualReason = true;
+                }
+            }
+
+            if (isManualReason)
+            {
+                // Nếu chọn Điền thủ công: Lưu chuỗi nhập tay, ID danh mục bằng NULL
+                revision.InvestmentReasonId = null;
+                revision.LyDoDauTu = dto.LyDoDauTu?.Trim();
+            }
+            else
+            {
+                // Nếu chọn danh mục có sẵn: Lưu khóa ngoại, làm sạch trường chuỗi nhập tay
+                revision.InvestmentReasonId = dto.InvestmentReasonId;
+                revision.LyDoDauTu = null;
+            }
+
+            // Gán các trường dữ liệu còn lại từ dto sang revision
+            revision.ProjectAreaId = dto.ProjectAreaId;
+            revision.TenHangMuc = dto.TenHangMuc;
+            revision.DuToan = dto.DuToan;
+            revision.SoToTrinh = dto.SoToTrinh;
+            revision.CategoryTypeId = dto.CategoryTypeId;
+            revision.PriorityLevelId = dto.PriorityLevelId;
+            revision.SoLuong = dto.SoLuong;
+
+            // Đoạn gán cũ [revision.LyDoDauTu = dto.LyDoDauTu] xóa đi vì đã được xử lý tối ưu ở khối logic phía trên
+
+            revision.MoTaKyThuat = dto.MoTaKyThuat;
+            revision.NgayBatDau = string.IsNullOrEmpty(dto.NgayBatDau)
+                                    ? (DateTime?)null
+                                    : DateTime.Parse(dto.NgayBatDau);
+            revision.NgayKetThuc = string.IsNullOrEmpty(dto.NgayKetThuc)
+                                    ? (DateTime?)null
+                                    : DateTime.Parse(dto.NgayKetThuc);
+            revision.LinkTaiLieuLienQuan = dto.LinkTaiLieuLienQuan;
+            revision.LyDoChinhSua = dto.LyDoChinhSua?.Trim();
+            revision.RevisionStatus = 1;
+            revision.CreatedDate = now;
+
+            db.SaveChanges();
+
+            var revFiles = Request.Files.GetMultiple("HoSoCanCu")
+                            .Where(f => f != null && f.ContentLength > 0)
+                            .ToList();
+
+            if (revFiles.Any())
+            {
+                // Xóa file revision cũ (nếu đang đè lên revision cũ)
+                var oldRevAttachments = db.BudgetRevisionAttachments
+                                          .Where(a => a.RevisionId == revision.RevisionId)
+                                          .ToList();
+                foreach (var old in oldRevAttachments)
+                {
+                    try
+                    {
+                        var physicalPath = Server.MapPath("~" + old.FilePath);
+                        if (System.IO.File.Exists(physicalPath))
+                            System.IO.File.Delete(physicalPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine(
+                            $"SubmitEditRequest - Xóa RevisionAttachment lỗi [{old.FilePath}]: {ex.Message}");
+                    }
+                }
+                db.BudgetRevisionAttachments.RemoveRange(oldRevAttachments);
+                db.SaveChanges();
+
+                // Lưu file mới vào BudgetRevisionAttachments
+                // KHÔNG xóa BudgetAttachments — chờ Admin duyệt mới xóa
+                foreach (var revFile in revFiles)
+                    _SaveRevisionAttachment(revFile, revision.RevisionId);
+            }
 
             // Gửi thông báo đến tất cả Admin
             var adminUsers = db.Users

@@ -830,7 +830,7 @@
                                         Loại hạng mục
                                     </label>
                                     @*<input type="text" class="form-control"
-                                id="modal_CategoryTypeName" readonly />*@
+                id="modal_CategoryTypeName" readonly />*@
                                     <select class="form-select" id="modal_CategoryTypeId">
                                         @foreach (var item in (IEnumerable<SelectListItem>)ViewBag.DsCategory)
                                         {
@@ -843,7 +843,7 @@
                                         Mức ưu tiên
                                     </label>
                                     @*<input type="text" class="form-control"
-                                id="modal_PriorityLevelName" readonly />*@
+                id="modal_PriorityLevelName" readonly />*@
                                     <select class="form-select" id="modal_PriorityLevelId">
                                         @foreach (var item in (IEnumerable<SelectListItem>)ViewBag.DsPriority)
                                         {
@@ -865,7 +865,7 @@
                                         Ngày bắt đầu
                                     </label>
                                     @*<input type="text" class="form-control"
-                                id="modal_NgayBatDau" />*@
+                id="modal_NgayBatDau" />*@
                                     <input type="date" class="form-control" id="modal_NgayBatDau" />
                                 </div>
                                 <div class="col-md-4 mb-3">
@@ -873,7 +873,7 @@
                                         Ngày kết thúc
                                     </label>
                                     @*<input type="text" class="form-control"
-                                id="modal_NgayKetThuc" />*@
+                id="modal_NgayKetThuc" />*@
                                     <input type="date" class="form-control" id="modal_NgayKetThuc" />
                                 </div>
                                 <div class="col-md-4 mb-3">
@@ -888,8 +888,23 @@
                                 <label class="form-label fw-semibold text-muted small">
                                     Lý do đầu tư
                                 </label>
-                                <textarea class="form-control" id="modal_LyDoDauTu"
-                                          rows="3"></textarea>
+                                <select class="form-select" id="modal_InvestmentReasonId">
+                                    <option value="">-- Chọn lý do đầu tư --</option>
+                                    @if (ViewBag.DsInvestmentReasons != null)
+                                    {
+                                        foreach (var item in (IEnumerable<SelectListItem>)ViewBag.DsInvestmentReasons)
+                                        {
+                                            <option value="@item.Value">@item.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3" id="modal_divLyDoNhapTay" style="display: none;">
+                                <label class="form-label fw-semibold text-primary small">
+                                    <i class="bi bi-pencil-square me-1"></i>Lý do đầu tư (điền thủ công)
+                                </label>
+                                <textarea class="form-control" id="modal_LyDoDauTu" rows="3"></textarea>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold text-muted small">
@@ -916,10 +931,18 @@
                                 <!-- Chỉ hiện khi hồ sơ ở trạng thái Trả hồ sơ -->
                                 <div id="revisionFileSection" class="mt-2" style="display:none;">
                                     <label class="form-label fw-semibold text-muted small">
-                                        <i class="bi bi-upload me-1"></i>Upload hồ sơ căn cứ mới
+                                        <i class="bi bi-upload me-1"></i>Upload hồ sơ mới
                                     </label>
+                                    <div class="text-danger small fst-italic mb-1">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>Lưu ý: Các file cũ sẽ bị xóa khi upload file mới.
+                                    </div>
+                                    <!-- SỬA: thêm multiple -->
                                     <input type="file" class="form-control" id="revisionFileInput"
+                                           multiple
                                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png" />
+                                    <div class="form-text text-muted small">
+                                        Cho phép chọn nhiều file.
+                                    </div>
                                 </div>
                             </div>
                             <!-- Textarea lý do chỉnh sửa — thêm vào tab Phiếu đăng ký -->
@@ -1444,6 +1467,19 @@
                 $(this).val(formatted);
             });
 
+            $('#modal_InvestmentReasonId').change(function () {
+                var selectedText = $(this).find('option:selected').text().trim();
+                var $divNhapTay = $('#modal_divLyDoNhapTay');
+                var $txtNhapTay = $('#modal_LyDoDauTu');
+
+                if (selectedText === "Điền thủ công") {
+                    $divNhapTay.slideDown(200);
+                } else {
+                    $divNhapTay.slideUp(200);
+                    $txtNhapTay.val(''); // Xóa text nhập tay nếu chuyển sang chọn lý do mẫu
+                }
+            });
+
             // Search on input with debounce
             var searchTimeout;
             $('#searchInput').on('keyup', function (e) {
@@ -1601,8 +1637,6 @@
                         bindModalData(res.data);
                         $('#modalLoading').hide();
                         $('#modalContent').show();
-                        console.log('res.data.workflowType: ' + res.data.WorkflowType)
-                        console.log(' res.isOwner: ' + res.isOwner)
                         NhatKyTienDo.init(currentBudgetId);
 
                         _currentWorkflowType = res.data.WorkflowType;
@@ -1693,9 +1727,29 @@
                 $('#modal_SoLuong').val(data.SoLuong);
                 $('#modal_NgayBatDau').val(formatDateForInput(data.NgayBatDau));
                 $('#modal_NgayKetThuc').val(formatDateForInput(data.NgayKetThuc));
+                console.log('data.InvestmentReasonId: ' + data.InvestmentReasonId)
+                console.log('data.IsManualReason: ' + data.IsManualReason)
+                if (data.InvestmentReasonId) {
+                    $('#modal_InvestmentReasonId').val(data.InvestmentReasonId);
+                } else if (data.IsManualReason) {
+                    // Nếu không có ID nhưng là bản ghi nhập tay cũ/mới, trỏ dropdown về option "Điền thủ công"
+                    // (Lưu ý: Đảm bảo trị value của option "Điền thủ công" khớp với danh mục trên view của bạn)
+                    $("#modal_InvestmentReasonId option").filter(function () {
+                        return $(this).text().trim() === "Điền thủ công";
+                    }).prop('selected', true);
+                } else {
+                    $('#modal_InvestmentReasonId').val(''); // Trạng thái chưa chọn
+                }
                 $('#modal_LyDoDauTu').val(data.LyDoDauTu);
                 $('#modal_MoTaKyThuat').val(data.MoTaKyThuat);
                 $('#modal_LinkTaiLieu').val(data.LinkTaiLieuLienQuan);
+
+                // Thực hiện ẩn/hiện vùng Textarea dựa trên cờ IsManualReason
+                if (data.IsManualReason) {
+                    $('#modal_divLyDoNhapTay').show();
+                } else {
+                    $('#modal_divLyDoNhapTay').hide();
+                }
 
                 var statusText = data.TrangThaiHienThiText || "Chưa xác định";
                 var badgeClass = "bg-secondary text-white"; // Màu mặc định
@@ -1804,16 +1858,16 @@
                     html = '<span class="text-muted small">Không có file đính kèm.</span>';
                 } else {
                     $.each(attachments, function (i, a) {
+                        // SỬA: dùng action DownloadFile thay vì URL trực tiếp
+                        var downloadUrl = '/Budget/DownloadFile?attachmentId=' + a.AttachmentId;
                         html += '<div class="d-flex align-items-center gap-2 py-1 border-bottom">'
                             + '<i class="bi bi-file-earmark text-primary"></i>'
-                            + '<a href="/' + a.FilePath + '" '
-                            + 'download="' + a.FileName + '" '   // *** THÊM download ***
+                            + '<a href="' + downloadUrl + '" '
                             + 'class="text-truncate flex-fill">'
                             + a.FileName
                             + '</a>'
-                            + '<span class="text-muted small">' + a.FileSizeFormatted + '</span>'
+                            + '<span class="text-muted small">' + (a.FileSizeFormatted || '') + '</span>'
                             + '<span class="text-muted small">'
-                            + formatDate(a.UploadedDate) + ' — ' + a.UploadedBy
                             + '</span>'
                             + '</div>';
                     });
@@ -2373,9 +2427,10 @@
                     data:        JSON.stringify(payload),
                     success: function (res) {
                         if (res.success) {
-                            // Hiện thông báo thành công ngay trong modal
                             showModalAlert('success', res.message);
-                            window.location.reload();
+                            setTimeout(function () {
+                                window.location.reload();
+                            }, 3000);
                         } else {
                             showModalAlert('danger', res.message);
                         }
@@ -3851,68 +3906,6 @@
                 });
             });
 
-            // ================================================================
-            // HÀM TRUNG TÂM: cập nhật hiển thị button theo trạng thái
-            // Gọi sau loadDetailsModal và sau mỗi thay đổi trạng thái
-            // ================================================================
-            @*function _updateModalButtons(workflowType, ngayDuyetBGD, isOwner) {
-                var isAdmin      = @(ViewBag.IsManagerOrAdmin == true ? "true" : "false");
-                var isTraHoSo    = (workflowType === 4);
-                var chuaXacNhan  = (workflowType === null || workflowType === undefined
-                                    || workflowType === 0  || workflowType === '');
-                var coDuyetBGD   = (ngayDuyetBGD !== null && ngayDuyetBGD !== undefined
-                                    && ngayDuyetBGD !== '');
-
-                // ── Reset tất cả button về ẩn trước ──────────────────────
-                $('#btnSaveDetailsModal').hide();
-                $('#btnTraHoSo').hide();
-                $('#btnGuiLai').hide();
-                $('#btnChinhSua').hide();
-                $('#btnGuiChinhSua').hide();
-
-                // ── WorkflowType = 4 (Trả hồ sơ) ────────────────────────
-                if (isTraHoSo) {
-                    if (isOwner) {
-                        $('#btnGuiLai').show();
-                        _setPhieuEditable(true);
-                    }
-                    // Admin: không có button đặc biệt ở trạng thái này
-                    return; // Dừng sớm, không hiện các button khác
-                }
-
-                // Nút Trả hồ sơ: Admin + chưa xác nhận luồng
-                if (isAdmin && chuaXacNhan) {
-                    $('#btnTraHoSo').show();
-                }
-
-                // Nút Chỉnh sửa: chủ hồ sơ + chưa có NgayDuyetBGD
-                if (isOwner && !coDuyetBGD) {
-                    if (!_isEditMode) {
-                        // Khi hiện Chỉnh sửa → ẩn Lưu thông tin
-                        $('#btnSaveDetailsModal').hide();
-                        $('#btnChinhSua')
-                            .removeClass('btn-secondary')
-                            .addClass('btn-warning')
-                            .html('<i class="bi bi-pencil me-1"></i>Chỉnh sửa')
-                            .show();
-                    } else {
-                        // Edit mode: ẩn Lưu, hiện Gửi + Hủy
-                        $('#btnSaveDetailsModal').hide();
-                        $('#btnGuiChinhSua').show();
-                        $('#btnChinhSua')
-                            .removeClass('btn-warning')
-                            .addClass('btn-secondary')
-                            .html('<i class="bi bi-x-circle me-1"></i>Hủy chỉnh sửa')
-                            .show();
-                    }
-                } else {
-                    // Không có quyền chỉnh sửa → hiện Lưu thông tin bình thường
-                    if (!_isEditMode) {
-                        $('#btnSaveDetailsModal').show();
-                    }
-                }
-            }*@
-
             function _updateModalButtons(workflowType, ngayDuyetBGD, isOwner) {
                 var isAdmin   = @(ViewBag.IsManagerOrAdmin == true ? "true" : "false");
                 var isTraHoSo = (workflowType === 4);
@@ -4019,13 +4012,17 @@
                 fd.append('SoLuong',             $('#modal_SoLuong').val()          || '');
                 fd.append('NgayBatDau',          $('#modal_NgayBatDau').val()       || '');
                 fd.append('NgayKetThuc',         $('#modal_NgayKetThuc').val()      || '');
+                fd.append('InvestmentReasonId',  $('#modal_InvestmentReasonId').val() || '');
                 fd.append('LyDoDauTu',           $('#modal_LyDoDauTu').val()        || '');
                 fd.append('MoTaKyThuat',         $('#modal_MoTaKyThuat').val()      || '');
                 fd.append('LinkTaiLieuLienQuan', $('#modal_LinkTaiLieu').val()      || '');
 
                 var fileInput = document.getElementById('revisionFileInput');
-                if (fileInput && fileInput.files.length > 0)
-                    fd.append('HoSoCanCu', fileInput.files[0]);
+                if (fileInput && fileInput.files.length > 0) {
+                    for (var i = 0; i < fileInput.files.length; i++) {
+                        fd.append('HoSoCanCu', fileInput.files[i]);
+                    }
+                }
 
                 $btn.prop('disabled', true)
                     .html('<i class="bi bi-hourglass-split me-1"></i>Đang gửi...');
@@ -4079,13 +4076,17 @@
                 fd.append('SoLuong',             $('#modal_SoLuong').val()          || '');
                 fd.append('NgayBatDau',          $('#modal_NgayBatDau').val()       || '');
                 fd.append('NgayKetThuc',         $('#modal_NgayKetThuc').val()      || '');
+                fd.append('InvestmentReasonId', $('#modal_InvestmentReasonId').val() || '');
                 fd.append('LyDoDauTu',           $('#modal_LyDoDauTu').val()        || '');
                 fd.append('MoTaKyThuat',         $('#modal_MoTaKyThuat').val()      || '');
                 fd.append('LinkTaiLieuLienQuan', $('#modal_LinkTaiLieu').val()      || '');
 
                 var fileInput = document.getElementById('revisionFileInput');
-                if (fileInput && fileInput.files.length > 0)
-                    fd.append('HoSoCanCu', fileInput.files[0]);
+                if (fileInput && fileInput.files.length > 0) {
+                    for (var i = 0; i < fileInput.files.length; i++) {
+                        fd.append('HoSoCanCu', fileInput.files[i]);
+                    }
+                }
 
                 $btn.prop('disabled', true)
                     .html('<i class="bi bi-hourglass-split me-1"></i>Đang gửi...');
@@ -4119,30 +4120,6 @@
                     }
                 });
             });
-
-            // ── Nút Trả hồ sơ ───────────────────────────────────────────
-            @*$(document).on('click', '#btnTraHoSo', function () {
-                var $btn = $(this);
-                $btn.prop('disabled', true);
-
-                $.ajax({
-                    url  : '@Url.Action("TraHoSo", "Budget")',
-                    type : 'POST',
-                    data : { budgetId: currentBudgetId },
-                    success: function (res) {
-                        if (res.success) {
-                            showModalAlert('success', res.message);
-                            _currentWorkflowType = 4;
-                            _setPhieuEditable(true);
-                            _updateModalButtons(4, _currentNgayDuyetBGD, _currentIsOwner);
-                        } else {
-                            showModalAlert('danger', res.message);
-                        }
-                    },
-                    error   : function () { showModalAlert('danger', 'Lỗi kết nối.'); },
-                    complete: function () { $btn.prop('disabled', false); }
-                });
-            });*@
 
             // Nút Trả hồ sơ → mở modal nhập lý do
             $(document).on('click', '#btnTraHoSo', function () {
@@ -4204,17 +4181,6 @@
                 });
             });
 
-            // ── Reset khi đóng modal ─────────────────────────────────────
-            //$('#budgetDetailsModal').on('hidden.bs.modal', function () {
-            //    _isEditMode          = false;
-            //    _currentWorkflowType = null;
-            //    _currentNgayDuyetBGD = null;
-            //    _currentIsOwner      = false;
-            //    _snapshotPhieu       = null;
-            //    _setAllPhieuEditable(false);
-            //    NhatKyTienDo.reset();
-            //});
-
             $('#budgetDetailsModal').on('hidden.bs.modal', function () {
                 _isEditMode = false;
                 _currentWorkflowType = null;
@@ -4239,12 +4205,11 @@
                     '#modal_NgayBatDau',
                     '#modal_NgayKetThuc',
                     '#modal_LyDoDauTu',
+                    '#modal_InvestmentReasonId',
                     '#modal_MoTaKyThuat',
                     '#modal_LinkTaiLieu'
                 ];
                 $.each(editableFields, function (_, sel) {
-                    // SỬA: dùng removeAttr/attr thay vì prop('disabled')
-                    // để xử lý đúng cả <select> lẫn <input>/<textarea>
                     if (editable) {
                         $(sel).removeAttr('disabled');
                         $(sel).removeAttr('readonly'); // Bổ sung: Xóa thuộc tính readonly khi cho phép edit
@@ -4261,89 +4226,6 @@
                     $('#revisionFileSection').hide();
                 }
             }
-
-            // Gọi _updateRevisionButtons sau khi loadDetailsModal xong
-            // Tìm chỗ bạn set dữ liệu vào modal (sau khi Ajax load xong),
-            // thêm dòng sau vào cuối callback success:
-            // _updateRevisionButtons(data.workflowType);
-
-            // ── Nút Trả hồ sơ ───────────────────────────────────────────
-            @*$(document).on('click', '#btnTraHoSo', function () {
-                var $btn = $(this);
-                $btn.prop('disabled', true);
-
-                $.ajax({
-                    url  : '@Url.Action("TraHoSo", "Budget")',
-                    type : 'POST',
-                    data : { budgetId: currentBudgetId },
-                    success: function (res) {
-                        if (res.success) {
-                            showModalAlert('success', res.message);
-                            _updateRevisionButtons(4);
-                        } else {
-                            showModalAlert('danger', res.message);
-                        }
-                    },
-                    error: function () {
-                        showModalAlert('danger', 'Lỗi kết nối.');
-                    },
-                    complete: function () {
-                        $btn.prop('disabled', false);
-                    }
-                });
-            });*@
-
-            // ── Nút Gửi lại ─────────────────────────────────────────────
-            @*$(document).on('click', '#btnGuiLai', function () {
-                var $btn  = $(this);
-                var fd    = new FormData();
-
-                fd.append('BudgetRegistrationId', currentBudgetId);
-                fd.append('ProjectAreaId',        $('#modal_AreaName').val()         || '');
-                fd.append('TenHangMuc',           $('#modal_TenHangMuc').val()       || '');
-                //fd.append('DuToan', $('#modal_DuToan').val() || '0');
-                fd.append('DuToan', parseCurrency($('#modal_DuToan').val()));
-                fd.append('SoToTrinh',            $('#modal_SoToTrinh').val()        || '');
-                fd.append('CategoryTypeId',       $('#modal_CategoryTypeId').val()   || '');
-                fd.append('PriorityLevelId',      $('#modal_PriorityLevelId').val()  || '');
-                fd.append('SoLuong',              $('#modal_SoLuong').val()          || '');
-                fd.append('NgayBatDau',           $('#modal_NgayBatDau').val()       || '');
-                fd.append('NgayKetThuc',          $('#modal_NgayKetThuc').val()      || '');
-                fd.append('LyDoDauTu',            $('#modal_LyDoDauTu').val()        || '');
-                fd.append('MoTaKyThuat',          $('#modal_MoTaKyThuat').val()      || '');
-                fd.append('LinkTaiLieuLienQuan',  $('#modal_LinkTaiLieu').val()      || '');
-
-                // File đính kèm nếu có
-                var fileInput = document.getElementById('revisionFileInput');
-                if (fileInput && fileInput.files.length > 0) {
-                    fd.append('HoSoCanCu', fileInput.files[0]);
-                }
-
-                $btn.prop('disabled', true)
-                    .html('<i class="bi bi-hourglass-split me-1"></i>Đang gửi...');
-
-                $.ajax({
-                    url         : '@Url.Action("SubmitRevision", "Budget")',
-                    type        : 'POST',
-                    data        : fd,
-                    processData : false,
-                    contentType : false,
-                    success: function (res) {
-                        if (res.success) {
-                            showModalAlert('success', res.message);
-                        } else {
-                            showModalAlert('danger', res.message);
-                        }
-                    },
-                    error: function () {
-                        showModalAlert('danger', 'Lỗi kết nối.');
-                    },
-                    complete: function () {
-                        $btn.prop('disabled', false)
-                            .html('<i class="bi bi-send me-1"></i>Gửi lại');
-                    }
-                });
-            });*@
 
             // Auto-open modal nếu URL có ?openBudget=xxx
             (function () {
@@ -4369,21 +4251,8 @@
                 '#modal_AreaName', '#modal_TenHangMuc', '#modal_DuToan',
                 '#modal_SoToTrinh', '#modal_CategoryTypeId', '#modal_PriorityLevelId',
                 '#modal_SoLuong', '#modal_NgayBatDau', '#modal_NgayKetThuc',
-                '#modal_LyDoDauTu', '#modal_MoTaKyThuat', '#modal_LinkTaiLieu'
+                '#modal_InvestmentReasonId', '#modal_LyDoDauTu', '#modal_MoTaKyThuat', '#modal_LinkTaiLieu'
             ];
-
-            // Gọi sau khi loadDetailsModal xong — thêm vào callback success
-            // _updateEditButton(res.chuaCoNgayDuyetBGD, res.isOwner);
-            // _snapshotPhieu = _captureSnapshot();
-
-            //function _updateEditButton(chuaCoNgayDuyetBGD, isOwner) {
-            //    if (isOwner && chuaCoNgayDuyetBGD) {
-            //        $('#btnChinhSua').show();
-            //    } else {
-            //        $('#btnChinhSua').hide();
-            //        $('#btnGuiChinhSua').hide();
-            //    }
-            //}
 
             // Chụp snapshot giá trị hiện tại các field
             function _captureSnapshot() {
@@ -4407,11 +4276,17 @@
                 } else {
                     $('#modal_customAreaWrapper').hide();
                 }
+
+                var selectedText = $('#modal_InvestmentReasonId').find('option:selected').text().trim();
+                if (selectedText === "Điền thủ công") {
+                    $('#modal_divLyDoNhapTay').show();
+                } else {
+                    $('#modal_divLyDoNhapTay').hide();
+                }
             }
 
             // Bật/tắt toàn bộ field tab Phiếu đăng ký
             function _setAllPhieuEditable(editable) {
-                console.log('editable: ' + editable)
                 $.each(_phieuFields, function (_, sel) {
                     if (editable) {
                         $(sel).removeAttr('disabled');
@@ -4429,43 +4304,6 @@
                     $('#modal_LyDoChinhSua').val('');
                 }
             }
-
-            // ── Nút Chỉnh sửa / Hủy chỉnh sửa ──────────────────────────
-            //$(document).on('click', '#btnChinhSua', function () {
-            //    _isEditMode = !_isEditMode;
-
-            //    if (_isEditMode) {
-            //        // Bật chỉnh sửa
-            //        _setAllPhieuEditable(true);
-            //        $(this).removeClass('btn-warning')
-            //               .addClass('btn-secondary')
-            //               .html('<i class="bi bi-x-circle me-1"></i>Hủy chỉnh sửa');
-            //        $('#btnGuiChinhSua').show();
-            //        $('#btnSaveDetailsModal').hide();
-            //    } else {
-            //        // Hủy chỉnh sửa → restore snapshot
-            //        _restoreSnapshot(_snapshotPhieu);
-            //        _setAllPhieuEditable(false);
-            //        $(this).removeClass('btn-secondary')
-            //               .addClass('btn-warning')
-            //               .html('<i class="bi bi-pencil me-1"></i>Chỉnh sửa');
-            //        $('#btnGuiChinhSua').hide();
-            //        $('#btnSaveDetailsModal').show();
-            //    }
-            //});
-
-            // Reset edit mode khi đóng modal
-            //$('#budgetDetailsModal').on('hidden.bs.modal', function () {
-            //    if (_isEditMode) {
-            //        _isEditMode = false;
-            //        _setAllPhieuEditable(false);
-            //        $('#btnChinhSua').removeClass('btn-secondary')
-            //                         .addClass('btn-warning')
-            //                         .html('<i class="bi bi-pencil me-1"></i>Chỉnh sửa');
-            //        $('#btnGuiChinhSua').hide();
-            //    }
-            //    _snapshotPhieu = null;
-            //});
 
             $("#phongBanId").chosen({
                 width: "100%"

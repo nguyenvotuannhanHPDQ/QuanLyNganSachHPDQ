@@ -109,10 +109,10 @@
 
                                     <!-- Mã hạng mục — giữ nguyên -->
                                     @*<div class="col-md-4 mb-3">
-                                        <label class="form-label fw-semibold">Mã hạng mục</label>
-                                        @Html.TextBoxFor(m => m.MaHangMuc,
-                                            new { @class = "form-control", @readonly = "readonly" })
-                                    </div>*@
+                <label class="form-label fw-semibold">Mã hạng mục</label>
+                @Html.TextBoxFor(m => m.MaHangMuc,
+                    new { @class = "form-control", @readonly = "readonly" })
+            </div>*@
                                     @Html.HiddenFor(m => m.MaHangMuc)
                                 </div>
 
@@ -129,11 +129,11 @@
                                         </label>
 
                                         @*@Html.TextBoxFor(m => m.DuToan, new
-                                        {
-                                            @class = "form-control",
-                                            type = "number",
-                                            min = 0
-                                        })*@
+                {
+                    @class = "form-control",
+                    type = "number",
+                    min = 0
+                })*@
 
                                         @* Hidden field giữ giá trị số thuần gửi lên server *@
                                         @Html.HiddenFor(m => m.DuToan, new { id = "DuToan_Hidden" })
@@ -192,11 +192,23 @@
                                         <label class="form-label fw-semibold">
                                             Lý do đầu tư
                                         </label>
+                                        @Html.DropDownListFor(m => m.InvestmentReasonId,
+                                            Model.InvestmentReasons,
+                                            "-- Chọn lý do đầu tư --",
+                                            new { @class = "form-select", id = "ddlInvestmentReason" })
+                                        @Html.ValidationMessageFor(m => m.InvestmentReasonId, "", new { @class = "text-danger small mt-1" })
+                                    </div>
+
+                                    <div class="col-12 mb-3" id="divLyDoNhapTay" style="display: none;">
+                                        <label class="form-label fw-semibold text-primary">
+                                            <i class="bi bi-pencil-square me-1"></i>Lý do đầu tư (điền thủ công)
+                                        </label>
 
                                         @Html.TextAreaFor(m => m.LyDoDauTu, new
                                         {
                                             @class = "form-control",
-                                            rows = 4
+                                            rows = 4,
+                                            id = "txtLyDoDauTu",
                                         })
 
                                         @Html.ValidationMessageFor(m => m.LyDoDauTu, "", new { @class = "text-danger small mt-1" })
@@ -227,12 +239,15 @@
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label fw-semibold">Hồ sơ căn cứ</label>
-                                        @Html.TextBoxFor(m => m.HoSoCanCu, new
-                                        {
-                                            type = "file",
-                                            @class = "form-control"
-                                        })
-                                        @Html.ValidationMessageFor(m => m.HoSoCanCu, "", new { @class = "text-danger small mt-1" })
+                                        <input type="file" name="HoSoCanCu" id="HoSoCanCu"
+                                               class="form-control"
+                                               multiple
+                                               accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png" />
+                                        <div class="form-text text-muted">
+                                            Cho phép chọn nhiều file. Mỗi file tối đa 20MB.
+                                        </div>
+                                        @Html.ValidationMessageFor(m => m.HoSoCanCu, "",
+                                            new { @class = "text-danger small mt-1" })
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label fw-semibold">Link tài liệu liên quan</label>
@@ -312,371 +327,393 @@
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
 <script>
-            $(document).ready(function () {
+    $(document).ready(function () {
 
-                var $display = $('#DuToan_Display');
-                var $hidden = $('#DuToan_Hidden');
+        // Sự kiện thay đổi giá trị trên Dropdown lý do đầu tư
+        $('#ddlInvestmentReason').change(function () {
+            var selectedText = $(this).find('option:selected').text().trim();
+            var $divNhapTay = $('#divLyDoNhapTay');
+            var $txtNhapTay = $('#txtLyDoDauTu');
 
-                // Khởi tạo: nếu hidden đã có giá trị thì hiển thị format
-                var initVal = parseFloat($hidden.val()) || 0;
-                if (initVal > 0) {
-                    $display.val(initVal.toLocaleString('en-US'));
-                }
+            if (selectedText === "Điền thủ công") {
+                // Hiển thị vùng nhập tay với hiệu ứng trượt nhẹ
+                $divNhapTay.slideDown(200);
+                $txtNhapTay.focus();
+            } else {
+                // Ẩn vùng nhập tay và clear sạch nội dung đã nhập trước đó
+                $divNhapTay.slideUp(200);
+                $txtNhapTay.val('');
+            }
+        });
 
-                // Chỉ cho nhập số và các phím điều hướng
-                $display.on('keydown', function (e) {
-                    var allowed = [
-                        'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
-                        'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
-                        'Home', 'End'
-                    ];
-                    // Cho phép Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-                    if (e.ctrlKey || e.metaKey) return;
-                    // Cho phép các phím đặc biệt
-                    if (allowed.includes(e.key)) return;
-                    // Chỉ cho nhập chữ số
-                    if (!/^\d$/.test(e.key)) {
-                        e.preventDefault();
-                    }
-                });
+        // Kích hoạt kiểm tra ngay khi load form (Phục vụ case Edit hoặc reload khi validation thất bại)
+        if ($('#ddlInvestmentReason').find('option:selected').text().trim() === "Điền thủ công") {
+            $('#divLyDoNhapTay').show();
+        }
 
-                // Format khi nhập
-                $display.on('input', function () {
-                    var raw = $(this).val().replace(/,/g, '');
-                    var num = parseFloat(raw) || 0;
+        var $display = $('#DuToan_Display');
+        var $hidden = $('#DuToan_Hidden');
 
-                    // Cập nhật hidden field (số thuần)
-                    $hidden.val(num > 0 ? num : '');
+        // Khởi tạo: nếu hidden đã có giá trị thì hiển thị format
+        var initVal = parseFloat($hidden.val()) || 0;
+        if (initVal > 0) {
+            $display.val(initVal.toLocaleString('en-US'));
+        }
 
-                    // Format hiển thị
-                    if (raw === '' || raw === '0') {
-                        $(this).val('');
-                        return;
-                    }
-                    var formatted = num.toLocaleString('en-US');
-                    $(this).val(formatted);
-                });
+        // Chỉ cho nhập số và các phím điều hướng
+        $display.on('keydown', function (e) {
+            var allowed = [
+                'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+                'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+                'Home', 'End'
+            ];
+            // Cho phép Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+            if (e.ctrlKey || e.metaKey) return;
+            // Cho phép các phím đặc biệt
+            if (allowed.includes(e.key)) return;
+            // Chỉ cho nhập chữ số
+            if (!/^\d$/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
 
-                // Validate trước khi submit
-                $('#mainForm').on('submit', function () {
-                    var raw = $display.val().replace(/,/g, '');
-                    var num = parseFloat(raw) || 0;
-                    $hidden.val(num > 0 ? num : '');
-                });
+        // Format khi nhập
+        $display.on('input', function () {
+            var raw = $(this).val().replace(/,/g, '');
+            var num = parseFloat(raw) || 0;
 
-                // ── Dữ liệu dropdown từ Razor ──────────────────────────────────
-                var dsPhongBan  = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(
-                    Model.DanhSachPhongBan.Select(x => new { value = x.Value, text = x.Text })
-                ));
-                var dsChucNang  = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(
-                    Model.DanhSachChucNang.Select(x => new { value = x.Value, text = x.Text })
-                ));
+            // Cập nhật hidden field (số thuần)
+            $hidden.val(num > 0 ? num : '');
 
-                var rowIndex = 0; // đếm index dòng để bind đúng tên field
+            // Format hiển thị
+            if (raw === '' || raw === '0') {
+                $(this).val('');
+                return;
+            }
+            var formatted = num.toLocaleString('en-US');
+            $(this).val(formatted);
+        });
 
-                // ── Hàm render 1 dòng mới ──────────────────────────────────────
-                function taoHtmlDong(idx) {
-                    // Dropdown Phòng ban
-                    var optionsPhongBan = '<option value="">-- Chọn --</option>';
-                    $.each(dsPhongBan, function (i, pb) {
-                        optionsPhongBan += '<option value="' + pb.value + '">'
-                                         + pb.text + '</option>';
-                    });
+        // Validate trước khi submit
+        $('#mainForm').on('submit', function () {
+            var raw = $display.val().replace(/,/g, '');
+            var num = parseFloat(raw) || 0;
+            $hidden.val(num > 0 ? num : '');
+        });
 
-                    // Dropdown Chức năng
-                    var optionsChucNang = '<option value="">-- Chọn hoặc nhập tay --</option>';
-                    $.each(dsChucNang, function (i, cn) {
-                        optionsChucNang += '<option value="' + cn.value + '">'
-                                         + cn.text + '</option>';
-                    });
+        // ── Dữ liệu dropdown từ Razor ──────────────────────────────────
+        var dsPhongBan  = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(
+            Model.DanhSachPhongBan.Select(x => new { value = x.Value, text = x.Text })
+        ));
+        var dsChucNang  = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(
+            Model.DanhSachChucNang.Select(x => new { value = x.Value, text = x.Text })
+        ));
 
-                    return '<tr data-index="' + idx + '">'
-                        + '<td class="text-center stt"></td>'
+        var rowIndex = 0; // đếm index dòng để bind đúng tên field
 
-                        // Phòng ban
-                        + '<td>'
-                        + '<select name="DanhSachPhanNhiem[' + idx + '].PhongBanId" '
-                        +         'class="form-select form-select-sm" required>'
-                        + optionsPhongBan
-                        + '</select>'
-                        + '</td>'
-
-                        // User
-                        + '<td>'
-                        + '<select name="DanhSachPhanNhiem[' + idx + '].UserId" '
-                        + 'class="form-select form-select-sm dd-user" required>'
-                        + '<option value="">-- Chọn nhân viên --</option>'
-                        + '</select>'
-                        + '</td>'
-
-                        // Chức năng — dropdown + textbox nhập tay
-                        + '<td>'
-                        + '<select name="DanhSachPhanNhiem[' + idx + '].ChucNangNhiemVuId" '
-                        +         'class="form-select form-select-sm mb-1 ddChucNang">'
-                        + optionsChucNang
-                        + '</select>'
-                        + '<input type="text" '
-                        +        'name="DanhSachPhanNhiem[' + idx + '].TenChucNangNhapTay" '
-                        +        'class="form-control form-control-sm txtChucNangTay" '
-                        +        'placeholder="Hoặc nhập tay tại đây..." />'
-                        + '</td>'
-
-                        // Email
-                        + '<td>'
-                        + '<input type="email" '
-                        +        'name="DanhSachPhanNhiem[' + idx + '].Email" '
-                        +        'class="form-control form-control-sm" '
-                        +        'placeholder="" />'
-                        + '</td>'
-
-                        // Ghi chú
-                        + '<td>'
-                        + '<input type="text" '
-                        +        'name="DanhSachPhanNhiem[' + idx + '].GhiChu" '
-                        +        'class="form-control form-control-sm" '
-                        +        'placeholder="Ghi chú..." />'
-                        + '</td>'
-
-                        // Nút xóa
-                        + '<td class="text-center">'
-                        + '<button type="button" class="btn btn-danger btn-sm btnXoaDong" '
-                        +         'title="Xóa dòng">'
-                        + '<i class="bi bi-trash"></i>'
-                        + '</button>'
-                        + '</td>'
-                        + '</tr>';
-                }
-
-                // ── Hàm load User theo PhongBanId (dùng chung cho cả 2 context) ──
-                @*function loadUsersByPhongBan(phongBanId, $ddUser,
-                                              selectedUserId, selectedText) {
-                    $ddUser.html('<option value="">Đang tải...</option>')
-                           .prop('disabled', true);
-
-                    if (!phongBanId) {
-                        $ddUser.html('<option value="">-- Chọn nhân viên --</option>')
-                               .prop('disabled', false);
-                        return;
-                    }
-
-                    $.ajax({
-                        url:  '@Url.Action("GetUsersByPhongBan", "Budget")',
-                        type: 'GET',
-                        data: { phongBanId: phongBanId },
-                        success: function (res) {
-                            var options =
-                                '<option value="">-- Chọn nhân viên --</option>';
-                            if (res.success && res.data.length > 0) {
-                                $.each(res.data, function (i, u) {
-                                    var selected = selectedUserId
-                                        && u.value == selectedUserId
-                                        ? 'selected' : '';
-                                    options += '<option value="' + u.value + '" '
-                                             + selected + '>'
-                                             + u.text + '</option>';
-                                });
-                            }
-                            $ddUser.html(options).prop('disabled', false);
-                        },
-                        error: function () {
-                            $ddUser.html('<option value="">-- Lỗi tải dữ liệu --</option>')
-                                   .prop('disabled', false);
-                        }
-                    });
-                }*@
-
-                function loadUsersByPhongBan(phongBanId, $ddUser, selectedUserId, selectedText) {
-                    // 1. Hiển thị trạng thái đang tải và cập nhật giao diện Chosen
-                    $ddUser.html('<option value="">Đang tải...</option>')
-                           .prop('disabled', true)
-                           .trigger("chosen:updated");
-
-                    // 2. Kiểm tra nếu không có Phòng ban nào được chọn
-                    if (!phongBanId) {
-                        $ddUser.html('<option value="">-- Chọn nhân viên --</option>')
-                               .prop('disabled', false)
-                               .trigger("chosen:updated");
-                        return;
-                    }
-
-                    // 3. Gọi Ajax lấy danh sách nhân viên
-                    $.ajax({
-                        url: '@Url.Action("GetUsersByPhongBan", "Budget")',
-                        type: 'GET',
-                        data: { phongBanId: phongBanId },
-                        success: function (res) {
-                            var options = '<option value="">-- Chọn nhân viên --</option>';
-
-                            if (res.success && res.data.length > 0) {
-                                $.each(res.data, function (i, u) {
-                                    var selected = selectedUserId && u.value == selectedUserId ? 'selected' : '';
-                                    options += '<option value="' + u.value + '" ' + selected + '>' + u.text + '</option>';
-                                });
-                            }
-
-                            // Đổ dữ liệu mới vào và mở khóa select
-                            $ddUser.html(options).prop('disabled', false);
-
-                            // 4. Kích hoạt Chosen nếu chưa có, hoặc cập nhật nếu đã tồn tại
-                            if ($ddUser.next('.chosen-container').length > 0) {
-                                $ddUser.trigger("chosen:updated");
-                            } else {
-                                $ddUser.chosen({
-                                    width: "100%",
-                                    no_results_text: "Không tìm thấy nhân viên:"
-                                });
-                            }
-                        },
-                        error: function () {
-                            // Xử lý khi có lỗi xảy ra
-                            $ddUser.html('<option value="">-- Lỗi tải dữ liệu --</option>')
-                                   .prop('disabled', false)
-                                   .trigger("chosen:updated");
-                        }
-                    });
-                }
-
-                // ── Trang Create: Load User khi đổi Phòng ban ────────────────
-                $(document).on('change',
-                    '#phanNhiemBody select[name*=PhongBanId]',
-                    function () {
-                        var phongBanId = $(this).val();
-                        var $ddUser = $(this).closest('tr').find('.dd-user');
-                        loadUsersByPhongBan(phongBanId, $ddUser, null, null);
-                    }
-                );
-
-                // ── Cập nhật số thứ tự và badge đếm dòng ──────────────────────
-                function capNhatSTT() {
-                    var rows = $('#phanNhiemBody tr');
-                    rows.each(function (i) {
-                        $(this).find('.stt').text(i + 1);
-                    });
-                    var count = rows.length;
-                    $('#phanNhiemCount').text(count)
-                        .toggleClass('bg-secondary', count === 0)
-                        .toggleClass('bg-primary',   count > 0);
-                }
-
-                // ── Thêm dòng ──────────────────────────────────────────────────
-                $('#btnThemDong').on('click', function () {
-                    var row = taoHtmlDong(rowIndex++);
-                    var $row = $(row);
-
-                    $('#phanNhiemBody').append($row);
-                    // Kích hoạt chosen cho select Phòng ban của dòng vừa thêm
-                    $row.find('select[name*=PhongBanId]').chosen({ width: "100%" });
-                    capNhatSTT();
-                });
-
-                // ── Xóa dòng (event delegation) ────────────────────────────────
-                $('#phanNhiemBody').on('click', '.btnXoaDong', function () {
-                    $(this).closest('tr').remove();
-                    capNhatSTT();
-                });
-
-                // ── Auto-dismiss alerts ─────────────────────────────────────────
-                setTimeout(function () { $('.alert').fadeOut('slow'); }, 5000);
-
-                // ── Chống double-submit ─────────────────────────────────────────
-                $('#mainForm').submit(function () {
-                    if (!$(this).valid()) return;
-
-                    // *** THÊM MỚI: Validate tab Phân nhiệm ***
-                    var $rows = $('#phanNhiemBody tr');
-                    var isValid = true;
-                    var dongLoi = [];
-
-                    if ($rows.length === 0) {
-                        alert('Vui lòng thêm ít nhất một dòng phân nhiệm trước khi lưu.');
-                        // Chuyển sang tab Phân nhiệm để user thấy
-                        $('#tab-phannhiem-btn').tab('show');
-                        return false;
-                    }
-
-                    $rows.each(function (i) {
-                        var $row = $(this);
-                        var stt = i + 1;
-                        var phongBan = $row.find('select[name*=PhongBanId]').val();
-                        var userId = $row.find('.dd-user').val();
-                        var chucNang = $row.find('.ddChucNang').val();
-                        var nhapTay = $row.find('.txtChucNangTay').val().trim();
-                        var email = $row.find('input[name*=Email]').val().trim();
-                        var loi = [];
-
-                        if (!phongBan) loi.push('Bộ phận');
-                        if (!userId) loi.push('Nhân viên');
-                        if (!chucNang && !nhapTay) loi.push('Chức năng / Nhiệm vụ');
-                        if (!email) loi.push('Email liên hệ');
-
-                        if (loi.length > 0) {
-                            dongLoi.push('Dòng ' + stt + ': thiếu ' + loi.join(', '));
-                            isValid = false;
-                        }
-                    });
-
-                    if (!isValid) {
-                        // Chuyển sang tab Phân nhiệm và hiển thị lỗi
-                        $('#tab-phannhiem-btn').tab('show');
-                        // Hiện alert lỗi ngay trong tab
-                        var alertHtml = '<div class="alert alert-danger alert-dismissible '
-                            + 'fade show" role="alert">'
-                            + '<i class="bi bi-exclamation-triangle-fill me-2"></i>'
-                            + '<strong>Vui lòng điền đầy đủ thông tin bắt buộc '
-                            + 'ở tab Phân nhiệm:</strong><br>'
-                            + dongLoi.join('<br>')
-                            + '<button type="button" class="btn-close" '
-                            + 'data-bs-dismiss="alert"></button>'
-                            + '</div>';
-                        // Chèn alert vào đầu tab Phân nhiệm
-                        $('#tab-phannhiem').prepend(alertHtml);
-                        return false;
-                    }
-
-                    // Tất cả hợp lệ — disable button chống double submit
-                    $(this).find('button[type="submit"]')
-                        .prop('disabled', true)
-                        .html('<i class="bi bi-hourglass-split me-1"></i> Đang xử lý...');
-                });
-
-                // Auto-generate MaHangMuc when CategoryTypeId changes
-                $('#CategoryTypeId').on('change', function() {
-                    var loaiHangMucId = $(this).val();
-
-                    if (!loaiHangMucId || loaiHangMucId === '') {
-                        $('#MaHangMuc').val('');
-                        return;
-                    }
-
-                    // Show loading state
-                    var $MaHangMuc = $('#MaHangMuc');
-                    var originalValue = $MaHangMuc.val();
-                    $MaHangMuc.val('Đang tạo mã...').prop('disabled', true);
-
-                    // Call AJAX to generate new code
-                    $.ajax({
-                        url: '@Url.Action("GenerateNewMaHangMuc", "Budget")',
-                        type: 'POST',
-                        data: { loaiHangMucId: loaiHangMucId },
-                        success: function(response) {
-                            if (response.success) {
-                                $MaHangMuc.val(response.maHangMuc);
-                            } else {
-                                alert(response.message || 'Không thể tạo mã hạng mục.');
-                                $MaHangMuc.val(originalValue);
-                            }
-                        },
-                        error: function() {
-                            alert('Đã xảy ra lỗi khi tạo mã hạng mục.');
-                            $MaHangMuc.val(originalValue);
-                        },
-                        complete: function() {
-                            $MaHangMuc.prop('disabled', false);
-                        }
-                    });
-                });
-
+        // ── Hàm render 1 dòng mới ──────────────────────────────────────
+        function taoHtmlDong(idx) {
+            // Dropdown Phòng ban
+            var optionsPhongBan = '<option value="">-- Chọn --</option>';
+            $.each(dsPhongBan, function (i, pb) {
+                optionsPhongBan += '<option value="' + pb.value + '">'
+                                    + pb.text + '</option>';
             });
+
+            // Dropdown Chức năng
+            var optionsChucNang = '<option value="">-- Chọn hoặc nhập tay --</option>';
+            $.each(dsChucNang, function (i, cn) {
+                optionsChucNang += '<option value="' + cn.value + '">'
+                                    + cn.text + '</option>';
+            });
+
+            return '<tr data-index="' + idx + '">'
+                + '<td class="text-center stt"></td>'
+
+                // Phòng ban
+                + '<td>'
+                + '<select name="DanhSachPhanNhiem[' + idx + '].PhongBanId" '
+                +         'class="form-select form-select-sm" required>'
+                + optionsPhongBan
+                + '</select>'
+                + '</td>'
+
+                // User
+                + '<td>'
+                + '<select name="DanhSachPhanNhiem[' + idx + '].UserId" '
+                + 'class="form-select form-select-sm dd-user" required>'
+                + '<option value="">-- Chọn nhân viên --</option>'
+                + '</select>'
+                + '</td>'
+
+                // Chức năng — dropdown + textbox nhập tay
+                + '<td>'
+                + '<select name="DanhSachPhanNhiem[' + idx + '].ChucNangNhiemVuId" '
+                +         'class="form-select form-select-sm mb-1 ddChucNang">'
+                + optionsChucNang
+                + '</select>'
+                + '<input type="text" '
+                +        'name="DanhSachPhanNhiem[' + idx + '].TenChucNangNhapTay" '
+                +        'class="form-control form-control-sm txtChucNangTay" '
+                +        'placeholder="Hoặc nhập tay tại đây..." />'
+                + '</td>'
+
+                // Email
+                + '<td>'
+                + '<input type="email" '
+                +        'name="DanhSachPhanNhiem[' + idx + '].Email" '
+                +        'class="form-control form-control-sm" '
+                +        'placeholder="" />'
+                + '</td>'
+
+                // Ghi chú
+                + '<td>'
+                + '<input type="text" '
+                +        'name="DanhSachPhanNhiem[' + idx + '].GhiChu" '
+                +        'class="form-control form-control-sm" '
+                +        'placeholder="Ghi chú..." />'
+                + '</td>'
+
+                // Nút xóa
+                + '<td class="text-center">'
+                + '<button type="button" class="btn btn-danger btn-sm btnXoaDong" '
+                +         'title="Xóa dòng">'
+                + '<i class="bi bi-trash"></i>'
+                + '</button>'
+                + '</td>'
+                + '</tr>';
+        }
+
+        // ── Hàm load User theo PhongBanId (dùng chung cho cả 2 context) ──
+        @*function loadUsersByPhongBan(phongBanId, $ddUser,
+                                        selectedUserId, selectedText) {
+            $ddUser.html('<option value="">Đang tải...</option>')
+                    .prop('disabled', true);
+
+            if (!phongBanId) {
+                $ddUser.html('<option value="">-- Chọn nhân viên --</option>')
+                        .prop('disabled', false);
+                return;
+            }
+
+            $.ajax({
+                url:  '@Url.Action("GetUsersByPhongBan", "Budget")',
+                type: 'GET',
+                data: { phongBanId: phongBanId },
+                success: function (res) {
+                    var options =
+                        '<option value="">-- Chọn nhân viên --</option>';
+                    if (res.success && res.data.length > 0) {
+                        $.each(res.data, function (i, u) {
+                            var selected = selectedUserId
+                                && u.value == selectedUserId
+                                ? 'selected' : '';
+                            options += '<option value="' + u.value + '" '
+                                        + selected + '>'
+                                        + u.text + '</option>';
+                        });
+                    }
+                    $ddUser.html(options).prop('disabled', false);
+                },
+                error: function () {
+                    $ddUser.html('<option value="">-- Lỗi tải dữ liệu --</option>')
+                            .prop('disabled', false);
+                }
+            });
+        }*@
+
+        function loadUsersByPhongBan(phongBanId, $ddUser, selectedUserId, selectedText) {
+            // 1. Hiển thị trạng thái đang tải và cập nhật giao diện Chosen
+            $ddUser.html('<option value="">Đang tải...</option>')
+                    .prop('disabled', true)
+                    .trigger("chosen:updated");
+
+            // 2. Kiểm tra nếu không có Phòng ban nào được chọn
+            if (!phongBanId) {
+                $ddUser.html('<option value="">-- Chọn nhân viên --</option>')
+                        .prop('disabled', false)
+                        .trigger("chosen:updated");
+                return;
+            }
+
+            // 3. Gọi Ajax lấy danh sách nhân viên
+            $.ajax({
+                url: '@Url.Action("GetUsersByPhongBan", "Budget")',
+                type: 'GET',
+                data: { phongBanId: phongBanId },
+                success: function (res) {
+                    var options = '<option value="">-- Chọn nhân viên --</option>';
+
+                    if (res.success && res.data.length > 0) {
+                        $.each(res.data, function (i, u) {
+                            var selected = selectedUserId && u.value == selectedUserId ? 'selected' : '';
+                            options += '<option value="' + u.value + '" ' + selected + '>' + u.text + '</option>';
+                        });
+                    }
+
+                    // Đổ dữ liệu mới vào và mở khóa select
+                    $ddUser.html(options).prop('disabled', false);
+
+                    // 4. Kích hoạt Chosen nếu chưa có, hoặc cập nhật nếu đã tồn tại
+                    if ($ddUser.next('.chosen-container').length > 0) {
+                        $ddUser.trigger("chosen:updated");
+                    } else {
+                        $ddUser.chosen({
+                            width: "100%",
+                            no_results_text: "Không tìm thấy nhân viên:"
+                        });
+                    }
+                },
+                error: function () {
+                    // Xử lý khi có lỗi xảy ra
+                    $ddUser.html('<option value="">-- Lỗi tải dữ liệu --</option>')
+                            .prop('disabled', false)
+                            .trigger("chosen:updated");
+                }
+            });
+        }
+
+        // ── Trang Create: Load User khi đổi Phòng ban ────────────────
+        $(document).on('change',
+            '#phanNhiemBody select[name*=PhongBanId]',
+            function () {
+                var phongBanId = $(this).val();
+                var $ddUser = $(this).closest('tr').find('.dd-user');
+                loadUsersByPhongBan(phongBanId, $ddUser, null, null);
+            }
+        );
+
+        // ── Cập nhật số thứ tự và badge đếm dòng ──────────────────────
+        function capNhatSTT() {
+            var rows = $('#phanNhiemBody tr');
+            rows.each(function (i) {
+                $(this).find('.stt').text(i + 1);
+            });
+            var count = rows.length;
+            $('#phanNhiemCount').text(count)
+                .toggleClass('bg-secondary', count === 0)
+                .toggleClass('bg-primary',   count > 0);
+        }
+
+        // ── Thêm dòng ──────────────────────────────────────────────────
+        $('#btnThemDong').on('click', function () {
+            var row = taoHtmlDong(rowIndex++);
+            var $row = $(row);
+
+            $('#phanNhiemBody').append($row);
+            // Kích hoạt chosen cho select Phòng ban của dòng vừa thêm
+            $row.find('select[name*=PhongBanId]').chosen({ width: "100%" });
+            capNhatSTT();
+        });
+
+        // ── Xóa dòng (event delegation) ────────────────────────────────
+        $('#phanNhiemBody').on('click', '.btnXoaDong', function () {
+            $(this).closest('tr').remove();
+            capNhatSTT();
+        });
+
+        // ── Auto-dismiss alerts ─────────────────────────────────────────
+        setTimeout(function () { $('.alert').fadeOut('slow'); }, 5000);
+
+        // ── Chống double-submit ─────────────────────────────────────────
+        $('#mainForm').submit(function () {
+            if (!$(this).valid()) return;
+
+            // *** THÊM MỚI: Validate tab Phân nhiệm ***
+            var $rows = $('#phanNhiemBody tr');
+            var isValid = true;
+            var dongLoi = [];
+
+            if ($rows.length === 0) {
+                alert('Vui lòng thêm ít nhất một dòng phân nhiệm trước khi lưu.');
+                // Chuyển sang tab Phân nhiệm để user thấy
+                $('#tab-phannhiem-btn').tab('show');
+                return false;
+            }
+
+            $rows.each(function (i) {
+                var $row = $(this);
+                var stt = i + 1;
+                var phongBan = $row.find('select[name*=PhongBanId]').val();
+                var userId = $row.find('.dd-user').val();
+                var chucNang = $row.find('.ddChucNang').val();
+                var nhapTay = $row.find('.txtChucNangTay').val().trim();
+                var email = $row.find('input[name*=Email]').val().trim();
+                var loi = [];
+
+                if (!phongBan) loi.push('Bộ phận');
+                if (!userId) loi.push('Nhân viên');
+                if (!chucNang && !nhapTay) loi.push('Chức năng / Nhiệm vụ');
+                if (!email) loi.push('Email liên hệ');
+
+                if (loi.length > 0) {
+                    dongLoi.push('Dòng ' + stt + ': thiếu ' + loi.join(', '));
+                    isValid = false;
+                }
+            });
+
+            if (!isValid) {
+                // Chuyển sang tab Phân nhiệm và hiển thị lỗi
+                $('#tab-phannhiem-btn').tab('show');
+                // Hiện alert lỗi ngay trong tab
+                var alertHtml = '<div class="alert alert-danger alert-dismissible '
+                    + 'fade show" role="alert">'
+                    + '<i class="bi bi-exclamation-triangle-fill me-2"></i>'
+                    + '<strong>Vui lòng điền đầy đủ thông tin bắt buộc '
+                    + 'ở tab Phân nhiệm:</strong><br>'
+                    + dongLoi.join('<br>')
+                    + '<button type="button" class="btn-close" '
+                    + 'data-bs-dismiss="alert"></button>'
+                    + '</div>';
+                // Chèn alert vào đầu tab Phân nhiệm
+                $('#tab-phannhiem').prepend(alertHtml);
+                return false;
+            }
+
+            // Tất cả hợp lệ — disable button chống double submit
+            $(this).find('button[type="submit"]')
+                .prop('disabled', true)
+                .html('<i class="bi bi-hourglass-split me-1"></i> Đang xử lý...');
+        });
+
+        // Auto-generate MaHangMuc when CategoryTypeId changes
+        $('#CategoryTypeId').on('change', function() {
+            var loaiHangMucId = $(this).val();
+
+            if (!loaiHangMucId || loaiHangMucId === '') {
+                $('#MaHangMuc').val('');
+                return;
+            }
+
+            // Show loading state
+            var $MaHangMuc = $('#MaHangMuc');
+            var originalValue = $MaHangMuc.val();
+            $MaHangMuc.val('Đang tạo mã...').prop('disabled', true);
+
+            // Call AJAX to generate new code
+            $.ajax({
+                url: '@Url.Action("GenerateNewMaHangMuc", "Budget")',
+                type: 'POST',
+                data: { loaiHangMucId: loaiHangMucId },
+                success: function(response) {
+                    if (response.success) {
+                        $MaHangMuc.val(response.maHangMuc);
+                    } else {
+                        alert(response.message || 'Không thể tạo mã hạng mục.');
+                        $MaHangMuc.val(originalValue);
+                    }
+                },
+                error: function() {
+                    alert('Đã xảy ra lỗi khi tạo mã hạng mục.');
+                    $MaHangMuc.val(originalValue);
+                },
+                complete: function() {
+                    $MaHangMuc.prop('disabled', false);
+                }
+            });
+        });
+
+    });
 </script>
     <style>
         /* Custom styles matching layout theme */

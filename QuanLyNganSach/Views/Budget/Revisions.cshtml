@@ -249,13 +249,13 @@
 
                 // File đính kèm
                 var $att = $('#rv_Attachments').empty();
-                if (data.attachments && data.attachments.length > 0) {
-                    $.each(data.attachments, function (_, a) {
+                if (data.Attachments && data.Attachments.length > 0) {
+                    $.each(data.Attachments, function (_, a) {
                         $att.append(
                             '<div class="d-flex align-items-center gap-2 mb-1">' +
                             '  <i class="bi bi-file-earmark me-1"></i>' +
-                            '  <a href="' + a.filePath + '" target="_blank">'
-                                + a.fileName + '</a>' +
+                            '  <a href="' + a.FilePath + '" target="_blank">'
+                                + a.FileName + '</a>' +
                             '</div>'
                         );
                     });
@@ -282,11 +282,24 @@
                 data : { revisionId: currentRevisionId },
                 success: function (res) {
                     if (res.success) {
-                        // Đóng modal và xóa dòng khỏi danh sách
-                        bootstrap.Modal.getInstance(
-                            document.getElementById('revisionDetailModal')).hide();
-                        // Reload trang để cập nhật danh sách
-                        window.location.reload();
+                        // 1. Hiển thị thông báo thành công lên modal trước
+                        showModalAlert('success', res.message);
+
+                        // 2. Chờ 4 giây sau đó mới đóng modal và reload trang
+                        setTimeout(function () {
+                            // Lấy instance và đóng modal
+                            var modalEl = document.getElementById('revisionDetailModal');
+                            if (modalEl) {
+                                var modalInstance = bootstrap.Modal.getInstance(modalEl);
+                                if (modalInstance) {
+                                    modalInstance.hide();
+                                }
+                            }
+
+                            // Tải lại trang để cập nhật danh sách mới nhất
+                            window.location.reload();
+                        }, 4000);
+
                     } else {
                         alert(res.message);
                     }
@@ -318,6 +331,25 @@
         function formatCurrency(value) {
             if (!value) return '0';
             return Number(value).toLocaleString('en-US');
+        }
+
+        // ── Helper: hiện alert trong modal ──────────────────────────
+        function showModalAlert(type, message) {
+            var html = '<div class="alert alert-' + type + ' alert-dismissible '
+                + 'fade show mt-3" role="alert">'
+                + '<i class="bi bi-' + (type === 'success'
+                    ? 'check-circle-fill' : 'exclamation-triangle-fill')
+                + ' me-2"></i>' + message
+                + '<button type="button" class="btn-close" '
+                + 'data-bs-dismiss="alert"></button>'
+                + '</div>';
+            // Chèn alert vào đầu modal-body
+            $('#revisionContent').prepend(html);
+            setTimeout(function () {
+                $('#revisionContent .alert').fadeOut('slow', function () {
+                    $(this).remove();
+                });
+            }, 4000);
         }
     </script>
 }
