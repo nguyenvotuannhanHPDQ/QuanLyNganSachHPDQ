@@ -4,15 +4,14 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container mt-4 mb-5">
-    <div class="row justify-content-center">
-        <div class="col-12 col-xl-10">
+<div class="container-fluid mt-2 mb-5 px-1">
+    <div class="row">
+        <div class="col-12">
 
-            <!-- Breadcrumb -->
             <nav aria-label="breadcrumb" class="mb-3">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="@Url.Action("Index", "Home", new { area = "" })">
+                        <a href="@Url.Action("Index", "Home", new { area = "" })" class="text-decoration-none">
                             <i class="bi bi-house-door"></i> Trang chủ
                         </a>
                     </li>
@@ -22,73 +21,115 @@
                 </ol>
             </nav>
 
-            <div class="card shadow-sm border-0">
-                <div class="card-header text-bg-primary py-3">
-                    <h5 class="mb-0">
-                        <i class="bi bi-file-earmark-text me-2"></i>
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
+                <div>
+                    <h4 class="mb-0 fw-bold text-dark">
+                        <i class="bi bi-file-earmark-text text-primary me-2"></i>
                         Danh sách hồ sơ chờ duyệt thay đổi
-                    </h5>
+                    </h4>
+                    <small class="text-muted">
+                        @*Cần xử lý các yêu cầu chỉnh sửa hoặc hoàn trả từ người dùng*@
+                    </small>
                 </div>
+            </div>
 
+            <div class="card shadow-sm border-0">
                 <div class="card-body p-0">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Mã hạng mục</th>
-                                <th>Tên hạng mục</th>
-                                <th>Loại</th>
-                                <th>Bộ phận</th>
-                                <th>Ngày gửi</th>
-                                <th class="text-center">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (!Model.Any())
-                            {
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle mb-0 text-nowrap">
+                            <thead class="table-light border-bottom">
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">
-                                        <i class="bi bi-inbox me-1"></i> Không có hồ sơ nào chờ duyệt.
-                                    </td>
+                                    <th class="text-center" style="width: 5%">STT</th>
+                                    <th style="width: 12%">Mã hạng mục</th>
+                                    <th style="width: 38%">Tên hạng mục</th>
+                                    @*<th class="text-center" style="width: 15%">Loại yêu cầu</th>*@
+                                    <th style="width: 20%">Người gửi</th>
+                                    <th class="text-center" style="width: 10%">Thao tác</th>
                                 </tr>
-                            }
-                            @foreach (var item in Model)
-                            {
-                                <tr>
-                                    <td>@item.MaHangMuc</td>
-                                    <td>@item.TenHangMuc</td>
-                                    <td>
-                                        @if (item.RevisionType == 1)
-                                        {
-                                            <span class="badge bg-warning text-dark">Trả hồ sơ</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-info text-dark">Chỉnh sửa</span>
-                                        }
-                                    </td>
-                                    <td>@item.CreatedByName</td>
-                                    <td>@item.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
-                                    <td class="text-center">
-                                        <button class="btn btn-sm btn-primary btn-view-revision"
-                                                data-revision-id="@item.RevisionId"
-                                                data-budget-id="@item.BudgetRegistrationId">
-                                            <i class="bi bi-eye me-1"></i>Xem & Duyệt
-                                        </button>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @if (!Model.Any())
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-5">
+                                            <i class="bi bi-folder-x fs-1 d-block mb-2"></i>
+                                            Không có dữ liệu.
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    int stt = 1;
+                                    foreach (var item in Model)
+                                    {
+                                        <tr>
+                                            <td class="text-center fw-semibold text-muted">#@stt</td>
+
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(item.MaHangMuc))
+                                                {
+                                                    <span class="badge bg-dark-subtle text-dark border border-dark-subtle px-2.5 py-1.5 fw-bold font-monospace">@item.MaHangMuc</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted small">---</span>
+                                                }
+                                            </td>
+
+                                            <td class="text-wrap fw-semibold text-dark" style="min-width: 250px;">
+                                                @item.TenHangMuc
+                                            </td>
+
+                                            @*<td class="text-center">
+                                                @if (item.RevisionType == 1)
+                                                {
+                                                    <span class="badge bg-danger-subtle text-danger border px-2 py-1.5 fw-medium">
+                                                        <i class="bi bi-arrow-left-square me-1"></i> Trả hồ sơ
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-info-subtle text-info border px-2 py-1.5 fw-medium">
+                                                        <i class="bi bi-pencil-square me-1"></i> Chỉnh sửa
+                                                    </span>
+                                                }
+                                            </td>*@
+
+                                            <td>
+                                                <div class="fw-semibold text-dark">
+                                                    <i class="bi bi-person me-1 text-secondary"></i>@item.CreatedByName
+                                                </div>
+                                                <div class="text-muted small mt-0.5">
+                                                    <i class="bi bi-clock me-1"></i>@item.CreatedDate.ToString("dd/MM/yyyy HH:mm")
+                                                </div>
+                                            </td>
+
+                                            <td class="text-center">
+                                                <button type="button"
+                                                        class="btn btn-outline-primary btn-sm px-2 py-0.5 btn-view-revision"
+                                                        data-revision-id="@item.RevisionId"
+                                                        data-budget-id="@item.BudgetRegistrationId"
+                                                        title="Xem và duyệt thay đổi">
+                                                    <i class="bi bi-eye"></i> Xem & Duyệt
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        stt++;
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <div class="card-footer bg-light text-muted small py-2">
+                <div class="card-footer bg-light py-2 border-top border-light-subtle">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                        <span>
-                        </span>
-                        <span class="text-end text-secondary">
-                            <i class="bi bi-clock-history me-1"></i>
-                            @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
-                        </span>
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Hiển thị <span class="fw-semibold text-dark">@Model.Count()</span> yêu cầu chờ duyệt
+                        </small>
+                        <small class="text-secondary text-end">
+                            <i class="bi bi-clock-history me-1"></i> @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+                        </small>
                     </div>
                 </div>
             </div>

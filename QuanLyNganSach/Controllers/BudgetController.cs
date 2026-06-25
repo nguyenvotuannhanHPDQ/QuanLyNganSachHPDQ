@@ -13,6 +13,7 @@ using QuanLyNganSach.Models.DTO;
 using QuanLyNganSach.Hubs;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
+using ClosedXML.Excel;
 using static QuanLyNganSach.Models.ViewModels.BudgetRegistrationListViewModel;
 
 namespace QuanLyNganSach.Controllers
@@ -935,107 +936,6 @@ namespace QuanLyNganSach.Controllers
             return RedirectToAction("Create");
         }
 
-        //[HttpPost]
-        //public ActionResult Delete(int id)
-        //{
-        //    try
-        //    {
-        //        if (CurrentUser == null)
-        //            return Json(new
-        //            {
-        //                success = false,
-        //                message = "Phiên đăng nhập đã hết hạn."
-        //            });
-
-        //        var entity = db.BudgetRegistrations
-        //            .FirstOrDefault(x => x.BudgetRegistrationId == id);
-
-        //        if (entity == null)
-        //            return Json(new
-        //            {
-        //                success = false,
-        //                message = "Không tìm thấy hồ sơ."
-        //            });
-
-        //        bool isManagerOrAdmin =
-        //            CurrentUser.RoleId == Constants.RoleConst.Admin ||
-        //            CurrentUser.RoleId == Constants.RoleConst.Manager;
-
-        //        // Kiểm tra quyền xóa
-        //        if (!isManagerOrAdmin)
-        //        {
-        //            // User thường chỉ xóa được hồ sơ của mình
-        //            // và chỉ khi chưa xác nhận luồng
-        //            if (entity.UserId != CurrentUser.UserId)
-        //                return Json(new
-        //                {
-        //                    success = false,
-        //                    message = "Bạn không có quyền xóa hồ sơ này."
-        //                });
-
-        //            if (entity.WorkflowType != null)
-        //                return Json(new
-        //                {
-        //                    success = false,
-        //                    message = "Hồ sơ đã được xác nhận, "
-        //                            + "không thể xóa."
-        //                });
-        //        }
-
-        //        // ── Xóa bảng con theo thứ tự ────────────────────────────
-
-        //        // 1. ProgressAreaItems → ProgressAreas
-        //        var progressAreas = db.ProgressAreas
-        //            .Include(a => a.ProgressAreaItems)
-        //            .Where(a => a.BudgetRegistrationId == id)
-        //            .ToList();
-        //        foreach (var area in progressAreas)
-        //            db.ProgressAreaItems.RemoveRange(area.ProgressAreaItems);
-        //        db.ProgressAreas.RemoveRange(progressAreas);
-
-        //        // 2. ProgressConfigs
-        //        var progressConfigs = db.ProgressConfigs
-        //            .Where(p => p.BudgetRegistrationId == id).ToList();
-        //        db.ProgressConfigs.RemoveRange(progressConfigs);
-
-        //        // 3. BudgetApprovals
-        //        var approvals = db.BudgetApprovals
-        //            .Where(a => a.BudgetRegistrationId == id).ToList();
-        //        db.BudgetApprovals.RemoveRange(approvals);
-
-        //        // 4. BudgetAttachments
-        //        var attachments = db.BudgetAttachments
-        //            .Where(a => a.BudgetRegistrationId == id).ToList();
-        //        db.BudgetAttachments.RemoveRange(attachments);
-
-        //        // 5. BudgetRegistrationPhanNhiem
-        //        var phanNhiems = db.BudgetRegistrationPhanNhiems
-        //            .Where(p => p.BudgetRegistrationId == id).ToList();
-        //        db.BudgetRegistrationPhanNhiems.RemoveRange(phanNhiems);
-
-        //        // 6. Xóa bảng cha
-        //        db.BudgetRegistrations.Remove(entity);
-
-        //        db.SaveChanges();
-
-        //        return Json(new
-        //        {
-        //            success = true,
-        //            message = "Xóa hồ sơ thành công."
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        System.Diagnostics.Debug.WriteLine(
-        //            $"Delete Error: {ex.Message}");
-        //        return Json(new
-        //        {
-        //            success = false,
-        //            message = "Đã xảy ra lỗi khi xóa hồ sơ."
-        //        });
-        //    }
-        //}
-
         [HttpGet]
         public ActionResult SearchPhanNhiem(int budgetRegistrationId, string search, int? phongBanId, int? chucNangId)
         {
@@ -1133,6 +1033,495 @@ namespace QuanLyNganSach.Controllers
                 },
                     JsonRequestBehavior.AllowGet);
             }
+        }
+
+        // ================================================================
+        // POST: /Budget/ExportExcel
+        // ================================================================
+        [HttpGet]
+        public ActionResult ExportExcel(string search, string sortOrder, int? phongBanId, int? filterTrangThai, List<string> fields)
+        {
+            // Kiểm tra quyền Admin
+            if (CurrentUser.RoleId != 1)
+                return Content("Không có quyền thực hiện chức năng này.");
+
+            if (fields == null) fields = new List<string>();
+
+            // SỬA LỖI ĐỒNG BỘ BỘ LỌC: Đọc trực tiếp từ chuỗi truy vấn để bắt chính xác giá trị số 0 từ Client
+            string rawTrangThai = Request.QueryString["filterTrangThai"];
+            int? validFilterTrangThai = filterTrangThai;
+
+            if (!string.IsNullOrEmpty(rawTrangThai) && int.TryParse(rawTrangThai, out int parsedValue))
+            {
+                validFilterTrangThai = parsedValue;
+            }
+            else if (rawTrangThai == "")
+            {
+                validFilterTrangThai = null; // Trả về chọn Tất cả trạng thái
+            }
+
+            // =========================================================================
+            // 1. XÂY DỰNG QUERY GỐC TỪ DATABASE (Sử dụng AsNoTracking tối ưu bộ nhớ)
+            // =========================================================================
+            var baseQuery = db.BudgetRegistrations
+                              .Include("ProjectArea")
+                              .Include("PhongBan")
+                              .Include("User")
+                              .Include("BudgetCategoryType")
+                              .Include("BudgetPriorityLevel")
+                              .AsNoTracking()
+                              .AsQueryable();
+
+            // Áp dụng trước bộ lọc tìm kiếm cơ bản trên Database để tối ưu hiệu năng
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.Trim().ToLower();
+                baseQuery = baseQuery.Where(b => b.TenHangMuc.ToLower().Contains(search) || b.MaHangMuc.ToLower().Contains(search));
+            }
+
+            if (phongBanId.HasValue)
+            {
+                baseQuery = baseQuery.Where(b => b.PhongBanId == phongBanId.Value);
+            }
+
+            // =========================================================================
+            // 2. MAPPING SANG VIEWMODEL QUERY (Đồng bộ cấu trúc dữ liệu của trang Index)
+            // =========================================================================
+            var viewModelQuery = baseQuery.Select(x => new BudgetRegistrationListViewModel
+            {
+                BudgetRegistrationId = x.BudgetRegistrationId,
+                MaHangMuc = x.MaHangMuc,
+                TenHangMuc = x.TenHangMuc,
+                DuToan = x.DuToan ?? 0,
+                SoToTrinh = x.SoToTrinh ?? string.Empty,
+                LyDoDauTu = x.LyDoDauTu ?? string.Empty,
+                MoTaKyThuat = x.MoTaKyThuat ?? string.Empty,
+                NgayBatDau = x.NgayBatDau,
+                NgayKetThuc = x.NgayKetThuc,
+                TenPhongBan = x.PhongBan.TenPhongBan,
+                PhongBanId = x.PhongBan.PhongBanId,
+                NguoiDangKy = x.User.HoTen,
+                NgayTao = x.CreatedDate,
+
+                SoToTrinhRaw = x.SoToTrinh,
+                WorkflowType = x.WorkflowType,
+
+                BudgetApprovals = x.BudgetApprovals.Select(a => new BudgetRegistrationListViewModel.BudgetApprovalRawField
+                {
+                    IsSupplementary = a.IsSupplementary,
+                    NgayDuyetPDA = a.NgayDuyetPDA,
+                    NgayDuyetBGD = a.NgayDuyetBGD
+                }).ToList(),
+
+                TongTienDo = x.ProgressConfigs.Select(p => (decimal?)p.TongTienDo).FirstOrDefault(),
+                DanhGiaChung = x.ProgressConfigs.Select(p => p.DanhGiaChung).FirstOrDefault(),
+
+                CoThongTinPheDuyet = x.BudgetApprovals.Any(a => a.TrangThaiPheDuyet == 2),
+                TongTienDaDuyet = (x.BudgetApprovals.Where(a => !a.IsSupplementary && a.TrangThaiPheDuyet == 2).Select(a => (decimal?)a.DuToanPheDuyet).FirstOrDefault() ?? 0)
+                                + (x.BudgetApprovals.Where(a => a.IsSupplementary && a.TrangThaiPheDuyet == 2).Sum(a => (decimal?)a.NganSachBoSung) ?? 0),
+                UserId = x.UserId,
+
+                // Xác định quyền hạn IsPhanNhiemUser động dựa trên CurrentUser của phiên làm việc
+                IsPhanNhiemUser = x.UserId != CurrentUser.UserId
+                    && (CurrentUser.RoleId != 1 && CurrentUser.RoleId != 2) // Giả định RoleId: 1-Admin, 2-Manager
+                    && x.BudgetRegistrationPhanNhiems.Any(p => p.UserId == CurrentUser.UserId)
+            });
+
+            // =========================================================================
+            // 3. ÁP DỤNG BỘ LỌC TRẠNG THÁI THEO ĐÚNG LOGIC CỦA TRANG INDEX
+            // =========================================================================
+            if (validFilterTrangThai.HasValue)
+            {
+                switch (validFilterTrangThai.Value)
+                {
+                    case 0: // Đăng ký mới
+                        viewModelQuery = viewModelQuery.Where(b => b.WorkflowType == null);
+                        break;
+
+                    case 1: // Chưa đủ hồ sơ
+                        viewModelQuery = viewModelQuery.Where(b =>
+                            b.WorkflowType == 4 ||
+                            (b.WorkflowType == 1 &&
+                             !b.BudgetApprovals.Any(a => a.IsSupplementary) &&
+                             b.BudgetApprovals.Any(a => !a.IsSupplementary && a.NgayDuyetPDA == null && a.NgayDuyetBGD == null))
+                        );
+                        break;
+
+                    case 2: // Theo luồng chi phí sản xuất
+                        viewModelQuery = viewModelQuery.Where(b => b.WorkflowType == 2);
+                        break;
+
+                    case 3: // Đang thực hiện xin ngân sách
+                        viewModelQuery = viewModelQuery.Where(b =>
+                            b.WorkflowType == 1 &&
+                            !b.BudgetApprovals.Any(a => a.IsSupplementary) &&
+                            b.BudgetApprovals.Any(a => !a.IsSupplementary && a.NgayDuyetPDA != null && a.NgayDuyetBGD == null)
+                        );
+                        break;
+
+                    case 4: // Đang bổ sung ngân sách
+                        viewModelQuery = viewModelQuery.Where(b =>
+                            b.WorkflowType == 1 &&
+                            b.BudgetApprovals.Any(a => a.IsSupplementary && a.NgayDuyetPDA != null && a.NgayDuyetBGD == null)
+                        );
+                        break;
+
+                    case 5: // Đã phê duyệt ngân sách
+                        viewModelQuery = viewModelQuery.Where(b =>
+                            b.WorkflowType == 1 &&
+                            (
+                                (!b.BudgetApprovals.Any(a => a.IsSupplementary) && b.BudgetApprovals.Any(a => !a.IsSupplementary && a.NgayDuyetPDA != null && a.NgayDuyetBGD != null)) ||
+                                b.BudgetApprovals.Any(a => a.IsSupplementary && a.NgayDuyetPDA == null && a.NgayDuyetBGD == null) ||
+                                b.BudgetApprovals.Any(a => a.IsSupplementary && a.NgayDuyetPDA != null && a.NgayDuyetBGD != null)
+                            )
+                        );
+                        break;
+                }
+            }
+
+            // =========================================================================
+            // 4. ÁP DỤNG LOGIC SẮP XẾP MỚI (SORT ORDER) Theo 4 Case yêu cầu
+            // =========================================================================
+            switch (sortOrder)
+            {
+                case "newest":
+                    viewModelQuery = viewModelQuery.OrderByDescending(b => b.NgayTao);
+                    break;
+
+                case "oldest":
+                    viewModelQuery = viewModelQuery.OrderBy(b => b.NgayTao);
+                    break;
+
+                case "budget-high":
+                    // Đẩy hồ sơ phân nhiệm xuống cuối (IsPhanNhiemUser: false lên trước, true xuống sau)
+                    viewModelQuery = viewModelQuery.OrderBy(b => b.IsPhanNhiemUser)
+                                                   .ThenByDescending(b => b.CoThongTinPheDuyet ? b.TongTienDaDuyet : b.DuToan)
+                                                   .ThenByDescending(b => b.NgayTao);
+                    break;
+
+                case "budget-low":
+                    // Đẩy hồ sơ phân nhiệm xuống cuối (IsPhanNhiemUser: false lên trước, true xuống sau)
+                    viewModelQuery = viewModelQuery.OrderBy(b => b.IsPhanNhiemUser)
+                                                   .ThenBy(b => b.CoThongTinPheDuyet ? b.TongTienDaDuyet : b.DuToan)
+                                                   .ThenByDescending(b => b.NgayTao);
+                    break;
+
+                default:
+                    viewModelQuery = viewModelQuery.OrderByDescending(b => b.NgayTao);
+                    break;
+            }
+
+            // Thực thi lấy danh sách IDs hoặc danh sách hồ sơ gốc đã qua sắp xếp, lọc
+            var filteredIds = viewModelQuery.Select(b => b.BudgetRegistrationId).ToList();
+
+            // Truy vấn lại dữ liệu gốc từ DB theo đúng thứ tự đã được sắp xếp và lọc để phục vụ ghi file Excel
+            var budgetRegistrations = db.BudgetRegistrations
+                                        .Include("ProjectArea")
+                                        .Include("PhongBan")
+                                        .Include("User")
+                                        .Include("BudgetCategoryType")
+                                        .Include("BudgetPriorityLevel")
+                                        .Where(b => filteredIds.Contains(b.BudgetRegistrationId))
+                                        .AsNoTracking()
+                                        .ToList()
+                                        .OrderBy(b => filteredIds.IndexOf(b.BudgetRegistrationId))
+                                        .ToList();
+
+            // =========================================================================
+            // 5. GIỮ NGUYÊN VẸN LOGIC KHỞI TẠO VÀ GHI DỮ LIỆU FILE EXCEL CỦA BẠN
+            // =========================================================================
+            using (var workbook = new XLWorkbook())
+            {
+                var ws = workbook.Worksheets.Add("Báo cáo ngân sách");
+                ws.ShowGridLines = true;
+
+                // Thiết lập Style chung cho Tiêu đề bảng
+                var headerStyle = workbook.Style;
+                headerStyle.Font.Bold = true;
+                headerStyle.Fill.BackgroundColor = XLColor.FromHtml("#E6F2FF");
+                headerStyle.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                headerStyle.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                headerStyle.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                headerStyle.Border.InsideBorder = XLBorderStyleValues.Thin;
+
+                // Khai báo Mapping các Cột Excel cố định
+                var colMapping = new Dictionary<string, int>
+        {
+            { "KhuVuc", 2 }, { "BoPhan", 3 }, { "MaHangMuc", 4 }, { "TenHangMuc", 5 },
+            { "MoTaKyThuat", 6 }, { "LyDoDauTu", 7 }, { "DuToan", 8 }, { "SoToTrinh", 9 },
+            { "LoaiHangMuc", 10 }, { "MucUuTien", 11 }, { "SoLuong", 12 }, { "ThoiGian", 13 },
+            { "NguoiDangKy", 14 }, { "LinkTaiLieu", 15 }, { "NganSachDaDuyet", 16 },
+            { "NganSachDangTrinh", 17 }, { "DotBoSung", 18 }, { "SoThongBao", 19 },
+            { "SoFM", 20 }, { "SoIO", 21 }, { "TongTienDo", 22 }, { "TienDoKhuVuc", 23 }
+        };
+
+                // Đặt Tiêu đề cột hàng 1
+                ws.Cell(1, 1).Value = "STT";
+                ws.Cell(1, 2).Value = "Khu vực dự án";
+                ws.Cell(1, 3).Value = "Bộ phận";
+                ws.Cell(1, 4).Value = "Mã hạng mục";
+                ws.Cell(1, 5).Value = "Tên hạng mục";
+                ws.Cell(1, 6).Value = "Mô tả kỹ thuật";
+                ws.Cell(1, 7).Value = "Lý do đầu tư";
+                ws.Cell(1, 8).Value = "Dự toán";
+                ws.Cell(1, 9).Value = "Số tờ trình";
+                ws.Cell(1, 10).Value = "Loại hạng mục";
+                ws.Cell(1, 11).Value = "Mức ưu tiên";
+                ws.Cell(1, 12).Value = "Số lượng";
+                ws.Cell(1, 13).Value = "Thời gian triển khai";
+                ws.Cell(1, 14).Value = "Người đăng ký";
+                ws.Cell(1, 15).Value = "Link tài liệu";
+                ws.Cell(1, 16).Value = "Tổng ngân sách đã duyệt";
+                ws.Cell(1, 17).Value = "Tổng ngân sách đang trình";
+                ws.Cell(1, 18).Value = "Giá trị phê duyệt từng đợt";
+                ws.Cell(1, 19).Value = "Số thông báo";
+                ws.Cell(1, 20).Value = "Số FM";
+                ws.Cell(1, 21).Value = "Số IO";
+                ws.Cell(1, 22).Value = "Tổng tiến độ";
+                ws.Cell(1, 23).Value = "Tiến độ chi tiết khu vực";
+
+                // Áp style tiêu đề cho toàn bộ 23 cột ở dòng 1
+                for (int c = 1; c <= 23; c++) { ws.Cell(1, c).Style = headerStyle; }
+
+                int currentRow = 2;
+                int sttCounter = 1;
+
+                // DUYỆT QUA CÁC BẢN GHI ĐÃ ĐƯỢC ĐỒNG BỘ BỘ LỌC VÀ SẮP XẾP
+                foreach (var budget in budgetRegistrations)
+                {
+                    var approvals = db.BudgetApprovals
+                                      .Where(a => a.BudgetRegistrationId == budget.BudgetRegistrationId)
+                                      .AsNoTracking()
+                                      .ToList();
+
+                    var rootApproval = approvals.FirstOrDefault(a => !a.IsSupplementary);
+                    var suppApprovals = approvals.Where(a => a.IsSupplementary).OrderBy(a => a.SupplementaryOrder).ToList();
+
+                    decimal tongDaDuyet = approvals.Where(a => a.NgayDuyetBGD.HasValue).Sum(a => a.DuToanPheDuyet ?? 0);
+                    decimal tongDangTrinh = approvals.Where(a => !a.NgayDuyetBGD.HasValue &&
+                                                    (a.NgayDuyetPDA.HasValue || a.NgayDuyetPKT.HasValue || a.NgayDuyetERPD.HasValue || a.NgayDuyetBTC.HasValue))
+                                                    .Sum(a => a.DuToanPheDuyet ?? 0);
+
+                    var latestProgressLog = db.ProgressLogs
+                                              .Where(p => p.BudgetRegistrationId == budget.BudgetRegistrationId)
+                                              .OrderByDescending(p => p.CreatedDate)
+                                              .AsNoTracking()
+                                              .FirstOrDefault();
+
+                    string progressAreaText = "";
+                    string tongTienDoText = "";
+                    if (latestProgressLog != null)
+                    {
+                        tongTienDoText = $"{latestProgressLog.TongTienDo}%";
+                        var logAreas = db.ProgressLogAreas
+                                         .Where(pa => pa.ProgressLogId == latestProgressLog.ProgressLogId)
+                                         .AsNoTracking()
+                                         .ToList();
+                        if (logAreas.Any())
+                        {
+                            progressAreaText = string.Join(" | ", logAreas.Select(la => $"{la.TenKhuVuc}: {la.TienDo}%"));
+                        }
+                    }
+
+                    ws.Cell(currentRow, 1).Value = sttCounter;
+                    ws.Cell(currentRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                    // Ghi dòng cha
+                    ws.Cell(currentRow, 2).Value = budget.ProjectAreaId == -1 ? budget.ProjectAreaCustom : (budget.ProjectArea?.AreaName ?? "");
+                    ws.Cell(currentRow, 3).Value = budget.PhongBan?.TenPhongBan ?? "";
+                    ws.Cell(currentRow, 4).Value = budget.MaHangMuc ?? "";
+                    ws.Cell(currentRow, 5).Value = budget.TenHangMuc ?? "";
+                    ws.Cell(currentRow, 6).Value = budget.MoTaKyThuat ?? "";
+
+                    if (budget.InvestmentReasonId.HasValue)
+                    {
+                        var reasonNode = db.BudgetInvestmentReasons.Find(budget.InvestmentReasonId.Value);
+                        ws.Cell(currentRow, 7).Value = reasonNode != null ? reasonNode.ReasonName : "";
+                    }
+                    else
+                    {
+                        ws.Cell(currentRow, 7).Value = budget.LyDoDauTu ?? "";
+                    }
+
+                    ws.Cell(currentRow, 8).Value = budget.DuToan ?? 0;
+                    ws.Cell(currentRow, 8).Style.NumberFormat.Format = "#,##0";
+                    ws.Cell(currentRow, 9).Value = budget.SoToTrinh ?? "";
+                    ws.Cell(currentRow, 10).Value = budget.BudgetCategoryType?.CategoryTypeName ?? "";
+                    ws.Cell(currentRow, 11).Value = budget.BudgetPriorityLevel?.PriorityLevelName ?? "";
+                    ws.Cell(currentRow, 12).Value = budget.SoLuong;
+                    ws.Cell(currentRow, 13).Value = $"{(budget.NgayBatDau.HasValue ? budget.NgayBatDau.Value.ToString("dd/MM/yyyy") : "")} - {(budget.NgayKetThuc.HasValue ? budget.NgayKetThuc.Value.ToString("dd/MM/yyyy") : "")}";
+                    ws.Cell(currentRow, 14).Value = budget.User?.HoTen ?? "";
+                    ws.Cell(currentRow, 15).Value = budget.LinkTaiLieuLienQuan ?? "";
+
+                    ws.Cell(currentRow, 16).Value = tongDaDuyet;
+                    ws.Cell(currentRow, 16).Style.NumberFormat.Format = "#,##0";
+                    ws.Cell(currentRow, 17).Value = tongDangTrinh;
+                    ws.Cell(currentRow, 17).Style.NumberFormat.Format = "#,##0";
+
+                    decimal nganSachGocValue = rootApproval != null ? (rootApproval.DuToanPheDuyet ?? 0) : 0;
+                    ws.Cell(currentRow, 18).Value = $"{nganSachGocValue:#,##0} (Gốc)";
+
+                    ws.Cell(currentRow, 19).Value = rootApproval?.SoThongBao ?? "";
+                    ws.Cell(currentRow, 20).Value = rootApproval?.SoFM ?? "";
+                    ws.Cell(currentRow, 21).Value = rootApproval?.SoIO ?? "";
+
+                    ws.Cell(currentRow, 22).Value = tongTienDoText;
+                    ws.Cell(currentRow, 23).Value = progressAreaText;
+
+                    for (int c = 1; c <= 23; c++) { ws.Cell(currentRow, c).Style.Border.OutsideBorder = XLBorderStyleValues.Thin; }
+
+                    currentRow++;
+                    sttCounter++;
+
+                    // Ghi dòng con bổ sung
+                    if (suppApprovals.Any())
+                    {
+                        foreach (var supp in suppApprovals)
+                        {
+                            ws.Cell(currentRow, 1).Value = "";
+
+                            decimal nganSachBoSung = supp.NganSachBoSung ?? 0;
+                            string ngayDuyetBsText = supp.NgayDuyetBGD.HasValue ? supp.NgayDuyetBGD.Value.ToString("dd/MM/yyyy") : "Chưa duyệt";
+
+                            ws.Cell(currentRow, 18).Value = $"{nganSachBoSung:#,##0} (Bổ sung đợt {supp.SupplementaryOrder})";
+                            ws.Cell(currentRow, 7).Value = $"[Lý do bổ sung]: {supp.LyDoBoSung}";
+                            ws.Cell(currentRow, 16).Value = $"BGĐ duyệt bổ sung: {ngayDuyetBsText}";
+
+                            ws.Cell(currentRow, 22).Value = tongTienDoText;
+                            ws.Cell(currentRow, 23).Value = progressAreaText;
+
+                            for (int c = 1; c <= 23; c++)
+                            {
+                                ws.Cell(currentRow, c).Style.Border.OutsideBorder = XLBorderStyleValues.Dotted;
+                            }
+
+                            currentRow++;
+                        }
+                    }
+                }
+
+                // Ẩn cột theo lựa chọn động
+                foreach (var item in colMapping)
+                {
+                    if (!fields.Contains(item.Key))
+                    {
+                        ws.Column(item.Value).Hide();
+                    }
+                }
+
+                ws.Columns().AdjustToContents();
+
+                // Xuất luồng Stream trả về file tải trực tiếp
+                using (var memoryStream = new MemoryStream())
+                {
+                    workbook.SaveAs(memoryStream);
+                    memoryStream.Position = 0;
+
+                    string excelFileName = $"BaoCao_NganSach_HPDQ_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                    return File(memoryStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelFileName);
+                }
+            }
+        }
+
+        [HttpGet]
+        public JsonResult GetDashboardData(int? phongBanId)
+        {
+            // Lấy toàn bộ danh sách đăng ký ngân sách dưới dạng NoTracking để tối ưu hóa bộ nhớ
+            var queryRegs = db.BudgetRegistrations.AsNoTracking().AsQueryable();
+            var queryApprovals = db.BudgetApprovals.AsNoTracking().AsQueryable();
+
+            // Áp dụng bộ lọc theo Phòng ban nếu có chọn
+            if (phongBanId.HasValue && phongBanId.Value > 0)
+            {
+                queryRegs = queryRegs.Where(r => r.PhongBanId == phongBanId.Value);
+                queryApprovals = queryApprovals.Where(a => a.BudgetRegistration.PhongBanId == phongBanId.Value);
+            }
+
+            var departments = db.PhongBans
+                        .Where(pb => pb.IsActive == true) // Chỉ lấy phòng ban đang hoạt động
+                        .OrderBy(pb => pb.TenPhongBan)
+                        .Select(pb => new SelectListItem
+                        {
+                            Value = pb.PhongBanId.ToString(),
+                            Text = pb.TenPhongBan,
+                            Selected = phongBanId.HasValue && pb.PhongBanId == phongBanId.Value
+                        })
+                        .ToList();
+
+                    // Thêm option "Tất cả phòng ban" ở đầu
+                    departments.Insert(0, new SelectListItem
+                    {
+                        Value = "",
+                        Text = "-- Tất cả đơn vị --",
+                        Selected = !phongBanId.HasValue
+                    });
+
+                    ViewBag.PhongBanList = departments;
+
+            var listRegs = queryRegs.ToList();
+            var listApprovals = queryApprovals.ToList();
+
+            // ── BIỂU ĐỒ 1: TÍNH TOÁN CÁC Ô SỐ TỔNG (CARDS) ──
+            var dto = new DashboardDataDto();
+            dto.TongSoHoSo = listRegs.Count;
+            dto.TongDuToanDeXuat = listRegs.Sum(r => r.DuToan ?? 0);
+
+            // Tính dòng tiền Ph phê duyệt dựa trên cờ TrangThaiPheDuyet (1: Đang trình, 2: Đã duyệt)
+            // - Đợt gốc (!IsSupplementary): Lấy trường DuToanPheDuyet
+            // - Đợt bổ sung (IsSupplementary): Lấy trường NganSachBoSung
+            dto.TongNganSachDangTrinh = listApprovals
+                .Where(a => a.TrangThaiPheDuyet == 1)
+                .Sum(a => a.IsSupplementary ? (a.NganSachBoSung ?? 0) : (a.DuToanPheDuyet ?? 0));
+
+            dto.TongNganSachDaDuyet = listApprovals
+                .Where(a => a.TrangThaiPheDuyet == 2)
+                .Sum(a => a.IsSupplementary ? (a.NganSachBoSung ?? 0) : (a.DuToanPheDuyet ?? 0));
+
+
+            // ── BIỂU ĐỒ 2: TỶ LỆ TRẠNG THÁI HỒ SƠ (PIE CHART) ──
+            // Định nghĩa text hiển thị dựa trên mã trạng thái Workflow thực tế của bạn
+            var statusMapping = new Dictionary<int, string> {
+        { 1, "Mới đăng ký" }, { 2, "Chờ duyệt" }, { 3, "Đã phê duyệt" }, { 4, "Trả về chỉnh sửa" }
+    };
+
+            var statusGroups = listRegs.GroupBy(r => r.TrangThai)
+                                       .Select(g => new {
+                                           Label = statusMapping.ContainsKey(g.Key) ? statusMapping[g.Key] : $"Trạng thái {g.Key}",
+                                           Count = g.Count()
+                                       }).ToList();
+
+            dto.StatusLabels = statusGroups.Select(g => g.Label).ToList();
+            dto.StatusValues = statusGroups.Select(g => g.Count).ToList();
+
+
+            // ── BIỂU ĐỒ 3: TƯƠNG QUAN NGÂN SÁCH THEO PHÒNG BAN (BAR CHART) ──
+            // Nhóm dữ liệu từ bảng Approvals theo tên phòng ban để vẽ cột đôi
+            var deptGroups = listApprovals
+                .GroupBy(a => a.BudgetRegistration.PhongBan?.TenPhongBan ?? "Chưa xác định")
+                .Select(g => new {
+                    DeptName = g.Key,
+                    Approved = g.Where(a => a.TrangThaiPheDuyet == 2).Sum(a => a.IsSupplementary ? (a.NganSachBoSung ?? 0) : (a.DuToanPheDuyet ?? 0)),
+                    Pending = g.Where(a => a.TrangThaiPheDuyet == 1).Sum(a => a.IsSupplementary ? (a.NganSachBoSung ?? 0) : (a.DuToanPheDuyet ?? 0))
+                }).OrderByDescending(g => g.Approved).Take(10).ToList(); // Lấy Top 10 phòng ban lớn nhất
+
+            dto.DeptLabels = deptGroups.Select(g => g.DeptName).ToList();
+            dto.DeptApprovedValues = deptGroups.Select(g => g.Approved).ToList();
+            dto.DeptPendingValues = deptGroups.Select(g => g.Pending).ToList();
+
+
+            // ── BIỂU ĐỒ 4: XU HƯỚNG ĐĂNG KÝ THEO THÁNG TRONG NĂM HIỆN TẠI (LINE CHART) ──
+            int currentYear = DateTime.Now.Year;
+            dto.MonthLabels = new List<string>();
+            dto.MonthRegistrationCounts = new List<int>();
+
+            for (int i = 1; i <= 12; i++)
+            {
+                dto.MonthLabels.Add($"Tháng {i}");
+                int count = listRegs.Count(r => r.CreatedDate.Year == currentYear && r.CreatedDate.Month == i);
+                dto.MonthRegistrationCounts.Add(count);
+            }
+
+            return Json(dto, JsonRequestBehavior.AllowGet);
         }
 
         // SỬA: đổi tham số từ single file sang IEnumerable

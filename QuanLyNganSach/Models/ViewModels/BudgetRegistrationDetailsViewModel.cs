@@ -47,7 +47,11 @@ namespace QuanLyNganSach.Models.ViewModels
 
         public ProgressConfigViewModel ThongTinTienDo { get; set; }
         public int TrangThaiHienThi { get; set; }
+        public string TrangThaiHoSo { get; set; }
         public int UserId { get; set; } // Cần để JS kiểm tra quyền Owner
+        public string TrangThaiHienThiText { get; set; }
+        public int? InvestmentReasonId { get; set; }
+        public bool IsManualReason { get; set; }
 
         // Constructor
         public BudgetRegistrationDetailsViewModel()

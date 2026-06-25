@@ -11,51 +11,97 @@
 <body class="bg-light">
 
     <div class="container">
-        <div class="row justify-content-center mt-5">
-            <div class="col-md-4">
-                <div class="card shadow">
-                    <div class="card-header text-center">
-                        <img src="~/Content/images/logo-inverse.png"
-                             class="img-fluid mt-2" />
-                        <div class="mt-2 fw-semibold text-secondary">
+        <div class="row justify-content-center align-items-start min-vh-100 pt-5">
+            <div class="col-md-5 col-lg-4">
+                <div class="card shadow-lg border-0 my-5">
+
+                    <div class="card-header border-0 bg-transparent text-center pt-4 pb-2">
+                        <img src="~/Content/images/logo-inverse.png" class="img-fluid px-4" alt="Corporate Logo" />
+                        <div class="mt-3 fs-5 fw-bold text-dark text-uppercase tracking-wide">
                             Phần mềm quản lý ngân sách
                         </div>
                     </div>
 
-                    <div class="card-body">
+                    <div class="card-body px-4 pb-4">
+                        <div class="alert alert-info d-flex align-items-center mb-3 shadow-sm border-0 bg-info-subtle text-info-emphasis" role="alert">
+                            <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                            <div class="small fw-medium">
+                                Sử dụng tài khoản <strong>Time365</strong> để đăng nhập vào hệ thống.
+                            </div>
+                        </div>
+
                         @if (ViewBag.Error != null)
                         {
-                            <div class="alert alert-danger">
-                                @ViewBag.Error
+                            <div class="alert alert-danger d-flex align-items-center mb-3 border-0 shadow-sm" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <div class="small">@ViewBag.Error</div>
                             </div>
                         }
 
-                        @using (Html.BeginForm())
+                        @using (Html.BeginForm(null, null, FormMethod.Post, new { @class = "mt-2" }))
                         {
                             @Html.AntiForgeryToken()
-                            <div class="mb-3">
-                                <label>Username</label>
-                                <input name="maNhanVien" class="form-control" required />
-                            </div>
 
                             <div class="mb-3">
-                                <label>Mật khẩu</label>
-                                <input type="password" name="matKhau" class="form-control" required />
+                                <label class="form-label fw-semibold text-secondary small">Mã nhân viên</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-person"></i></span>
+                                    <input type="text"
+                                           id="maNhanVienInput"
+                                           name="maNhanVien"
+                                           class="form-control border-start-0 bg-light text-uppercase"
+                                           style="text-transform: uppercase;"
+                                           required />
+                                </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100">
-                                Đăng nhập
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold text-secondary small">Mật khẩu</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-lock"></i></span>
+                                    <input type="password" id="txtMatKhau" name="matKhau" class="form-control border-start-0 border-end-0 bg-light" required />
+                                    <button class="btn btn-light border border-start-0 text-muted" type="button" id="btnTogglePassword">
+                                        <i class="bi bi-eye" id="toggleIcon"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm text-uppercase">
+                                Đăng nhập <i class="bi bi-box-arrow-in-right ms-1"></i>
                             </button>
                         }
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="~/Content/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
+    <script>
+        $(document).ready(function () {
+            $('#btnTogglePassword').on('click', function () {
+                const passwordField = $('#txtMatKhau');
+                const toggleIcon = $('#toggleIcon');
+
+                // Thay đổi thuộc tính type của ô input mật khẩu
+                if (passwordField.attr('type') === 'password') {
+                    passwordField.attr('type', 'text');
+                    toggleIcon.removeClass('bi-eye').addClass('bi-eye-slash');
+                } else {
+                    passwordField.attr('type', 'password');
+                    toggleIcon.removeClass('bi-eye-slash').addClass('bi-eye');
+                }
+            });
+
+            $('#maNhanVienInput').on('input', function () {
+                this.value = this.value.toUpperCase();
+            });
+        });
+    </script>
 </body>
 </html>
+
 <style>
     body {
         background: url('/Content/images/background.jpg') no-repeat center center fixed;
@@ -63,7 +109,7 @@
         position: relative;
     }
 
-    /* Lớp phủ tối */
+    /* Lớp phủ tối mượt cho màn hình nền */
     body::before {
         content: "";
         position: fixed;
@@ -71,20 +117,54 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.4); /* chỉnh độ tối tại đây */
+        background: rgba(15, 32, 67, 0.45); /* Chuyển màu phủ sang tone xanh navy sẫm cho hợp doanh nghiệp */
         z-index: 0;
     }
 
-    /* Đảm bảo nội dung nằm trên overlay */
+    /* Bảo đảm layout container nằm trên lớp phủ */
     .container {
         position: relative;
         z-index: 1;
     }
 
-    /* Làm card nổi bật hơn */
+    /* Đưa layout form ra chính giữa màn hình */
+    .min-vh-100 {
+        min-height: 100vh !important;
+    }
+
+    .row.align-items-start {
+        padding-top: 8vh !important; /* Đẩy form lên trên một khoảng bằng 8% chiều cao màn hình */
+    }
+
+    /* Tối ưu hóa cấu trúc Card Glassmorphism hiện đại */
     .card {
-        border-radius: 12px;
-        backdrop-filter: blur(6px);
-        background: rgba(255, 255, 255, 0.9);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.95);
+        transition: transform 0.2s ease;
+    }
+
+    /* Kiểu dáng viền cho các ô input-group */
+    .input-group .form-control:focus {
+        box-shadow: none;
+        border-color: #dee2e6;
+        background-color: #ffffff !important;
+    }
+
+    .input-group:focus-within {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        border-radius: 0.375rem;
+    }
+
+    .input-group:focus-within .input-group-text,
+    .input-group:focus-within .form-control,
+    .input-group:focus-within .btn {
+        border-color: #86b7fe;
+    }
+
+    /* Giãn chữ tiêu đề cho chuyên nghiệp */
+    .tracking-wide {
+        letter-spacing: 0.5px;
     }
 </style>

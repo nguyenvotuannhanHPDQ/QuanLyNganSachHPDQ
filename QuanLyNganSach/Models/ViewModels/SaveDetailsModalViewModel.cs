@@ -1,4 +1,5 @@
-﻿using System;
+﻿using QuanLyNganSach.Models.DTO;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -30,5 +31,6 @@ namespace QuanLyNganSach.Models.ViewModels
         public string LyDoDauTu { get; set; }
         public string MoTaKyThuat { get; set; }
         public string LinkTaiLieuLienQuan { get; set; }
+        public SaveProgressLogDto NhatKyTienDo { get; set; }
     }
 }

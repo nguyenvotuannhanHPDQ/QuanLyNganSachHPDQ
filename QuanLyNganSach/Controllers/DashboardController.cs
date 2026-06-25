@@ -25,6 +25,14 @@ namespace QuanLyNganSach.Controllers
                 return RedirectToAction("Index", "Budget");
             }
 
+            var danhSachPhongBan = db.PhongBans
+                             .AsNoTracking()
+                             .OrderBy(p => p.TenPhongBan)
+                             .ToList();
+
+            // Khởi tạo SelectList (Value là ID kiểu int, Text hiển thị là Tên phòng ban)
+            ViewBag.PhongBanList = new SelectList(danhSachPhongBan, "PhongBanId", "TenPhongBan");
+
             // Load dropdowns cho bộ lọc
             ViewBag.DsProjectArea = db.ProjectAreas
                 .OrderBy(p => p.AreaName)

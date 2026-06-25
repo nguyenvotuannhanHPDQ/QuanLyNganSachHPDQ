@@ -3,11 +3,107 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.Title - My ASP.NET Application</title>
+    <title>@ViewBag.Title</title>
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
     <link href="~/Content/menu-admin.css" rel="stylesheet" />
     <link href="~/Content/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
+    <style>
+        .noti-item {
+            text-decoration: none;
+            color: inherit;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background .15s;
+        }
+
+        .noti-item:hover {
+            background: #f8f9fa;
+            color: inherit;
+        }
+
+        .noti-unread {
+            background: #eef4ff;
+        }
+
+        .noti-unread:hover {
+            background: #ddeeff;
+        }
+
+        /* ── CSS TỐI ƯU GIAO DIỆN CỐ ĐỊNH ── */
+        body {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            overflow-x: hidden;
+        }
+        /* Top Navbar sát mép */
+        .navbar-custom {
+            height: 56px;
+            z-index: 1030;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        /* Sidebar cố định bên trái */
+        .sidebar {
+            position: fixed;
+            top: 56px;
+            bottom: 0;
+            left: 0;
+            width: 250px;
+            z-index: 1020;
+            background-color: #ffffff;
+            border-right: 1px solid #dee2e6;
+            transition: all 0.25s ease-in-out;
+            overflow-y: auto;
+        }
+        /* Menu Sidebar dạng phẳng */
+        .sidebar-heading {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05rem;
+            font-weight: 700;
+            padding: 1.25rem 1rem 0.5rem;
+            color: #6c757d;
+        }
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #333333;
+            padding: 0.6rem 1rem;
+            border-radius: 0.25rem;
+            margin: 0.1rem 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.15s ease;
+        }
+        .sidebar .nav-link:hover {
+            background-color: #f1f3f5;
+            color: #0d6efd;
+        }
+        .sidebar .nav-link.active {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+            font-weight: 600;
+        }
+        /* Vùng nội dung chính bên phải */
+        .main-wrapper {
+            margin-left: 250px;
+            padding-top: 56px;
+            transition: all 0.25s ease-in-out;
+            min-height: 100vh;
+        }
+        /* Trạng thái khi Thu gọn Sidebar (Toggled) */
+        body.sidebar-toggled .sidebar {
+            left: -250px;
+        }
+        body.sidebar-toggled .main-wrapper {
+            margin-left: 0;
+        }
+        /* Hỗ trợ Responsive màn hình nhỏ */
+        media (max-width: 767.98px) {
+            .sidebar { left: -250px; }
+            .main-wrapper { margin-left: 0; }
+            body.sidebar-toggled .sidebar { left: 0; }
+        }
+    </style>
 </head>
 
 @{
@@ -15,94 +111,52 @@
 }
 
 <body>
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-light fixed-top">
-        <div class="container">
-            <a class="navbar-brand" href="@Url.Action("Index", "Dashboard", new { area = "" })">
-                <img src="~/Content/images/logo-inverse.png"
-                     alt="Logo công ty"
-                     class="img-fluid"
-                     style="max-height:40px;" />
-            </a>
-            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" title="Toggle navigation" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    @*<li class="nav-item">
-                            @Html.ActionLink("Đăng ký ngân sách", "Create", "Budget", new { area = "" }, new { @class = "nav-link text-dark" })
-                        </li>*@
-                    <li class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle text-dark">
-                            Đăng ký ngân sách
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li>
-                                @Html.ActionLink("Đăng ký mới", "Create", "Budget", new { area = "" }, new { @class = "dropdown-item" })
-                            </li>
-                            <li>
-                                @Html.ActionLink("Danh sách đăng ký", "Index", "Budget", new { area = "" }, new { @class = "dropdown-item" })
-                            </li>
-                            @if (user != null && user.RoleId == QuanLyNganSach.Constants.RoleConst.Admin)
-                            {
-                                <li>
-                                    @Html.ActionLink("Cấu hình Đăng ký", "Config", "Budget", new { area = "" }, new { @class = "dropdown-item" })
-                                </li>
-                            }
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        @Html.ActionLink("Report", "Index", "Dashboard", new { area = "" }, new { @class = "nav-link text-dark" })
-                    </li>
-                    @if (user != null && user.RoleId == QuanLyNganSach.Constants.RoleConst.Admin)
-                    {
-                        <li class="nav-item dropdown">
-                            <a href="#" class="nav-link dropdown-toggle text-dark">
-                                Quản lý tài khoản
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    @Html.ActionLink("Tạo mới tài khoản", "Create", "User", new { area = "Admin" }, new { @class = "dropdown-item" })
-                                </li>
-                                <li>
-                                    @Html.ActionLink("Danh sách tài khoản", "Index", "User", new { area = "Admin" }, new { @class = "dropdown-item" })
-                                </li>
-                                @*<li>
-                                        @Html.ActionLink("Đồng bộ", "Index", "Sync", new { area = "" }, new { @class = "dropdown-item" })
-                                    </li>*@
-                            </ul>
-                        </li>
-                    }
-                </ul>
+    <nav class="navbar navbar-expand-md navbar-light bg-light fixed-top navbar-custom">
+        <div class="container-fluid px-3">
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-light border-0 btn-sm" id="sidebarToggle" title="Ẩn/Hiện Menu">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <a class="navbar-brand d-flex align-items-center py-0 m-0" href="@Url.Action("Index", "Dashboard", new { area = "" })">
+                    <img src="~/Content/images/logo-inverse.png" alt="HPDQ" class="img-fluid" style="max-height:40px;" />
+                </a>
+            </div>
 
-                <ul class="navbar-nav">
+            <div class="d-flex align-items-center gap-1">
+                <ul class="navbar-nav flex-row align-items-center gap-3">
                     @if (user != null)
                     {
+                        <li class="nav-item position-relative" id="notiNavItem">
+                            <a class="nav-link position-relative py-1" href="#" id="noti-bell" data-bs-toggle="dropdown" aria-expanded="false" title="Thông báo">
+                                <i class="bi bi-bell fs-5 text-dark"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="noti-count" style="display:none; font-size:.6rem;">0</span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end shadow p-0" id="noti-dropdown" style="width:360px; max-height:480px; overflow-y:auto;">
+                                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-light">
+                                    <span class="fw-bold small">Thông báo</span>
+                                    <a href="#" class="small text-primary" id="noti-mark-all">Đánh dấu tất cả đã đọc</a>
+                                </div>
+                                <div id="noti-list">
+                                    <div class="text-center text-muted small py-3">Đang tải...</div>
+                                </div>
+                            </div>
+                        </li>
+
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-dark d-flex align-items-center gap-1"
-                               href="#"
-                               id="accountDropdown"
-                               role="button"
-                               data-bs-toggle="dropdown"
-                               aria-expanded="false"
-                               title="Tài khoản">
+                            <a class="nav-link dropdown-toggle text-dark d-flex align-items-center gap-1 py-1" href="#" id="accountDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Tài khoản">
                                 <i class="bi bi-person-circle fs-5 text-primary"></i>
-                                <span class="fw-semibold text-dark">
-                                    @user.UserName
-                                </span>
+                                <span class="fw-semibold text-dark">@user.UserName - @user.HoTen</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                 <li>
                                     <a class="dropdown-item" href="@Url.Action("ChangePassword", "Account", new { area = "" })">
-                                        <i class="bi bi-key me-2"></i>
-                                        Đổi mật khẩu
+                                        <i class="bi bi-key me-2"></i> Đổi mật khẩu
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider" /></li>
                                 <li>
                                     <a class="dropdown-item text-danger" href="@Url.Action("Logout", "Account", new { area = "" })">
-                                        <i class="bi bi-box-arrow-right me-2"></i>
-                                        Đăng xuất
+                                        <i class="bi bi-box-arrow-right me-2"></i> Đăng xuất
                                     </a>
                                 </li>
                             </ul>
@@ -112,8 +166,52 @@
             </div>
         </div>
     </nav>
-    <div class="container body-content pb-5">
-        @RenderBody()
+    <div class="sidebar">
+        <div class="nav flex-column">
+
+            <div class="sidebar-heading"><i class="bi bi-speedometer2 me-1"></i> Tổng quan</div>
+            <a href="@Url.Action("Index", "Dashboard", new { area = "" })" class="nav-link">
+                <i class="bi bi-pie-chart-fill text-danger"></i> Dashboard
+            </a>
+
+            <div class="sidebar-heading"><i class="bi bi-wallet2 me-1"></i> Đăng ký ngân sách</div>
+            <a href="@Url.Action("Index", "Budget", new { area = "" })" class="nav-link">
+                <i class="bi bi-collection-fill text-primary"></i> Tất cả hồ sơ
+            </a>
+            <a href="@Url.Action("Create", "Budget", new { area = "" })" class="nav-link">
+                <i class="bi bi-plus-circle-fill text-success"></i> Đăng ký mới
+            </a>
+
+            @if (user != null && user.RoleId == QuanLyNganSach.Constants.RoleConst.Admin)
+            {
+                <a href="@Url.Action("Revisions", "Budget", new { area = "" })" class="nav-link">
+                    <i class="bi bi-hourglass-split text-warning"></i> Hồ sơ chờ duyệt
+                </a>
+                <a href="@Url.Action("Config", "Budget", new { area = "" })" class="nav-link">
+                    <i class="bi bi-gear-fill text-secondary"></i> Cấu hình đăng ký
+                </a>
+
+                <div class="sidebar-heading"><i class="bi bi-shield-lock me-1"></i> Quản trị</div>
+                <a href="@Url.Action("Index", "User", new { area = "Admin" })" class="nav-link">
+                    <i class="bi bi-people-fill text-info"></i> Danh sách tài khoản
+                </a>
+                <a href="@Url.Action("Create", "User", new { area = "Admin" })" class="nav-link">
+                    <i class="bi bi-person-plus-fill text-dark"></i> Tạo mới tài khoản
+                </a>
+            }
+        </div>
+    </div>
+    <div class="main-wrapper">
+        <div class="container-fluid body-content px-4 py-3 pb-5">
+            @*<div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">
+                        <i class="bi bi-file-earmark-diff me-2 text-warning"></i>
+                    </h5>
+                    <span class="badge bg-warning text-dark fs-6"></span>
+                </div>*@
+
+            @RenderBody()
+        </div>
     </div>
 
     <footer class="footer fixed-bottom bg-light text-dark">
@@ -135,5 +233,152 @@
     <!-- Chosen JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.jquery.min.js"></script>
     @RenderSection("scripts", required: false)
+
+
+    @* SignalR *@
+    <script src="~/Scripts/jquery.signalR-2.4.3.min.js"></script>
+    <script src="~/signalr/hubs"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#sidebarToggle').on('click', function (e) {
+                e.preventDefault();
+                $('body').toggleClass('sidebar-toggled');
+            });
+
+            var currentUrl = window.location.pathname;
+            $('.sidebar .nav-link').each(function () {
+                var linkUrl = $(this).attr('href');
+                if (currentUrl === linkUrl) {
+                    $(this).addClass('active');
+                }
+            });
+        });
+    </script>
+    <script>
+        (function () {
+            // Khởi tạo SignalR connection
+            var notiHub = $.connection.notificationHub;
+
+            // Nhận thông báo realtime
+            notiHub.client.receiveNotification = function (noti) {
+                _prependNotification(noti);
+                _incrementBadge();
+            };
+
+            $.connection.hub.start().done(function () {
+                // Join group theo UserId
+                var userId = '@(user != null ? user.UserId.ToString() : "0")';
+                notiHub.server.joinUserGroup(userId);
+            });
+
+            // Load danh sách thông báo khi mở dropdown
+            $('#noti-bell').on('click', function () {
+                _loadNotifications();
+            });
+
+            // Đánh dấu tất cả đã đọc
+            $('#noti-mark-all').on('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $.post('/Budget/MarkAllNotificationsRead', function () {
+                    $('#noti-list .noti-item').removeClass('noti-unread');
+                    _setBadge(0);
+                });
+            });
+
+            function _loadNotifications() {
+                $.get('/Budget/GetNotifications', function (res) {
+                    _setBadge(res.unreadCount);
+                    var $list = $('#noti-list').empty();
+
+                    if (res.list.length === 0) {
+                        $list.html(
+                            '<div class="text-center text-muted small py-3">' +
+                            'Không có thông báo nào.</div>'
+                        );
+                        return;
+                    }
+
+                    $.each(res.list, function (_, n) {
+                        $list.append(_buildNotiItem(n));
+                    });
+                });
+            }
+
+            function _buildNotiItem(n) {
+                console.log('n: ' + n)
+                var unreadClass = n.isRead ? '' : 'noti-unread';
+                var $item = $('<a></a>')
+                    .addClass('noti-item d-flex gap-2 px-3 py-2 ' + unreadClass)
+                    .attr('href', 'javascript:void(0)')
+                    .attr('data-noti-id', n.notificationId)
+                    .attr('data-url', n.url || '');
+
+                $item.append(
+                    '<div class="flex-shrink-0 mt-1">' +
+                    '  <i class="bi bi-bell' + (n.isRead ? '' : '-fill text-primary') + '"></i>' +
+                    '</div>'
+                );
+                $item.append(
+                    '<div class="flex-fill">' +
+                    '  <div class="small fw-semibold">' + (n.title || '') + '</div>' +
+                    '  <div class="small text-muted">' + (n.message || '') + '</div>' +
+                    '  <div class="small text-muted fst-italic">' + (n.createdDate || '') + '</div>' +
+                    '</div>'
+                );
+
+                return $item;
+            }
+
+            // Click vào thông báo → đánh dấu đã đọc → navigate
+            $(document).on('click', '.noti-item', function () {
+                var $item = $(this);
+                // SỬA: dùng .attr() thay vì .data()
+                var notiId = $item.attr('data-noti-id');
+                var url = $item.attr('data-url');
+                console.log(notiId)
+                console.log(url)
+
+                if (notiId) {
+                    $.post('/Budget/MarkNotificationRead',
+                        { notificationId: notiId });
+                    $item.removeClass('noti-unread');
+                    $item.find('i').removeClass('bi-bell-fill text-primary')
+                        .addClass('bi-bell');
+                }
+
+                if (url && url.trim() !== '') {
+                    window.location.href = url;
+                }
+            });
+
+            function _prependNotification(n) {
+                var $list = $('#noti-list');
+                // Xóa placeholder "Không có thông báo"
+                $list.find('.text-center').remove();
+                $list.prepend(_buildNotiItem(n));
+            }
+
+            function _setBadge(count) {
+                var $badge = $('#noti-count');
+                if (count > 0) {
+                    $badge.text(count > 99 ? '99+' : count).show();
+                } else {
+                    $badge.hide();
+                }
+            }
+
+            function _incrementBadge() {
+                var current = parseInt($('#noti-count').text()) || 0;
+                _setBadge(current + 1);
+            }
+
+            // Load badge count khi trang load
+            $.get('/Budget/GetNotifications', function (res) {
+                _setBadge(res.unreadCount);
+            });
+        })();
+    </script>
 </body>
 </html>

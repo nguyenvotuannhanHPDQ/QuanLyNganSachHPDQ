@@ -14,6 +14,7 @@ namespace QuanLyNganSach.Models.ViewModels
         [Required(ErrorMessage = "Vui lòng nhập tên hạng mục")]
         public string TenHangMuc { get; set; }
 
+        [Required(ErrorMessage = "Vui lòng nhập dự toán")]
         [Range(0.01, double.MaxValue, ErrorMessage = "Vui lòng nhập dự toán hợp lệ")]
         public decimal DuToan { get; set; }
 
@@ -29,6 +30,8 @@ namespace QuanLyNganSach.Models.ViewModels
         public int SoLuong { get; set; }
 
         public string LyDoDauTu { get; set; }
+        public int? InvestmentReasonId { get; set; }
+        public IEnumerable<SelectListItem> InvestmentReasons { get; set; }
 
         public string MoTaKyThuat { get; set; }
 
@@ -38,8 +41,7 @@ namespace QuanLyNganSach.Models.ViewModels
         [DataType(DataType.Date)]
         public DateTime? NgayKetThuc { get; set; }
 
-
-        public HttpPostedFileBase HoSoCanCu { get; set; }
+        public IEnumerable<HttpPostedFileBase> HoSoCanCu { get; set; }
 
         public string LinkTaiLieuLienQuan { get; set; }
 
