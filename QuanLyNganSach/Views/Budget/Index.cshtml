@@ -35,7 +35,7 @@
                     <a href="@Url.Action("Create", "Budget")" class="btn btn-primary shadow-sm fw-semibold">
                         <i class="bi bi-plus-circle me-1"></i> Đăng ký mới
                     </a>
-                    @if (ViewBag.IsManagerOrAdmin == true)
+                    @if (ViewBag.IsAdmin == true)
                     {
                         <button type="button" class="btn btn-success shadow-sm fw-semibold" id="btnOpenExportModal">
                             <i class="bi bi-file-earmark-excel me-1"></i> Xuất dữ liệu Excel
@@ -66,8 +66,9 @@
                 <div class="card-header bg-light py-3 border-bottom border-light-subtle">
                     @using (Html.BeginForm("Index", "Budget", FormMethod.Get, new { id = "searchForm" }))
                     {
-                        <div class="row align-items-center g-2">
-                            <div class="col-12 col-md-4 col-lg-4">
+                        <div class="row align-items-center gx-3 gy-2">
+
+                            <div class="col-12 col-md-3 col-lg-3">
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-white border-end-0 text-muted">
                                         <i class="bi bi-search"></i>
@@ -86,6 +87,18 @@
                                     }
                                 </div>
                             </div>
+
+                            @if (ViewBag.IsManagerOrAdmin == false)
+                            {
+                                <div class="col-12 col-md-3 col-lg-3">
+                                    <select id="filterScope" name="filterScope" class="form-select form-select-sm fw-medium border-primary-subtle bg-white">
+                                        <option value="my-and-assigned" @(ViewBag.CurrentFilterScope == "my-and-assigned" ? "selected" : "")>Hồ sơ đăng ký & Phân nhiệm</option>
+                                        <option value="my-records" @(ViewBag.CurrentFilterScope == "my-records" ? "selected" : "")>Hồ sơ đăng ký</option>
+                                        <option value="assigned-records" @(ViewBag.CurrentFilterScope == "assigned-records" ? "selected" : "")>Hồ sơ được phân nhiệm</option>
+                                        <option value="dept-records" @(ViewBag.CurrentFilterScope == "dept-records" ? "selected" : "")>Hồ sơ cùng bộ phận</option>
+                                    </select>
+                                </div>
+                            }
 
                             @if (ViewBag.IsManagerOrAdmin == true)
                             {
@@ -111,7 +124,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-12 col-md-2 col-lg-2">
+                            <div class="col-12 col-md-3 col-lg-3">
                                 <select id="sortOrder" name="sortOrder" class="form-select form-select-sm">
                                     <option value="newest" @(ViewBag.CurrentSort == "newest" ? "selected" : "")>Ngày tạo mới nhất</option>
                                     <option value="oldest" @(ViewBag.CurrentSort == "oldest" ? "selected" : "")>Ngày tạo cũ nhất</option>
@@ -120,15 +133,6 @@
                                 </select>
                             </div>
 
-                            @if (ViewBag.CurrentFilterTrangThai != null)
-                            {
-                                <div class="col-auto ms-auto">
-                                    <a href="@Url.Action("Index", "Budget", new { search = ViewBag.CurrentSearch, sortOrder = ViewBag.CurrentSort, phongBanId = ViewBag.CurrentPhongBanId })"
-                                       class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
-                                        <i class="bi bi-arrow-counterclockwise"></i> Đặt lại
-                                    </a>
-                                </div>
-                            }
                         </div>
                     }
                 </div>
@@ -550,9 +554,18 @@
                                     <select class="form-select" id="modal_AreaName">
                                         @foreach (var item in (IEnumerable<SelectListItem>)ViewBag.DsKhuVucModal)
                                         {
-                                            <option value="@item.Value">@item.Text</option>
+                                            @*<option value="@item.Value">@item.Text</option>*@
+                                            <option value="@item.Value" data-is-custom="@(item.Disabled ? "true" : "false")">
+                                                @item.Text
+                                            </option>
                                         }
                                     </select>
+                                </div>
+                                <div class="col-md-4 mb-3" id="divModalProjectAreaCustom" style="display: none;">
+                                    <label class="form-label fw-semibold text-danger small">
+                                        Tên khu vực khác
+                                    </label>
+                                    <input type="text" class="form-control" id="modal_ProjectAreaNameCustom" placeholder="Tên khu vực tự nhập..." />
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label fw-semibold text-muted small">
@@ -880,8 +893,7 @@
                             </div>
                             <!-- CARD NGÂN SÁCH GỐC -->
                             <div class="card border-primary mb-3" id="cardNganSachGoc">
-                                <div class="card-header bg-primary text-white d-flex
-            justify-content-between align-items-center py-2">
+                                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-2">
                                     <span class="fw-semibold">
                                         <i class="bi bi-wallet2 me-1"></i>Ngân sách gốc
                                     </span>
@@ -1077,13 +1089,6 @@
                                     <i class="bi bi-plus-circle me-2"></i>Thêm khu vực
                                 </button>
 
-                                <!-- ── NÚT LƯU TIẾN ĐỘ ── -->
-                                @*<div class="mt-3 text-end">
-                                        <button id="btn-save-progress" type="button" class="btn btn-success">
-                                            <i class="bi bi-save me-1"></i>Lưu tiến độ
-                                        </button>
-                                    </div>*@
-
                                 <!-- ── TOAST THÔNG BÁO ── -->
                                 <div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
                                     <div id="nk-toast" class="toast align-items-center text-white border-0" role="alert">
@@ -1170,13 +1175,17 @@
 
             <!-- FOOTER -->
             <div class="modal-footer">
-                @if (ViewBag.IsManagerOrAdmin == true)
+                @if (ViewBag.IsAdmin == true)
                 {
                     <button type="button" class="btn btn-warning"
                             id="btnTraHoSo" style="display:none;">
                         <i class="bi bi-arrow-return-left me-1"></i>Trả hồ sơ
                     </button>
                 }
+                <button type="button" class="btn btn-success"
+                        id="btn-save-progress" style="display: none;">
+                    <i class="bi bi-save me-1"></i>Lưu tiến độ
+                </button>
                 <button type="button" class="btn btn-info text-white"
                         id="btnGuiLai" style="display:none;">
                     <i class="bi bi-send me-1"></i>Gửi lại
@@ -1347,7 +1356,7 @@
             });
 
             // Auto-submit when department filter changes (for Manager/Admin)
-            $('#phongBanId, #filterTienDo, #filterTrangThai').on('change', function () {
+            $('#phongBanId, #filterTienDo, #filterTrangThai, #filterScope').on('change', function () {
                 $('#searchForm').submit();
             });
 
@@ -1412,7 +1421,7 @@
             // ── Mở modal khi click nút Xem ──────────────────────────────
             $(document).on('click', '.btn-view-modal', function () {
                 currentBudgetId = $(this).data('budget-id');
-                isPhanNhiemUserGlobal = $(this).data('is-phan-nhiem') === true;
+                window.isPhanNhiemUserGlobal = $(this).data('is-phan-nhiem') === true;
                 modalRowIndex   = 0;
 
                 // Reset về trạng thái loading
@@ -1531,22 +1540,18 @@
             }
 
             var isManagerOrAdminGlobal = false;
+            var isManagerGlobal = false;
+            var isAdminGlobal = false;
 
             // ── Bind dữ liệu vào các field ──────────────────────────────
             function bindModalData(data) {
                 isManagerOrAdminGlobal = data.IsManagerOrAdmin;
+                isManagerGlobal = data.IsManager;
+                isAdminGlobal = data.IsAdmin;
 
-                var status = data.TrangThaiHienThi; // Cần đảm bảo ViewModel trả về trường này
-                var isOwner = data.UserId === currentUserIdGlobal; // CurrentUserId lấy từ biến toàn cục hệ thống
+                var status = data.TrangThaiHienThi;
+                var isOwner = data.UserId === currentUserIdGlobal;
 
-                //var canEdit = isManagerOrAdminGlobal || (isOwner && [0, 1, 6].includes(status));
-
-                //// Mở/Khóa các trường
-                //$('#detail-phieu input, #detail-phieu textarea, #detail-phieu select').not('#modal_TenPhongBan, #modal_MaHangMuc, #modal_TenNguoiDangKy, #modal_LyDoChinhSua').prop('readonly', !canEdit).prop('disabled', !canEdit);
-
-                // Header
-                //$('#modalMaHangMuc').text(data.MaHangMuc);
-                // *** THAY ĐỔI: Ẩn/hiện MaHangMuc theo giá trị ***
                 if (data.MaHangMuc) {
                     $('#modalMaHangMuc').text(data.MaHangMuc).show();
                     $('#modal_MaHangMuc').closest('.col-md-4').show();
@@ -1554,40 +1559,36 @@
                     $('#modalMaHangMuc').text('').hide();
                     $('#modal_MaHangMuc').closest('.col-md-4').hide();
                 }
-
+                console.log(data.ProjectAreaCustom)
                 // Tab Phiếu đăng ký
-                //$('#modal_AreaName').val(data.ProjectAreaId);
                 $('#modal_TenPhongBan').val(data.TenPhongBan);
                 $('#modal_MaHangMuc').val(data.MaHangMuc);
                 $('#modal_TenNguoiDangKy').val(data.TenNguoiDangKy);
 
                 $('#modal_AreaName').val(data.ProjectAreaId);
+                $('#modal_ProjectAreaNameCustom').val(data.ProjectAreaCustom || '');
+                checkModalAreaCustomVisibility();
                 $('#modal_TenHangMuc').val(data.TenHangMuc);
-                $('#modal_DuToan').val(formatCurrency(data.DuToan)); // Vẫn hiển thị format đẹp
+                $('#modal_DuToan').val(formatCurrency(data.DuToan));
                 $('#modal_SoToTrinh').val(data.SoToTrinh);
-                $('#modal_CategoryTypeId').val(data.CategoryTypeId); // Bind theo ID
-                $('#modal_PriorityLevelId').val(data.PriorityLevelId); // Bind theo ID
+                $('#modal_CategoryTypeId').val(data.CategoryTypeId);
+                $('#modal_PriorityLevelId').val(data.PriorityLevelId);
                 $('#modal_SoLuong').val(data.SoLuong);
                 $('#modal_NgayBatDau').val(formatDateForInput(data.NgayBatDau));
                 $('#modal_NgayKetThuc').val(formatDateForInput(data.NgayKetThuc));
-                console.log('data.InvestmentReasonId: ' + data.InvestmentReasonId)
-                console.log('data.IsManualReason: ' + data.IsManualReason)
                 if (data.InvestmentReasonId) {
                     $('#modal_InvestmentReasonId').val(data.InvestmentReasonId);
                 } else if (data.IsManualReason) {
-                    // Nếu không có ID nhưng là bản ghi nhập tay cũ/mới, trỏ dropdown về option "Điền thủ công"
-                    // (Lưu ý: Đảm bảo trị value của option "Điền thủ công" khớp với danh mục trên view của bạn)
                     $("#modal_InvestmentReasonId option").filter(function () {
                         return $(this).text().trim() === "Điền thủ công";
                     }).prop('selected', true);
                 } else {
-                    $('#modal_InvestmentReasonId').val(''); // Trạng thái chưa chọn
+                    $('#modal_InvestmentReasonId').val('');
                 }
                 $('#modal_LyDoDauTu').val(data.LyDoDauTu);
                 $('#modal_MoTaKyThuat').val(data.MoTaKyThuat);
                 $('#modal_LinkTaiLieu').val(data.LinkTaiLieuLienQuan);
 
-                // Thực hiện ẩn/hiện vùng Textarea dựa trên cờ IsManualReason
                 if (data.IsManualReason) {
                     $('#modal_divLyDoNhapTay').show();
                 } else {
@@ -1595,7 +1596,7 @@
                 }
 
                 var statusText = data.TrangThaiHienThiText || "Chưa xác định";
-                var badgeClass = "bg-secondary text-white"; // Màu mặc định
+                var badgeClass = "bg-secondary text-white";
 
                 switch (statusText) {
                     case "Đăng ký mới":
@@ -1624,19 +1625,17 @@
                     .text(statusText)
                     .show();
 
-                // Attachments
                 renderAttachments(data.Attachments);
 
                 $('#containerBoSung').empty();
 
-                // Workflow dropdown
                 if (data.IsManagerOrAdmin) {
                     $('#workflowSection').show();
                     $('#modal_WorkflowType').val(data.WorkflowType || '');
                     applyWorkflowTabs(data.WorkflowType);
                 } else {
                     $('#workflowSection').hide();
-                    // *** THÊM MỚI: Chủ hồ sơ thấy tab Nhật ký nếu WorkflowType = 1 ***
+                    // Chủ hồ sơ thấy tab Nhật ký nếu WorkflowType = 1 ***
                     applyWorkflowTabs(data.WorkflowType);
                 }
 
@@ -1659,7 +1658,7 @@
 
                 originalPhanNhiemList = data.DanhSachPhanNhiem;
 
-                // *** THÊM MỚI: Init dropdowns filter ***
+                // Init dropdowns filter ***
                 initPhanNhiemFilters();
 
                 // *** THÊM MỚI — gọi bind tab Phê duyệt ***
@@ -1718,10 +1717,24 @@
                 $('#modal_AttachmentsList').html(html);
             }
 
+            function checkModalAreaCustomVisibility() {
+                var $selectedOption = $('#modal_AreaName option:selected');
+                var isCustom = $selectedOption.data('is-custom') === true || $selectedOption.data('is-custom') === "true";
+
+                if (isCustom) {
+                    console.log('isCustom')
+                    $('#divModalProjectAreaCustom').slideDown(200);
+                } else {
+                    console.log('isNoCustom')
+                    $('#divModalProjectAreaCustom').slideUp(150);
+                    $('#modal_ProjectAreaNameCustom').val(''); // Xóa nội dung bên trong nếu chuyển về khu vực mẫu
+                }
+            }
+
             function applyWorkflowTabs(workflowType) {
                 if (parseInt(workflowType) === 1) {
-                    // *** THAY ĐỔI: Tab Phê duyệt chỉ hiện với Admin/Manager ***
-                    if (isManagerOrAdminGlobal) {
+                    // Tab Phê duyệt chỉ hiện với Admin
+                    if (isAdminGlobal) {
                         $('#tabPheDuyetItem').removeClass('d-none');
                     }
                     $('#tabNhatKyItem').removeClass('d-none');
@@ -1739,6 +1752,10 @@
                     }
                 }
             }
+
+            $('#modal_AreaName').on('change', function () {
+                checkModalAreaCustomVisibility();
+            });
 
             // ── Lắng nghe thay đổi WorkflowType ─────────────────────────
             $(document).on('change', '#modal_WorkflowType', function () {
@@ -1790,7 +1807,7 @@
 
             // ── Tạo HTML 1 dòng Phân nhiệm trong modal ──────────────────
             function taoHtmlDongModal(idx) {
-                var optionsPhongBan = '<option value="">-- Chọn --</option>';
+                var optionsPhongBan = '<option value="">-- Chọn bộ phận --</option>';
                 $.each(dsPhongBan, function (i, pb) {
                     optionsPhongBan += '<option value="' + pb.value + '">'
                                      + pb.text + '</option>';
@@ -2133,7 +2150,7 @@
 
                 if (!validatePhanNhiem()) return;
 
-                if (isManagerOrAdminGlobal) {
+                if (isAdminGlobal) {
                     // *** THÊM MỚI: Validate 3 field bắt buộc khi có ngày BGĐ ***
                     var bgdVal = $('#pd_NgayDuyetBGD').val();
                     if (!!bgdVal) {
@@ -2320,7 +2337,7 @@
             }
 
             // ── Helper: hiện alert trong modal ──────────────────────────
-            function showModalAlert(type, message) {
+            window.showModalAlert = function(type, message) {
                 var html = '<div class="alert alert-' + type + ' alert-dismissible '
                          + 'fade show mt-3" role="alert">'
                          + '<i class="bi bi-' + (type === 'success'
@@ -2611,56 +2628,6 @@
                 updateMocNgayState();
             });
 
-            // ── Hiển thị badge trạng thái + disable button ───────────────
-            //function applyTrangThaiPheDuyet(trangThai, isManagerOrAdmin) {
-            //    var $badge = $('#badgeTrangThaiPheDuyet');
-            //    var $duToanInput = $('#pd_DuToanPheDuyet');
-
-            //    switch (trangThai) {
-            //        case 0: // Chờ trình
-            //            $badge.text('Chờ trình')
-            //                .removeClass('bg-success bg-warning text-dark')
-            //                .addClass('bg-secondary');
-            //            $duToanInput.val('')
-            //                .prop('readonly', true)
-            //                .attr('placeholder', 'Chưa có duyệt từ BGĐ');
-            //            break;
-
-            //        case 1: // Đang trình
-            //            var duToanGoc = $('#pd_DuToanGoc').val();
-
-            //            // Format số (nếu cần)
-            //            var formatted = duToanGoc
-            //                ? Number(duToanGoc.replace(/[^\d]/g, '')).toLocaleString('en-US') + ' VND'
-            //                : '';
-            //            $badge.text('Đang trình' + (formatted ? ' ' + formatted : ''))
-            //                .removeClass('bg-success bg-secondary')
-            //                .addClass('bg-warning text-dark');
-            //            $duToanInput.val('')
-            //                .prop('readonly', true)
-            //                .attr('placeholder', 'Chưa có duyệt từ BGĐ');
-            //            break;
-
-            //        case 2: // Đã phê duyệt
-            //            $badge.text('Đã phê duyệt')
-            //                .removeClass('bg-warning bg-secondary text-dark')
-            //                .addClass('bg-success');
-
-            //            // Đọc DuToanGoc (đang format vi-VN dấu chấm), strip về số thuần
-            //            var duToanGocRaw = $('#pd_DuToanGoc').val()
-            //                .replace(/\./g, '')   // bỏ dấu chấm vi-VN
-            //                .replace(/,/g, '');   // bỏ dấu phẩy (nếu có)
-            //            var duToanGocNum = parseFloat(duToanGocRaw) || 0;
-
-            //            // Hiển thị format dấu phẩy (en-US: 12,000,000,000)
-            //            $('#pd_DuToanPheDuyet')
-            //                .val(duToanGocNum.toLocaleString('en-US'))
-            //                .prop('readonly', !isManagerOrAdmin)
-            //                .attr('placeholder', 'Nhập dự toán phê duyệt');
-            //            break;
-            //    }
-            //}
-
             function applyTrangThaiPheDuyet(trangThai, isManagerOrAdmin) {
                 var $badge = $('#badgeTrangThaiPheDuyet');
                 var $duToanInput = $('#pd_DuToanPheDuyet');
@@ -2725,65 +2692,6 @@
                         break;
                 }
             }
-
-            // ── Tính và cập nhật 2 card tổng hợp ────────────────────────
-            //function capNhatCardTongHop() {
-            //    var tongDangTrinh = 0;
-            //    var tongDaDuyet = 0;
-
-            //    // ── Xử lý Ngân sách gốc ──────────────────────────────────
-            //    var bgdGoc = $('#pd_NgayDuyetBGD').val();
-            //    var pdaGoc = $('#pd_NgayDuyetPDA').val();
-            //    var pktGoc = $('#pd_NgayDuyetPKT').val();
-            //    var erpdGoc = $('#pd_NgayDuyetERPD').val();
-            //    var btcGoc = $('#pd_NgayDuyetBTC').val();
-
-            //    var coItNhat1NgayGoc = !!pdaGoc || !!pktGoc
-            //        || !!erpdGoc || !!btcGoc || !!bgdGoc;
-
-            //    if (!!bgdGoc) {
-            //        // Đã duyệt đủ → lấy DuToanPheDuyet
-            //        var rawGoc = $('#pd_DuToanPheDuyet').val()
-            //            .replace(/,/g, '').replace(/\./g, '');
-            //        tongDaDuyet += parseFloat(rawGoc) || 0;
-            //    } else if (coItNhat1NgayGoc) {
-            //        // Đang trình → lấy DuToanGoc
-            //        var rawGocTrinh = $('#pd_DuToanGoc').val()
-            //            .replace(/\./g, '').replace(/,/g, '');
-            //        tongDangTrinh += parseFloat(rawGocTrinh) || 0;
-            //    }
-
-            //    // ── Xử lý các card Bổ sung ───────────────────────────────
-            //    $('#containerBoSung .card-bo-sung').each(function () {
-            //        var $card = $(this);
-            //        var idx = $card.data('index');
-
-            //        var bgdBS = $('#bs_BGD_' + idx).val();
-            //        var pdaBS = $('#bs_PDA_' + idx).val();
-            //        var pktBS = $('#bs_PKT_' + idx).val();
-            //        var erpdBS = $('#bs_ERPD_' + idx).val();
-            //        var btcBS = $('#bs_BTC_' + idx).val();
-
-            //        var coItNhat1NgayBS = !!pdaBS || !!pktBS
-            //            || !!erpdBS || !!btcBS || !!bgdBS;
-
-            //        var rawBS = $('#bs_NganSach_' + idx).val()
-            //            .replace(/,/g, '').replace(/\./g, '');
-            //        var soBS = parseFloat(rawBS) || 0;
-
-            //        if (!!bgdBS) {
-            //            // Đã duyệt đủ
-            //            tongDaDuyet += soBS;
-            //        } else if (coItNhat1NgayBS) {
-            //            // Đang trình
-            //            tongDangTrinh += soBS;
-            //        }
-            //    });
-
-            //    // ── Cập nhật UI ──────────────────────────────────────────
-            //    $('#card_TongDangTrinh').text(formatCurrencyPD(tongDangTrinh));
-            //    $('#card_TongDaDuyet').text(formatCurrencyPD(tongDaDuyet));
-            //}
 
             function capNhatCardTongHop() {
                 var tongDangTrinh = 0;
@@ -3752,7 +3660,7 @@
 
                 if (!confirm('Bạn có chắc chắn muốn xóa hồ sơ "'
                            + tenHangMuc + '" không?\n'
-                           + 'Thao tác này không thể hoàn tác!')) return;
+                           + 'Thao tác này sẽ xóa toàn bộ dữ liệu liên quan đến hồ sơ và không thể hoàn tác!')) return;
 
                 var $btn = $(this);
                 $btn.prop('disabled', true)
@@ -3875,9 +3783,30 @@
                 var $btn = $(this);
                 var fd   = new FormData();
 
+                //fd.append('BudgetRegistrationId', currentBudgetId);
+                //fd.append('ProjectAreaId',
+                //    $('#modal_AreaName').val() === '-1' ? '' : $('#modal_AreaName').val());
+                var areaId = $('#modal_AreaName').val();
+                var $selectedAreaOption = $('#modal_AreaName option:selected');
+
+                var isCustomArea = $selectedAreaOption.data('is-custom') === true || $selectedAreaOption.data('is-custom') === "true";
+                var areaCustomText = "";
+
+                if (isCustomArea) {
+                    areaCustomText = $('#modal_ProjectAreaNameCustom').val().trim();
+
+                    // Khu vuc khac
+                    if (!areaCustomText) {
+                        alert('Vui lòng nhập tên khu vực dự án.');
+                        $('#modal_ProjectAreaNameCustom').focus();
+                        return;
+                    }
+                }
+
+                // FormData
                 fd.append('BudgetRegistrationId', currentBudgetId);
-                fd.append('ProjectAreaId',
-                    $('#modal_AreaName').val() === '-1' ? '' : $('#modal_AreaName').val());
+                fd.append('ProjectAreaId', areaId);
+                fd.append('ProjectAreaCustom', areaCustomText);
                 fd.append('TenHangMuc',          $('#modal_TenHangMuc').val()      || '');
                 fd.append('DuToan',              parseCurrency($('#modal_DuToan').val()));
                 fd.append('SoToTrinh',           $('#modal_SoToTrinh').val()        || '');
@@ -3910,6 +3839,10 @@
                     success: function (res) {
                         if (res.success) {
                             showModalAlert('success', res.message);
+                            sessionStorage.setItem('highlightBudgetId', currentBudgetId);
+                            setTimeout(function () {
+                                window.location.reload();
+                            }, 2000);
                         } else {
                             showModalAlert('danger', res.message);
                         }
@@ -3931,17 +3864,38 @@
                     return;
                 }
 
+                // ── XỬ LÝ LẤY DỮ LIỆU KHU VỰC ĐỘNG THEO DATA-IS-CUSTOM ──
+                var areaId = $('#modal_AreaName').val();
+                var $selectedAreaOption = $('#modal_AreaName option:selected');
+
+                // Đọc cờ định danh động (true/false) của option đang chọn
+                var isCustomArea = $selectedAreaOption.data('is-custom') === true || $selectedAreaOption.data('is-custom') === "true";
+
+                var areaCustomText = "";
+                if (isCustomArea) {
+                    areaCustomText = $('#modal_ProjectAreaNameCustom').val().trim();
+
+                    // Chặn người dùng nếu cố tình bỏ trống Tên khu vực mới
+                    if (!areaCustomText) {
+                        alert('Vui lòng nhập tên khu vực dự án cụ thể.');
+                        $('#modal_ProjectAreaNameCustom').focus();
+                        return;
+                    }
+                }
+
                 var $btn = $(this);
                 var fd   = new FormData();
 
                 fd.append('BudgetRegistrationId', currentBudgetId);
                 fd.append('RevisionType',         '2');
-                fd.append('LyDoChinhSua',         lyDo);
-                fd.append('ProjectAreaId',
-                    $('#modal_AreaName').val() === '-1' ? '' : $('#modal_AreaName').val());
-                fd.append('ProjectAreaCustom',
-                    $('#modal_AreaName').val() === '-1'
-                        ? $('#modal_ProjectAreaCustom').val() : '');
+                fd.append('LyDoChinhSua', lyDo);
+                fd.append('ProjectAreaId', areaId);
+                fd.append('ProjectAreaCustom', areaCustomText);
+                //fd.append('ProjectAreaId',
+                //    $('#modal_AreaName').val() === '-1' ? '' : $('#modal_AreaName').val());
+                //fd.append('ProjectAreaCustom',
+                //    $('#modal_AreaName').val() === '-1'
+                //        ? $('#modal_ProjectAreaNameCustom').val() : '');
                 fd.append('TenHangMuc',          $('#modal_TenHangMuc').val()      || '');
                 fd.append('DuToan',              parseCurrency($('#modal_DuToan').val()));
                 fd.append('SoToTrinh',           $('#modal_SoToTrinh').val()        || '');
@@ -3973,16 +3927,18 @@
                     contentType : false,
                     success: function (res) {
                         if (res.success) {
-                            showModalAlert('success', res.message);
+                            //showModalAlert('success', res.message);
                             // Thoát edit mode sau khi gửi thành công
                             _isEditMode = false;
                             _setAllPhieuEditable(false);
                             _restoreSnapshot(_snapshotPhieu);
-                            _updateModalButtons(
-                                _currentWorkflowType,
-                                _currentNgayDuyetBGD,
-                                _currentIsOwner
-                            );
+                            _updateModalButtons(_currentWorkflowType, _currentNgayDuyetBGD, _currentIsOwner);
+
+                            showModalAlert('success', res.message);
+                            sessionStorage.setItem('highlightBudgetId', currentBudgetId);
+                            setTimeout(function () {
+                                window.location.reload();
+                            }, 2000);
                         } else {
                             showModalAlert('danger', res.message);
                         }
@@ -4249,6 +4205,13 @@
                 bootstrap.Modal.getInstance(document.getElementById('excelFieldsModal')).hide();
             });
 
+            // Tự động tắt thông báo alert-success sau 4 giây
+            setTimeout(function () {
+                $(".alert-success").fadeTo(500, 0).slideUp(500, function () {
+                    $(this).remove();
+                });
+            }, 4000);
+
             $("#phongBanId").chosen({
                 width: "100%"
             });
@@ -4258,6 +4221,35 @@
     <script>
         var NhatKyTienDo = (function ($) {
             'use strict';
+
+            $(document).ready(function () {
+                $('#detailTabs button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+                    var targetId = $(e.target).attr('id');
+
+                    // Chọn Tab Tiến độ thực hiện
+                    if (targetId === 'detail-nhatky-btn') {
+                        if (typeof isPhanNhiemUserGlobal !== 'undefined' && (isPhanNhiemUserGlobal === true || isPhanNhiemUserGlobal === 'True' || isPhanNhiemUserGlobal === 'true')) {
+                            $('#btn-save-progress').show();
+                        }
+                    } else {
+                        // Nếu chuyển sang bất kỳ tab nào khác, luôn ẩn nút Lưu tiến độ và hiện lại nút Lưu tổng thể
+                        $('#btn-save-progress').hide();
+                    }
+                });
+
+                // 2. XỬ LÝ SỰ KIỆN KHI CLICK VÀO NÚT "LƯU TIẾN ĐỘ" Ở FOOTER (Giữ nguyên)
+                $(document).on('click', '#btn-save-progress', function (e) {
+                    e.preventDefault();
+
+                    if (typeof _saveProgress === 'function') {
+                        _saveProgress();
+                    } else if (typeof NhatKyTienDo !== 'undefined' && typeof NhatKyTienDo.saveProgress === 'function') {
+                        NhatKyTienDo.saveProgress();
+                    } else {
+                        _saveProgress();
+                    }
+                });
+            });
 
             var workItemList = [];
             var currentBudgetId = 0;
@@ -4291,7 +4283,6 @@
                     _recalcTotal();
                 });
 
-                $('#btn-save-progress').off('click').on('click', _saveProgress);
             }
 
             function _loadFromServer(data) {
@@ -4507,76 +4498,6 @@
                 $('#nk-total-pct').html(avg.toFixed(1) + '<span style="font-size:1rem">%</span>');
             }
 
-            //function _saveProgress() {
-            //    var areas = [];
-
-            //    $('#nk-vung2 .nk-kv-wrapper').each(function () {
-            //        var $kv = $(this);
-            //        var items = [];
-
-            //        $kv.find('tbody tr').each(function (idx) {
-            //            var $tr = $(this);
-            //            var $select = $tr.find('.inp-hangmuc-select');
-            //            var $manual = $tr.find('.inp-hangmuc-manual');
-            //            var $inpTxt = $tr.find('.inp-hangmuc:not(.inp-hangmuc-manual)');
-            //            var tenHangMuc = '';
-            //            var workItemId = null;
-
-            //            if ($select.length && $select.is(':visible')) {
-            //                workItemId = parseInt($select.val()) || null;
-            //                tenHangMuc = $select.find('option:selected').text();
-            //            } else if ($manual.length && $manual.is(':visible')) {
-            //                tenHangMuc = $manual.val();
-            //            } else {
-            //                tenHangMuc = $inpTxt.val();
-            //            }
-
-            //            items.push({
-            //                WorkItemId: workItemId,
-            //                TenHangMuc: tenHangMuc,
-            //                DonViTinh: $tr.find('.inp-dvt').val(),
-            //                KLKeHoach: parseFloat($tr.find('.inp-klkh').val()) || 0,
-            //                KLThucTe: parseFloat($tr.find('.inp-kltt').val()) || 0,
-            //                PhanTram: parseFloat($tr.find('.row-pct').text()) || 0,
-            //                NgayBatDauKH: $tr.find('.inp-date-bd').val() || null,
-            //                NgayKetThucKH: $tr.find('.inp-date-kt').val() || null,
-            //                GhiChu: $tr.find('.inp-ghichu').val(),
-            //                SortOrder: idx
-            //            });
-            //        });
-
-            //        areas.push({
-            //            TenKhuVuc: $kv.find('.kv-name-input').val(),
-            //            TienDo: parseFloat($kv.find('.kv-pct-badge').text()) || 0,
-            //            Items: items
-            //        });
-            //    });
-
-            //    var payload = {
-            //        BudgetRegistrationId: currentBudgetId,
-            //        DanhGiaChung: $('#nk-danhgia').val(),
-            //        LuuY: $('#nk-luuy').val(),
-            //        TongTienDo: parseFloat($('#nk-total-pct').text()) || 0,
-            //        Areas: areas
-            //    };
-
-            //    $('#btn-save-progress').prop('disabled', true)
-            //        .html('<i class="bi bi-hourglass-split me-1"></i>Đang lưu...');
-
-            //    $.ajax({
-            //        url: '/Budget/SaveProgressLog',
-            //        type: 'POST',
-            //        contentType: 'application/json',
-            //        data: JSON.stringify(payload),
-            //        success: function (res) { _showToast(res.success, res.message); },
-            //        error: function () { _showToast(false, 'Lỗi kết nối, vui lòng thử lại.'); },
-            //        complete: function () {
-            //            $('#btn-save-progress').prop('disabled', false)
-            //                .html('<i class="bi bi-save me-1"></i>Lưu tiến độ');
-            //        }
-            //    });
-            //}
-
             function _showToast(success, message) {
                 var $toast = $('#nk-toast');
                 $toast.removeClass('bg-success bg-danger')
@@ -4660,8 +4581,37 @@
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(payload),
-                    success: function (res) { _showToast(res.success, res.message); },
-                    error: function () { _showToast(false, 'Lỗi kết nối, vui lòng thử lại.'); },
+                    success: function (res) {
+                        if (res.success) {
+                            if (typeof showModalAlert === 'function') {
+                                showModalAlert('success', res.message);
+                            } else {
+                                alert(res.message);
+                            }
+
+                            if (payload && payload.BudgetRegistrationId) {
+                                sessionStorage.setItem('highlightBudgetId', payload.BudgetRegistrationId);
+                            }
+
+                            setTimeout(function () {
+                                window.location.reload();
+                            }, 2000);
+
+                        } else {
+                            if (typeof showModalAlert === 'function') {
+                                showModalAlert('danger', res.message);
+                            } else {
+                                alert('Lỗi: ' + res.message);
+                            }
+                        }
+                    },
+                    error: function () {
+                        if (typeof showModalAlert === 'function') {
+                            showModalAlert('danger', 'Lỗi kết nối, vui lòng thử lại.');
+                        } else {
+                            alert('Lỗi kết nối, vui lòng thử lại.');
+                        }
+                    },
                     complete: function () {
                         $('#btn-save-progress').prop('disabled', false)
                             .html('<i class="bi bi-save me-1"></i>Lưu tiến độ');
@@ -4705,7 +4655,8 @@
             return {
                 init: init,
                 reset: reset,
-                collectProgressLog: collectProgressLog  // THÊM MỚI: expose ra ngoài
+                collectProgressLog: collectProgressLog,  // expose ra ngoài
+                saveProgress: _saveProgress             // expose ra ngoài
             };
         })(jQuery);
     </script>
@@ -4727,10 +4678,10 @@
             transition: all 0.2s ease;
         }
 
-            .table tbody tr:hover {
-                background-color: rgba(13, 110, 253, 0.05);
-                transform: translateX(2px);
-            }
+        .table tbody tr:hover {
+            background-color: rgba(13, 110, 253, 0.05);
+            transform: translateX(2px);
+        }
 
         .badge {
             font-weight: 500;

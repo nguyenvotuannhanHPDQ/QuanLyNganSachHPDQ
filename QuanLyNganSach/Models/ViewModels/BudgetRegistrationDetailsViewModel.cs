@@ -25,6 +25,8 @@ namespace QuanLyNganSach.Models.ViewModels
         public DateTime NgayTao { get; set; }
         public int? WorkflowType { get; set; }
         public bool IsManagerOrAdmin { get; set; }
+        public bool IsManager { get; set; }
+        public bool IsAdmin { get; set; }
 
         // Khu vực dự án
         public string AreaName { get; set; }
@@ -52,6 +54,7 @@ namespace QuanLyNganSach.Models.ViewModels
         public string TrangThaiHienThiText { get; set; }
         public int? InvestmentReasonId { get; set; }
         public bool IsManualReason { get; set; }
+        public string ProjectAreaCustom { get; set; }
 
         // Constructor
         public BudgetRegistrationDetailsViewModel()

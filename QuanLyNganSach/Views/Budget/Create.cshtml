@@ -84,12 +84,33 @@
                                         <label class="form-label fw-semibold">
                                             Khu vực dự án <span class="text-danger">*</span>
                                         </label>
-                                        @Html.DropDownListFor(m => m.ProjectAreaId,
-                                            Model.DanhSachKhuVuc,
-                                            "-- Chọn khu vực --",
-                                            new { @class = "form-select" })
-                                        @Html.ValidationMessageFor(m => m.ProjectAreaId, "",
-                                            new { @class = "text-danger small mt-1 d-block" })
+
+                                        @* Sửa cách render Dropdown để đính kèm thuộc tính data-is-custom *@
+                                        <select Convert.ToString(Model.ProjectAreaId) name="ProjectAreaId" id="ProjectAreaId" class="form-select">
+                                            <option value="">-- Chọn khu vực --</option>
+                                            @if (Model.DanhSachKhuVuc != null)
+                                            {
+                                                foreach (var item in Model.DanhSachKhuVuc)
+                                                {
+                                                    // Giả định SelectListItem của bạn có thể chứa dữ liệu Custom thông qua việc ép kiểu hoặc select list đặc thù.
+                                                    // Để đơn giản và an toàn nhất, ta sẽ check text hoặc value tùy thuộc vào cách bạn gán ở hàm GetProjectAreaSelectList()
+                                                    <option value="@item.Value"
+                                                            selected="@(item.Selected)"
+                                                            data-is-custom="@(item.Text.Contains("khác") || item.Value == "khac" ? "true" : "false")">
+                                                        @item.Text
+                                                    </option>
+                                                }
+                                            }
+                                        </select>
+                                        @Html.ValidationMessageFor(m => m.ProjectAreaId, "", new { @class = "text-danger small mt-1 d-block" })
+                                    </div>
+
+                                    <div class="col-md-3 col-sm-6 mb-3" id="divProjectAreaCustom" style="display: none;">
+                                        <label class="form-label fw-semibold text-danger">
+                                            Tên khu vực mới <span class="text-danger">*</span>
+                                        </label>
+                                        @Html.TextBoxFor(m => m.ProjectAreaCustom, new { @class = "form-control", placeholder = "Nhập tên khu vực khác..." })
+                                        @Html.ValidationMessageFor(m => m.ProjectAreaCustom, "", new { @class = "text-danger small mt-1 d-block" })
                                     </div>
 
                                     <div class="col-md-3 col-sm-6 mb-3">
@@ -141,11 +162,12 @@
 
                                 <div class="row">
                                     <div class="col-12 mb-3">
-                                        <label class="form-label fw-semibold">Lý do đầu tư</label>
+                                        <label class="form-label fw-semibold">Lý do đầu tư <span class="text-danger">*</span></label>
                                         @Html.DropDownListFor(m => m.InvestmentReasonId,
-                                            Model.InvestmentReasons,
+                                            Model.InvestmentReasons ?? new List<SelectListItem>(),
                                             "-- Chọn lý do đầu tư --",
                                             new { @class = "form-select", id = "ddlInvestmentReason" })
+
                                         @Html.ValidationMessageFor(m => m.InvestmentReasonId, "", new { @class = "text-danger small mt-1 d-block" })
                                     </div>
 
@@ -167,13 +189,13 @@
 
                                 <div class="row">
                                     <div class="col-md-3 col-sm-6 mb-3">
-                                        <label class="form-label fw-semibold">Ngày bắt đầu</label>
+                                        <label class="form-label fw-semibold">Ngày bắt đầu<span class="text-danger">*</span></label>
                                         @Html.TextBoxFor(m => m.NgayBatDau, "{0:yyyy-MM-dd}", new { type = "date", @class = "form-control custom-date-input" })
                                         @Html.ValidationMessageFor(m => m.NgayBatDau, "", new { @class = "text-danger small mt-1 d-block" })
                                     </div>
 
                                     <div class="col-md-3 col-sm-6 mb-3">
-                                        <label class="form-label fw-semibold">Ngày kết thúc</label>
+                                        <label class="form-label fw-semibold">Ngày kết thúc<span class="text-danger">*</span></label>
                                         @Html.TextBoxFor(m => m.NgayKetThuc, "{0:yyyy-MM-dd}", new { type = "date", @class = "form-control custom-date-input" })
                                         @Html.ValidationMessageFor(m => m.NgayKetThuc, "", new { @class = "text-danger small mt-1 d-block" })
                                     </div>
@@ -646,6 +668,31 @@
                 }
             });
         });
+
+        // Hàm kiểm tra ẩn hiện Khu vực tự nhập
+        function toggleProjectAreaCustom() {
+            var $selectedOption = $('#ProjectAreaId option:selected');
+            var isCustom = $selectedOption.data('is-custom') === true || $selectedOption.data('is-custom') === "true";
+
+            if (isCustom) {
+                console.log('isCustom')
+                $('#divProjectAreaCustom').slideDown(300);
+                $('#ProjectAreaCustom').attr('required', 'required'); // Thêm validate mềm ở client
+            } else {
+                console.log('isNoCustom')
+                $('#divProjectAreaCustom').slideUp(200);
+                $('#ProjectAreaCustom').val('').removeAttr('required'); // Xóa text nếu user đổi ý chọn khu vực khác
+            }
+        }
+
+        // Lắng nghe sự kiện thay đổi trên dropdown Khu vực dự án
+        $('#ProjectAreaId').on('change', function () {
+            console.log('on change')
+            toggleProjectAreaCustom();
+        });
+
+        // Chạy kích hoạt lần đầu tiên phòng trường hợp form bị lỗi ModelState trả về và giữ nguyên dữ liệu cũ
+        toggleProjectAreaCustom();
 
     });
 </script>

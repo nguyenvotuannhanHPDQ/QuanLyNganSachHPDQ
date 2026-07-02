@@ -30,20 +30,25 @@ namespace QuanLyNganSach.Models.ViewModels
         public int SoLuong { get; set; }
 
         public string LyDoDauTu { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng chọn lý do đầu tư")]
         public int? InvestmentReasonId { get; set; }
         public IEnumerable<SelectListItem> InvestmentReasons { get; set; }
 
         public string MoTaKyThuat { get; set; }
 
         [DataType(DataType.Date)]
+        [Required(ErrorMessage = "Vui lòng chọn ngày bắt đầu")]
         public DateTime? NgayBatDau { get; set; }
 
         [DataType(DataType.Date)]
+        [Required(ErrorMessage = "Vui lòng chọn ngày kết thúc")]
         public DateTime? NgayKetThuc { get; set; }
 
         public IEnumerable<HttpPostedFileBase> HoSoCanCu { get; set; }
 
         public string LinkTaiLieuLienQuan { get; set; }
+        public string ProjectAreaCustom { get; set; }
 
         /* Dropdowns */
         public IEnumerable<SelectListItem> CategoryTypes { get; set; }

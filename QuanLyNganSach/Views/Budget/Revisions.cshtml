@@ -43,7 +43,7 @@
                                     <th style="width: 12%">Mã hạng mục</th>
                                     <th style="width: 38%">Tên hạng mục</th>
                                     @*<th class="text-center" style="width: 15%">Loại yêu cầu</th>*@
-                                    <th style="width: 20%">Người gửi</th>
+                                    <th style="width: 20%">Bộ phận</th>
                                     <th class="text-center" style="width: 10%">Thao tác</th>
                                 </tr>
                             </thead>
@@ -163,6 +163,10 @@
                             <label class="form-label fw-semibold text-muted small">Khu vực dự án</label>
                             <input type="text" class="form-control" id="rv_KhuVuc" disabled />
                         </div>
+                        <div class="col-md-4 mb-3" id="divRvKhuVucCustom" style="display: none;">
+                            <label class="form-label fw-semibold text-danger small">Tên khu vực khác</label>
+                            <input type="text" class="form-control" id="rv_KhuVucCustom" disabled />
+                        </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-semibold text-muted small">Tên hạng mục</label>
                             <input type="text" class="form-control" id="rv_TenHangMuc" disabled />
@@ -261,11 +265,15 @@
 
                 if (!data.success) return;
 
-                // SỬA: dùng tên thay vì ID cho 3 field này
-                $('#rv_KhuVuc').val(data.TenKhuVuc         || '');
+                $('#rv_KhuVuc').val(data.TenKhuVuc || '');
+                $('#rv_KhuVucCustom').val(data.ProjectAreaCustom || '');
+                if (data.ProjectAreaCustom && data.ProjectAreaCustom.trim() !== '') {
+                    $('#divRvKhuVucCustom').show();
+                } else {
+                    $('#divRvKhuVucCustom').hide();
+                }
                 $('#rv_CategoryType').val(data.TenCategoryType  || '');
                 $('#rv_PriorityLevel').val(data.TenPriorityLevel || '');
-                // Các field còn lại giữ nguyên
                 $('#rv_TenHangMuc').val(data.TenHangMuc      || '');
                 $('#rv_DuToan').val(formatCurrency(data.DuToan));
                 $('#rv_SoToTrinh').val(data.SoToTrinh        || '');
@@ -323,10 +331,8 @@
                 data : { revisionId: currentRevisionId },
                 success: function (res) {
                     if (res.success) {
-                        // 1. Hiển thị thông báo thành công lên modal trước
                         showModalAlert('success', res.message);
 
-                        // 2. Chờ 4 giây sau đó mới đóng modal và reload trang
                         setTimeout(function () {
                             // Lấy instance và đóng modal
                             var modalEl = document.getElementById('revisionDetailModal');
@@ -337,9 +343,8 @@
                                 }
                             }
 
-                            // Tải lại trang để cập nhật danh sách mới nhất
                             window.location.reload();
-                        }, 4000);
+                        }, 2000);
 
                     } else {
                         alert(res.message);
@@ -393,4 +398,27 @@
             }, 4000);
         }
     </script>
+    <style>
+        .card {
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(13, 110, 253, 0.05);
+            transform: translateX(2px);
+        }
+    </style>
 }
